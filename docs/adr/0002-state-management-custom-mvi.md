@@ -11,38 +11,10 @@
 
 自作の MVI を採用します。TCA は採用しません。
 
-- 画面ごとに `State`(struct)、`Action`(関連値つき enum)、`Store`(`@MainActor @Observable final class`)を用意します。
-- `Store` は `private(set) var state` と `func send(_ action:)` を持ち、`send` の中で `switch` して state を更新します。
-- 非同期処理は `send` の中で `Task` を起動し、結果を `.response(...)` のような Action として `send` し直します。
-- 親に伝えるイベントは `.delegate(...)` ケースにまとめます。
+- 画面ごとに `State`(struct)、`Action`(関連値つき enum)、`Store`(`@MainActor @Observable final class`)を用意し、`Store` の `send(_ action:)` で state を更新します。
 - 依存は `@Dependency` で受け取ります([ADR-0004](0004-dependency-injection.md))。
 
-```swift
-// 例(方針を示すための抜粋)
-@MainActor @Observable
-final class CounterStore {
-    struct State: Equatable { var count = 0 }
-    enum Action { case increment, decrement }
-
-    private(set) var state = State()
-
-    func send(_ action: Action) {
-        switch action {
-        case .increment: state.count += 1
-        case .decrement: state.count -= 1
-        }
-    }
-}
-```
-
-Flutter / Kotlin / React との対応は次のとおりです。
-
-| 他の世界 | このプロジェクト |
-| --- | --- |
-| BLoC の Event / MVI の Intent / useReducer の action | Action |
-| BLoC の State / Kotlin の data class | State(値型の struct なので直接書き換えてよい) |
-| reducer / BLoC の `on<Event>` | `send` 内の `switch` |
-| SideEffect | `Task` で起動する非同期処理 |
+`send` の振る舞い、コード例、BLoC / Kotlin MVI / useReducer との対応は [architecture.md](../architecture.md#状態管理mvi) を参照してください。
 
 ## 理由
 
@@ -69,8 +41,7 @@ Flutter / Kotlin / React との対応は次のとおりです。
 ### 悪い点・注意点
 
 - 検索の debounce やキャンセルは Store が `Task` を保持して `cancel` する必要があり、自前で書く。
-- `send` が `Task<Void, Never>?` を返してテストで `await store.send(.onAppear)?.value` と待つ形は初期方針で、実装しながら見直す。
-- 任意で、後から 1 画面だけ TCA で書き直して比較する(Phase 6)。
+- 任意で、後から 1 画面だけ TCA で書き直して比較する。
 
 ## 参考リンク
 

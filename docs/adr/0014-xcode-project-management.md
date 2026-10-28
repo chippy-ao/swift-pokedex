@@ -13,6 +13,8 @@
 - ソースのフォルダは buildable folder(Xcode 16 以降のフォルダ参照)にします。
 - モジュールの追加や依存の変更は、すべてルートの `Package.swift` で行います([ADR-0003](0003-multi-module-structure.md))。Xcode プロジェクトはアプリの入口だけを持つ薄い殻にします。
 
+運用上のルールは [development.md](../development.md#xcode-プロジェクト) に書きます。
+
 ## 理由
 
 - buildable folder では、ファイルの追加・削除で `project.pbxproj` が変わりません。Xcode 16 のリリースノートでも、プロジェクトファイルの変更とコンフリクトを減らす機能として紹介されています。
@@ -37,7 +39,7 @@
 ### 悪い点・注意点
 
 - アプリ拡張(Widget など)でターゲットが増え、`project.pbxproj` の編集が頻繁になったら、XcodeGen への移行を新しい ADR で検討する。
-- `project.pbxproj` を変更した PR は、Xcode で開けることを確認する。
+- `project.pbxproj` を変更した PR では、Xcode で開けることを確認する必要がある(ルールは development.md)。
 
 ## 参考リンク
 

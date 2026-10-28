@@ -15,21 +15,7 @@
 
 ### Package.swift はルートに 1 つ
 
-リポジトリのルートに `Package.swift` を 1 つ置き、各 target の `path` でディレクトリを指定します。Xcode プロジェクトは `app/Pokedex` に置き、ルートのパッケージをローカルパッケージとして参照します(Point-Free の isowords が同様の構成です)。ワークスペースの要否など Xcode プロジェクトの細部は Phase 0 で決めます。
-
-```swift
-// 例(抜粋)
-.target(
-    name: "Model",
-    dependencies: ["Common"],
-    path: "core/Model/Sources"
-),
-.testTarget(
-    name: "ModelTests",
-    dependencies: ["Model"],
-    path: "core/Model/Tests"
-),
-```
+リポジトリのルートに `Package.swift` を 1 つ置き、各 target の `path` でディレクトリを指定します。Xcode プロジェクトは `app/Pokedex` に置き、ルートのパッケージをローカルパッケージとして参照します(Point-Free の isowords が同様の構成です)。書き方の方針と例は [package-dependencies.md](../package-dependencies.md#packageswift-の書き方の方針) を参照してください。
 
 ### feature はドメイン単位
 
@@ -41,7 +27,7 @@ feature は Repository / NetworkClient / Database / Datastore を直接 import �
 
 ## 理由
 
-- 依存は target 単位で宣言できるので、モジュールごとに `Package.swift` を置かなくても境界を表現できます。ただし推移的な依存は import できてしまう場合があるため、明示的な依存チェックを Phase 0 で確認します。
+- 依存は target 単位で宣言できるので、モジュールごとに `Package.swift` を置かなくても境界を表現できます。ただし推移的な依存は import できてしまう場合があるため、明示的な依存チェックが必要です([package-dependencies.md](../package-dependencies.md#依存ルール))。
 - ルートに 1 つなら記述量が少なく、依存関係を 1 ファイルで見渡せます。
 - 画面単位で分けると、一覧・詳細・お気に入りが同じ型(Pokemon)を共有するため、feature 間依存が発生しやすくなります。
 - UseCase を挟むと、言語フォールバックなどのルール([ADR-0007](0007-localization.md))を 1 か所に置けます。
@@ -67,7 +53,7 @@ feature は Repository / NetworkClient / Database / Datastore を直接 import �
 
 - 単純な委譲の UseCase が増える。
 - ルートの `Package.swift` が長くなる。
-- Xcode プロジェクトとの連携(ワークスペース要否など)は Phase 0 で確認する。
+- Xcode プロジェクトとの連携(ワークスペース要否など)は導入時に確認する。
 
 ## 参考リンク
 

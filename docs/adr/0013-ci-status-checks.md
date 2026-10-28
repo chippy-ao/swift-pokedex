@@ -9,31 +9,12 @@ AI が書いたコードも人が書いたコードも、同じ基準でマー�
 
 ## 決定
 
-### PR で実行するチェック
-
-GitHub Actions で次のチェックを実行し、main のルールセットで「Require status checks to pass」を有効にします。どれかが失敗した PR はマージできません。
-
-| チェック | 内容 | ランナー |
-| --- | --- | --- |
-| PR タイトル | Conventional Commits 形式か([ADR-0010](0010-commit-and-pr-convention.md)) | Linux |
-| コミットメッセージ | PR 内の全コミットを committed で検査([ADR-0010](0010-commit-and-pr-convention.md)) | Linux |
-| Lint | swift-format と SwiftLint([ADR-0011](0011-lint-and-format.md))、ワークフローの actionlint | macOS |
-| Build / Test | `xcodebuild test` で全モジュールとアプリをビルドし、Swift Testing のテストを実行 | macOS |
-
-- ルールセットで必須にするのは、ワークフローごとの集約ジョブ(結果をまとめるだけのジョブ)にします。変更のない領域のジョブをスキップしても、集約ジョブが成功すればマージできるようにするためです。
+- GitHub Actions で PR のチェック(PR タイトル、コミットメッセージ、Lint、Build / Test)を実行し、main のルールセットで「Require status checks to pass」を有効にします。どれかが失敗した PR はマージできません。
+- ルールセットで必須にするのは、個々のジョブではなく、ワークフローごとの集約ジョブ(結果をまとめるだけのジョブ)にします。
+- Actions の `uses:` はタグではなくフルコミット SHA で固定し、SHA の固定は pinact で自動化します。`permissions` は最小限にします。
 - CI から呼ぶコマンドは mise のタスクに揃えます([ADR-0012](0012-tool-version-management.md))。
 
-### Actions のセキュリティ
-
-- `uses:` はタグではなくフルコミット SHA で固定し、末尾にバージョンをコメントで残します。
-
-  ```yaml
-  - uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50 # v6.1.1
-  ```
-
-- SHA の固定は手で書かず、pinact で行います。prek のフックで `.github/` 配下の変更時に自動で実行します。
-- ワークフローとジョブの `permissions` は必要な最小限だけを付けます。
-- `pull_request_target` を使うワークフローでは、PR のコードを checkout しません。
+チェックの一覧と Actions を書くときの手順は [development.md](../development.md#ステータスチェック) に書きます。
 
 ## 理由
 

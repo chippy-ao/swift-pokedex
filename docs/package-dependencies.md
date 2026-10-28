@@ -226,7 +226,7 @@ flowchart TD
 - DesignSystem 以外から Nuke を、SettingsFeature 以外から LicenseList を import すること
 - DatabaseSwiftData の外へ `@Model` 型を公開すること
 
-SwiftPM では、直接の依存に書いていないモジュールでも推移的な依存として import できてしまう場合があります。`Package.swift` の宣言だけでは境界を完全には守れないため、Phase 0 で明示的な依存チェック（例: `swift build` の `--explicit-target-dependency-import-check`）が使えるかを確認し、CI に組み込みます。
+SwiftPM では、直接の依存に書いていないモジュールでも推移的な依存として import できてしまう場合があります。`Package.swift` の宣言だけでは境界を完全には守れないため、導入時に明示的な依存チェック（例: `swift build` の `--explicit-target-dependency-import-check`）が使えるかを確認し、CI に組み込みます。
 
 ## 外部ライブラリ
 
@@ -234,29 +234,22 @@ SwiftPM では、直接の依存に書いていないモジュールでも推移
 
 ### 採用
 
-| ライブラリ | 用途 | 依存する target | 採用理由 |
+選んだ理由は [ADR 0005](./adr/0005-external-libraries.md) を参照してください。
+
+| ライブラリ | 用途 | 依存する target | 備考 |
 | --- | --- | --- | --- |
-| [swift-http-types](https://github.com/apple/swift-http-types) | `HTTPRequest` / `HTTPResponse` / `HTTPFields` の共通型。HTTPTypesFoundation が URLSession の拡張を提供する | NetworkClientURLSession | Apple 製の標準的な HTTP 型。[swift-openapi-runtime](https://github.com/apple/swift-openapi-runtime) や SwiftNIO 周辺でも使われる共通型で、学んでおく価値が高い |
-| [swift-dependencies](https://github.com/pointfreeco/swift-dependencies) | 依存性の注入（`@Dependency`、`@DependencyClient`） | NetworkClient、NetworkClientURLSession、Database、Datastore、Repository、Domain、PokedexFeature、SettingsFeature | interface と実装を別モジュールに分けるパターンが公式に整理されている。Riverpod 経験から入りやすい |
-| [Nuke](https://github.com/kean/Nuke)（NukeUI の `LazyImage`） | 画像のメモリ・ディスクキャッシュ | DesignSystem | 標準の `AsyncImage` はキャッシュ制御が弱い。14 系はベータが出ているので、導入時に最新の安定版を確認する |
-| [LicenseList](https://github.com/cybozu/LicenseList) | SPM 依存のライセンス一覧を生成し、`LicenseListView` で表示 | SettingsFeature | ライセンス表示を自作せずに済む。Swift 6.2 で書かれ Xcode 26.2 以上が必要。プラグインの適用先など導入手順は README に従い、導入時に確認する |
-| [SwiftLint](https://github.com/realm/SwiftLint) | Lint | （開発ツール） | 実務で定番 |
+| [swift-http-types](https://github.com/apple/swift-http-types) | `HTTPRequest` / `HTTPResponse` / `HTTPFields` の共通型。HTTPTypesFoundation が URLSession の拡張を提供する | NetworkClientURLSession | |
+| [swift-dependencies](https://github.com/pointfreeco/swift-dependencies) | 依存性の注入（`@Dependency`、`@DependencyClient`） | NetworkClient、NetworkClientURLSession、Database、Datastore、Repository、Domain、PokedexFeature、SettingsFeature | |
+| [Nuke](https://github.com/kean/Nuke)（NukeUI の `LazyImage`） | 画像のメモリ・ディスクキャッシュ | DesignSystem | 14 系はベータが出ているので、導入時に最新の安定版を確認する |
+| [LicenseList](https://github.com/cybozu/LicenseList) | SPM 依存のライセンス一覧を生成し、`LicenseListView` で表示 | SettingsFeature | Swift 6.2 で書かれ Xcode 26.2 以上が必要。プラグインの適用先など導入手順は README に従い、導入時に確認する |
+| [SwiftLint](https://github.com/realm/SwiftLint) | Lint | （開発ツール） | |
 | [swift-format](https://github.com/swiftlang/swift-format) | 整形 | （開発ツール） | Swift ツールチェーンに同梱されている |
-| [Swift Testing](https://developer.apple.com/documentation/testing) | テストフレームワーク | 各モジュールの Tests | 標準 |
-| [swift-snapshot-testing](https://github.com/pointfreeco/swift-snapshot-testing) | スナップショットテスト | （余裕が出たら導入） | UI の回帰確認に有用。Phase 6 で検討する |
+| [Swift Testing](https://developer.apple.com/documentation/testing) | テストフレームワーク | 各モジュールの Tests | |
+| [swift-snapshot-testing](https://github.com/pointfreeco/swift-snapshot-testing) | スナップショットテスト | （余裕が出たら導入） | UI の回帰確認に有用。導入するかは後で検討する |
 
 ### 不採用
 
-| ライブラリ | 不採用理由 |
-| --- | --- |
-| Alamofire、Moya | PokeAPI は GET のみ・認証なしなので、URLSession + swift-http-types で足りる |
-| Realm | MongoDB が 2024 年 9 月に Atlas Device SDK の廃止を発表し、2025 年 9 月 30 日に EOL となった。DB 本体はオープンソースとして残るが、新規採用は避ける（[公式ドキュメント](https://www.mongodb.com/docs/realm/)、[廃止の告知](https://www.mongodb.com/community/forums/t/deprecation-of-realm-swift-sdk/300126)） |
-| Kingfisher | Nuke と同等の選択肢。国内では Kingfisher も多いが、どちらか一つでよい |
-| Factory | swift-dependencies と同等の選択肢。Riverpod 経験から swift-dependencies を選ぶ |
-| TCA | 2026 年 10 月時点で 1.26.x が出ており 2.0 への移行期で、書き方が変わるリスクがある。素の Swift を学ぶ目的に対して抽象化が厚い（詳細は [architecture.md](./architecture.md) と [ADR 0002](./adr/0002-state-management-custom-mvi.md)、[TCA releases](https://github.com/pointfreeco/swift-composable-architecture/releases)） |
-| swift-openapi-generator | PokeAPI に公式の OpenAPI 定義が無い（[issue #528](https://github.com/PokeAPI/pokeapi/issues/528) で議論されているのみ） |
-| R.swift、SwiftGen | Xcode のアセットシンボル自動生成と String Catalog で足りる |
-| XcodeGen、Tuist | 個人開発なので当面不要。Xcode プロジェクトは buildable folder を使って直接管理する（[ADR 0014](./adr/0014-xcode-project-management.md)） |
+不採用にしたライブラリと理由は [ADR 0005 の検討した代替案](./adr/0005-external-libraries.md#検討した代替案)を参照してください（Alamofire / Moya、Realm、Kingfisher、Factory、TCA、swift-openapi-generator、R.swift / SwiftGen、XcodeGen / Tuist）。XcodeGen / Tuist を使わない場合の Xcode プロジェクトの管理方法は [ADR 0014](./adr/0014-xcode-project-management.md) を参照してください。
 
 ### Flutter のよく使うパッケージとの対応
 
@@ -271,7 +264,7 @@ SwiftPM では、直接の依存に書いていないモジュールでも推移
 
 ## モジュール命名規約
 
-Apple SDK や標準ライブラリのモジュール名・型名と衝突する名前を避けます。
+Apple SDK や標準ライブラリのモジュール名・型名と衝突する名前を避けます。理由は [ADR 0008](./adr/0008-module-naming.md) を参照してください。
 
 | 避ける名前 | 衝突先・問題 | 採用する名前 |
 | --- | --- | --- |
@@ -291,24 +284,24 @@ Apple SDK や標準ライブラリのモジュール名・型名と衝突する�
 
 - リポジトリのルートに `Package.swift` を 1 つだけ置く。モジュールごとに置く案は記述量が多いので採用しない。
 - 各 target は `path` で `<ディレクトリ>/Sources` を、test target は `<ディレクトリ>/Tests` を指定する。
-- 依存は target 単位で宣言する。推移的な依存の import を防ぐチェックは Phase 0 で確認する（[依存ルール](#依存ルール)の補足を参照）。
+- 依存は target 単位で宣言する。推移的な依存の import を防ぐチェックは導入時に確認する（[依存ルール](#依存ルール)の補足を参照）。
 - `Package` の `swiftLanguageModes: [.v6]` で、全 target を Swift 6 言語モードにする。
-- Xcode プロジェクト（`app/Pokedex`）はルートのパッケージをローカルパッケージとして参照する。ワークスペースの要否など Xcode プロジェクトの細部は Phase 0 で決める。同様の構成の例として [isowords](https://github.com/pointfreeco/isowords) がある。
+- Xcode プロジェクト（`app/Pokedex`）はルートのパッケージをローカルパッケージとして参照する。ワークスペースの要否など Xcode プロジェクトの細部は導入時に決める。同様の構成の例として [isowords](https://github.com/pointfreeco/isowords) がある。
 - 外部ライブラリのバージョンは導入時に最新の安定版を確認して決める。
 
-### 例（Phase 0 で確定する例）
+### 例
 
-以下は構成のイメージを示す抜粋です。tools-version、外部パッケージのバージョン指定、product 名、`platforms` の書き方などは Phase 0 で確定します。ここに書いた内容をそのまま使うわけではありません。
+以下は構成のイメージを示す抜粋です。tools-version、外部パッケージのバージョン指定、product 名、`platforms` の書き方などは導入時に確定します。ここに書いた内容をそのまま使うわけではありません。
 
 ```swift
-// swift-tools-version: （Phase 0 で確定）
+// swift-tools-version: （導入時に確定）
 import PackageDescription
 
 let package = Package(
     name: "swift-pokedex",
     platforms: [.iOS(.v26)],
     products: [
-        // Xcode プロジェクトから参照する library product（Phase 0 で確定）
+        // Xcode プロジェクトから参照する library product（導入時に確定）
         .library(name: "AppShared", targets: ["AppShared"]),
         .library(name: "NetworkClientURLSession", targets: ["NetworkClientURLSession"]),
     ],

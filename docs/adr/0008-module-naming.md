@@ -9,26 +9,20 @@ Swift のモジュール名は import 時に名前空間として使われます
 
 ## 決定
 
-Apple SDK や標準ライブラリのモジュール名・型名と衝突する名前を避けます。
+Apple SDK や標準ライブラリのモジュール名・型名と衝突する名前を避けます。具体的な命名規則と避ける名前の一覧は [docs/package-dependencies.md](../package-dependencies.md#モジュール命名規約) を参照してください。
 
-| 避ける名前 | 衝突先 | 採用する名前 |
-| --- | --- | --- |
-| Network | Network.framework | NetworkClient |
-| Data | Foundation.Data | Repository(Now in Android / Flutter 版の `core/data` に相当) |
-| Testing | Swift Testing | TestSupport |
-| UI | 汎用的すぎる | SharedUI |
+要点は次のとおりです。
 
-追加のルール:
-
-- `CoreXxx` という接頭辞は CoreData などの Apple フレームワークと紛らわしいので付けません。
-- feature は `XxxFeature` とします。
-- ディレクトリ名 = target 名とします。
-- 実装モジュールは「interface 名 + 技術名」とします(`NetworkClientURLSession`、`DatabaseSwiftData`、`DatastoreUserDefaults`)。
+- `Network`、`Data`、`Testing`、`UI` はそのまま使わず、別の名前にします。
+- `CoreXxx` という接頭辞は付けません。
+- ディレクトリ名と target 名を揃えます。
+- 実装モジュールは「interface 名 + 技術名」とします。
 
 ## 理由
 
-- 衝突を最初から避けると、後からのリネームや曖昧さの解消が不要になります。
+- `Network`(Network.framework)、`Data`(`Foundation.Data`)、`Testing`(Swift Testing)は Apple SDK と衝突し、`UI` は汎用的すぎます。衝突を最初から避けると、後からのリネームや曖昧さの解消が不要になります。
 - ディレクトリ名と target 名を揃えると、`Package.swift` の `path` 指定を探しやすくなります。
+- `CoreXxx` は CoreData などの Apple フレームワークと紛らわしいので避けます。
 - 実装モジュール名に技術名を含めると、差し替え可能な実装であることが名前から分かります([ADR-0004](0004-dependency-injection.md))。
 
 ## 検討した代替案

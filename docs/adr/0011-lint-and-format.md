@@ -9,23 +9,11 @@
 
 ## 決定
 
-### 役割を分ける
+- 見た目の整形は [swift-format](https://github.com/swiftlang/swift-format)、書き方の検査は [SwiftLint](https://github.com/realm/SwiftLint) と役割を分けます。見た目に関するルールは swift-format に任せ、SwiftLint で整形結果とぶつかるルールは無効にします。
+- swift-format は Swift ツールチェーンに同梱されている `swift format` を使います。SwiftLint は mise でバージョンを固定して入れます([ADR-0012](0012-tool-version-management.md))。
+- コミット時に整形と検査を行い、CI でリポジトリ全体を検査します。
 
-| ツール | 役割 | 設定ファイル |
-| --- | --- | --- |
-| [swift-format](https://github.com/swiftlang/swift-format) | 見た目の整形(インデント、改行、空白など) | `.swift-format` |
-| [SwiftLint](https://github.com/realm/SwiftLint) | 書き方の検査(force unwrap、命名、複雑度など) | `.swiftlint.yml` |
-
-- 見た目に関するルールは swift-format に任せます。SwiftLint で swift-format の整形結果とぶつかるルールは無効にします。
-- swift-format は Swift ツールチェーンに同梱されている `swift format` を使います。
-- SwiftLint は mise でバージョンを固定して入れます([ADR-0012](0012-tool-version-management.md))。
-
-### 実行するタイミング
-
-| タイミング | 実行内容 |
-| --- | --- |
-| コミット時(prek の pre-commit フック) | 変更したファイルに `swift format` を適用し、`swiftlint` で検査する |
-| CI | `swift format lint --strict` と `swiftlint --strict` をリポジトリ全体に実行する |
+設定ファイルと実行するタイミングは [development.md](../development.md#lint-と整形) に書きます。
 
 ## 理由
 

@@ -9,25 +9,16 @@
 
 ## 決定
 
-- お気に入りは SwiftData に保存します。
-- Database interface の裏に隠すので、View で `@Query` は使いません。fetch 関数や `AsyncStream` で公開します。
-- `ModelContext` は `Sendable` ではないので、実装は `@ModelActor` を付けた actor で包みます。
-- SwiftData の `@Model` 型は `DatabaseSwiftData` の外に出しません。外へは `Model` モジュールの Entity を返します。
+- お気に入りは SwiftData に保存します。Database interface の裏に隠し、View で `@Query` は使いません。
 - 設定値(テーマ色)は UserDefaults に保存します(Datastore interface + `DatastoreUserDefaults` 実装)。
-
-```swift
-// 例(実装モジュール内の方針を示す抜粋)
-@ModelActor
-actor FavoriteStoreActor {
-    // @Model 型はこの actor の内側に閉じ、外へは Sendable な Entity を返す
-}
-```
+- 実装の方針(`@ModelActor`、`@Model` 型を外に出さないこと、公開方法)は [data-layer.md](../data-layer.md#database-と-databaseswiftdata) を参照してください。
 
 ## 理由
 
 - Apple 標準で学習目的に合い、追加の依存が不要です。
 - interface の裏に隠すことで、View が永続化技術に依存せず、後から実装を差し替えられます([ADR-0004](0004-dependency-injection.md))。
-- `@ModelActor` で並行性の境界が明確になり、Swift 6 言語モードに適合します。
+- `@Model` 型が View や Store に漏れると、feature が実装モジュールに依存してモジュール境界が崩れます。interface 越しなら、Store のテストで Database を差し替えられ、SwiftData なしでテストできます。
+- `ModelContext` は `Sendable` ではないため、`@ModelActor` の actor で包むと並行性の境界が明確になり、Swift 6 言語モードに適合します。
 - テーマ色のような小さな設定値に SwiftData は過剰で、UserDefaults で十分です。
 
 ## 検討した代替案
@@ -37,7 +28,7 @@ actor FavoriteStoreActor {
 | Core Data | SwiftData の前身。新規で学ぶならモダンな SwiftData を優先する |
 | GRDB / SQLiteData | まず Apple 標準を学ぶ |
 | Realm | MongoDB が 2024 年 9 月に Atlas Device SDK の廃止を発表し、2025 年 9 月 30 日に EOL。DB 本体はオープンソースとして残るが新規採用は避ける |
-| View で `@Query` を使う | View が SwiftData に直接依存し、interface の裏に隠せない |
+| View で `@Query` を使う | View が SwiftData の `@Model` と `ModelContext` に直接依存し、interface の裏に隠せない。`@Model` が漏れるとモジュール境界が崩れる |
 | テーマ色も SwiftData に保存 | 単一の設定値には過剰 |
 
 ## 影響
@@ -51,7 +42,7 @@ actor FavoriteStoreActor {
 
 - `@Model` 型と Entity の変換コードが必要。
 - `@Query` の便利さは使えないため、変更監視は `AsyncStream` などで自前で公開する。
-- 段階 2 のオフラインキャッシュで SwiftData を拡張する際は、Database interface の設計を見直す([data-layer.md](../data-layer.md) 参照)。
+- オフラインキャッシュ([キャッシュ方針](../data-layer.md#キャッシュ方針)の段階2)で SwiftData を拡張する際は、Database interface の設計を見直す。
 
 ## 参考リンク
 

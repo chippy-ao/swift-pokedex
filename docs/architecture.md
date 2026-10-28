@@ -378,7 +378,6 @@ sequenceDiagram
 ```
 
 - DTO はネットワーク用モデルで、Repository で Model に変換します。View と Store は DTO を知りません。
-- NetworkClient の interface は HTTP レベルではなく API レベル（PokeAPIClient）です。
 - Database は interface の裏で SwiftData を隠します。View で `@Query` は使いません。
 - キャッシュ方針、各クライアントの詳細は [data-layer.md](./data-layer.md) を参照してください。
 
@@ -448,7 +447,7 @@ flowchart LR
 | 非同期処理 | Store が `Task` を保持してキャンセルする。構造化されたものは async/await で書く |
 | AsyncStream | 設定値の監視など、継続的に変わる値の公開に使う |
 
-- Swift 6 言語モードでデータ競合を設計段階で避けます。警告の扱いなど具体的なビルド設定は Phase 0 で決めます。
+- Swift 6 言語モードでデータ競合を設計段階で避けます。警告の扱いなど具体的なビルド設定は導入時に決めます。
 - Flutter の Isolate と違い、同じアクターに隔離された値は共有できます。アクターの境界を越える値だけが Sendable である必要があります。
 
 ## 関連 ADR

@@ -4,19 +4,19 @@ ADR は「なぜその設計にしたか」を 1 決定 1 ファイルで残す�
 
 ## 運用ルール
 
-- ADR は書き換えません。誤字の修正などを除き、承認済みの内容は変更しません。
-- 方針を覆すときは新しい ADR を追加し、古い ADR のステータスを `Superseded` にします。新旧の ADR は相互にリンクします。
+ADR を残す基準、書き換えない原則、置き場所の考え方は [docs/README.md](../README.md#ドキュメントの運用ルール) を参照してください。ここには ADR 固有の書式だけを書きます。
+
+- 番号は連番(4 桁ゼロ埋め)で、欠番を作りません。ファイル名は `NNNN-kebab-case-title.md` です。
+- ステータスは `提案中` / `承認済み` / `却下` / `Superseded` のいずれかです。
+- 方針を覆すときは、新旧の ADR を相互にリンクします。
   - 古い側: `ステータス: Superseded (ADR-00XX により置き換え)`
   - 新しい側: `ステータス: 承認済み (ADR-00YY を置き換える)`
-- 番号は連番(4 桁ゼロ埋め)で、欠番を作りません。ファイル名は `NNNN-kebab-case-title.md` です。
-- ステータスは `提案中` / `承認済み` / `Superseded` / `却下` のいずれかです。
-- ロードマップやタスクは ADR にも docs にも書かず、GitHub Issues と Milestones で管理します([ADR-0001](0001-documentation-policy.md) 参照)。
 
 ## 一覧
 
 | 番号 | タイトル | ステータス | 日付 |
 | --- | --- | --- | --- |
-| [0001](0001-documentation-policy.md) | ドキュメント運用方針 | 承認済み | 2026-10-27 |
+| [0001](0001-documentation-policy.md) | ドキュメント運用方針 | 承認済み | 2026-10-28 |
 | [0002](0002-state-management-custom-mvi.md) | 状態管理に自作 MVI を採用する | 承認済み | 2026-10-27 |
 | [0003](0003-multi-module-structure.md) | app / feature / core の 3 層マルチモジュール構成 | 承認済み | 2026-10-27 |
 | [0004](0004-dependency-injection.md) | DI に swift-dependencies を採用する | 承認済み | 2026-10-27 |

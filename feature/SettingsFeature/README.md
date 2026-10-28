@@ -13,19 +13,12 @@
 
 データの読み書きは [Domain](../../docs/architecture.md) の UseCase 経由で行い、Datastore を直接 import しません。全体の設計は [docs/architecture.md](../../docs/architecture.md)、依存ルールは [docs/package-dependencies.md](../../docs/package-dependencies.md) を参照してください。
 
-## 依存してよいモジュール
+## 依存
 
-| 依存先 | 用途 |
-| --- | --- |
-| Domain | UseCase の呼び出し |
-| SharedUI | 共通 UI |
-| DesignSystem | テーマ、色 |
-| Model | Entity |
-| Common | 共通ユーティリティ |
-| Dependencies | `@Dependency` で UseCase を受け取る |
-| LicenseList | ライセンス一覧の表示(依存するのはこの feature だけ) |
+依存ルール全般は [docs/package-dependencies.md](../../docs/package-dependencies.md#依存ルール) に従います。この feature 固有の点は次のとおりです。
 
-他の feature(PokedexFeature)には依存しません。
+- LicenseList に依存してよいのはこの feature だけ（ライセンス一覧の表示に使う）
+- 他の feature（PokedexFeature）には依存しない
 
 ## 設定項目
 
@@ -40,26 +33,9 @@
 
 ライセンス一覧は LicenseList が SPM 依存から生成します。プラグインの適用先など導入手順は LicenseList の README に従い、導入時に確認します。
 
-## テーマ色が他の feature に伝わる仕組み
+## テーマ色の保存と伝搬
 
-SettingsFeature は他の feature を直接参照しません。Datastore に保存された値を、AppShared が監視して Environment で配ります。
-
-```mermaid
-flowchart LR
-    S[SettingsFeature] -->|"UseCase(保存)"| D[Domain]
-    D --> R[Repository]
-    R --> DS[Datastore]
-    DS -.->|"AsyncStream で変更を通知"| R
-    R -.-> D
-    D -.->|"UseCase(監視)"| A[AppShared]
-    A -->|".tint() と Theme を Environment で配布"| P[PokedexFeature / SettingsFeature]
-```
-
-- 保存: SettingsFeature が UseCase を呼び、Datastore(実装は DatastoreUserDefaults)に保存する
-- 監視: AppShared が UseCase(AsyncStream)で値を受け取り、`.tint()` と DesignSystem の Theme を Environment で全体に流す
-- 利用側: PokedexFeature は Environment から読むだけで、SettingsFeature には依存しない
-
-Flutter で例えると、Riverpod の Provider を Settings が更新し、ルートの `MaterialApp` が watch してテーマに反映するのに近い形です。
+この feature は UseCase 経由でテーマ色を保存するだけです。値の監視と Environment への配布は AppShared が行い、他の feature を直接参照しません。全体の流れは [docs/architecture.md](../../docs/architecture.md#テーマ色の伝搬) を参照してください。
 
 ## State / Action の案
 
@@ -96,21 +72,3 @@ UseCase 案は `ObserveThemeColorUseCase`(AsyncStream。AppShared と共有)と 
 | --- | --- |
 | 読み込み中 | 保存済みの値が読めるまでは既定のテーマ色を表示 |
 | 保存失敗 | エラーを表示し、表示中の選択を元に戻すかは実装時に決める |
-
-## 実装フェーズ
-
-フェーズ一覧と進捗は [GitHub Milestones](https://github.com/chippy-ao/swift-pokedex/milestones) で管理します。この feature は Phase 4 で実装します。
-
-| フェーズ | 内容 |
-| --- | --- |
-| Phase 4 | Datastore、テーマ色、LicenseList、言語設定への誘導、String Catalog の ja / en |
-
-## 未決事項
-
-- プリセットの色の数と具体的な色
-- テーマ色の型の配置(Model か DesignSystem か)
-- ダークモードとの関係(テーマ色は tint のみで、背景色などは変えない想定だが実装時に確認する)
-- LicenseList の導入手順(プラグインの適用先など。導入時に README で確認する)
-- ライセンス画面の遷移方法(NavigationStack の push か sheet か)
-- アプリのバージョン表示を入れるかどうか(任意)
-- 保存失敗時の扱い

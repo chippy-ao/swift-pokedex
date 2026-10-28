@@ -42,24 +42,22 @@ flowchart LR
 
 ## 使うエンドポイント
 
-| エンドポイント | 用途 | 主なフィールド | 使う画面・フェーズ |
+| エンドポイント | 用途 | 主なフィールド | 使う画面 |
 | --- | --- | --- | --- |
-| `GET /pokemon?limit=20&offset=0` | 一覧のページング取得 | `count`、`next`、`previous`、`results`（`name` と `url` の配列） | 一覧 / Phase 1 |
-| `GET /pokemon?limit={count 以上}` | 全件の名前リスト取得（ローカル検索用） | 同上 | 検索 / Phase 2 |
-| `GET /pokemon/{id または name}` | 詳細 | `types`、`stats`、`sprites`（公式アートワークは `sprites.other["official-artwork"].front_default`） | 詳細、お気に入り一覧 / Phase 1、3 |
-| `GET /pokemon-species/{id}` | 名前のローカライズ、説明文、進化チェーンへの入口 | `names`（`name` と `language.name` の配列）、`flavor_text_entries`、`evolution_chain.url` | 一覧・詳細 / Phase 5 |
-| `GET /evolution-chain/{id}` | 進化チェーン | `chain`（`species` と `evolves_to` の配列を持つ再帰構造） | 詳細 / Phase 5 |
-| `GET /type/{name}` | タイプフィルタ | `pokemon`（`pokemon.name` と `pokemon.url` を持つ要素の配列） | 一覧 / Phase 2 |
-
-フェーズの一覧は [GitHub Milestones](https://github.com/chippy-ao/swift-pokedex/milestones) で管理しています。
+| `GET /pokemon?limit=20&offset=0` | 一覧のページング取得 | `count`、`next`、`previous`、`results`（`name` と `url` の配列） | 一覧 |
+| `GET /pokemon?limit={count 以上}` | 全件の名前リスト取得（ローカル検索用） | 同上 | 検索 |
+| `GET /pokemon/{id または name}` | 詳細 | `types`、`stats`、`sprites`（公式アートワークは `sprites.other["official-artwork"].front_default`） | 詳細、お気に入り一覧 |
+| `GET /pokemon-species/{id}` | 名前のローカライズ、説明文、進化チェーンへの入口 | `names`（`name` と `language.name` の配列）、`flavor_text_entries`、`evolution_chain.url` | 一覧・詳細 |
+| `GET /evolution-chain/{id}` | 進化チェーン | `chain`（`species` と `evolves_to` の配列を持つ再帰構造） | 詳細 |
+| `GET /type/{name}` | タイプフィルタ | `pokemon`（`pokemon.name` と `pokemon.url` を持つ要素の配列） | 一覧 |
 
 ## データ取得の方針
 
 ### ページング
 
-- `limit` / `offset` 方式です。デフォルトは 1ページ 20件です。
+- `limit` / `offset` 方式です。1ページ 20件で取得します。
 - レスポンスの `count`（2026年10月時点で 1351）で全件数が分かります。`next` が `null` でなければ続きがあります。
-- 無限スクロールは、末尾付近の行が表示されたときに次の `offset` を読み込む形で実装します（具体的な実装は Phase 1 で決めます）。
+- 無限スクロールは、末尾付近の行が表示されたときに次の `offset` を読み込む形で実装します。
 
 ### ID の取り出し方
 
@@ -72,13 +70,13 @@ func pokemonID(from url: URL) -> Int? {
 }
 ```
 
-ID が 10000 を超えるものはフォーム違いなどの pokemon です。扱いは実装時に決めます。
+ID が 10000 を超えるものはフォーム違いなどの pokemon です。
 
 ### 名前検索
 
 - 名前検索の API はありません。
 - 全件の名前リスト（`limit` を `count` 以上にして 1回取得）をキャッシュし、ローカルで絞り込みます。
-- 日本語名での検索は全 species の名前が必要になるため、拡張フェーズで方式を検討します（要調査）。
+- 日本語名での検索は全 species の名前が必要になります。
 
 ### 言語コードと変換ルール
 
@@ -101,7 +99,7 @@ ID が 10000 を超えるものはフォーム違いなどの pokemon です。�
 - 該当言語の名前が無ければ `en` にフォールバックします。
 - この変換とフォールバックは Domain の UseCase で行います。
 
-詳しい背景は [ADR 0007](./adr/0007-localization.md) を参照してください。
+選んだ理由と検討した代替案は [ADR 0007](./adr/0007-localization.md) を参照してください。
 
 ## NetworkClient と NetworkClientURLSession
 
@@ -169,8 +167,6 @@ func get(_ url: URL, session: URLSession) async throws -> Data {
 }
 ```
 
-`JSONDecoder` の `keyDecodingStrategy` など、デコード周りの設定は実装時に決めます。
-
 ### DTO から Model への変換
 
 - DTO は `NetworkClient` モジュールに置き、PokeAPI のレスポンス形状にそのまま合わせた `Codable` な struct にします。
@@ -189,15 +185,9 @@ Flutter では Freezed / json_serializable で書いていた部分は、Swift �
 - お気に入りを SwiftData に保存します。
 - `ModelContext` は Sendable ではないため、実装は `@ModelActor` を付けた actor で包みます。
 - `@Model` 型は `DatabaseSwiftData` の外に出しません。外へ出すのは `core/Model` の Entity だけです。
-- 公開方法は fetch 関数や `AsyncStream` にします。
+- 公開方法は fetch 関数や `AsyncStream` にします。View で `@Query` は使いません。
 
-### View で `@Query` を使わない理由
-
-- `@Query` は View が SwiftData の `@Model` 型と `ModelContext` に直接依存する仕組みで、Database interface の裏に隠すという方針と両立しません。
-- `@Model` 型が View や Store に漏れると、feature が実装モジュールに依存することになり、モジュール境界が崩れます。
-- fetch 関数 / `AsyncStream` 越しなら、テストで Database をクロージャ差し替えにでき、SwiftData を使わずに Store をテストできます。
-
-参考: [Apple SwiftData](https://developer.apple.com/documentation/swiftdata)。
+選んだ理由と検討した代替案は [ADR 0006](./adr/0006-local-persistence.md) を参照してください。参考: [Apple SwiftData](https://developer.apple.com/documentation/swiftdata)。
 
 ## Datastore と DatastoreUserDefaults
 
@@ -208,15 +198,12 @@ Flutter では Freezed / json_serializable で書いていた部分は、Swift �
 
 - Flutter 版の `datastore` と `datastore_shared_preferences` の分割に相当します。
 - テーマ色は Settings で変更し、`AsyncStream` で監視できるようにします。流れは SettingsFeature → UseCase → Datastore と保存し、AppShared が UseCase 経由で値を受け取って全体に流します（[architecture.md](./architecture.md) を参照）。
-- 保存形式（色をどう表すか）は実装時に決めます。
 
 ## Repository と UseCase
 
 Repository は `NetworkClient` / `Database` / `Datastore` を組み合わせ、DTO を Model に変換します（Now in Android や Flutter 版の `core/data` に相当）。
 
 ### Repository の案
-
-実装時に調整します。
 
 | Repository | 役割 | 使う interface |
 | --- | --- | --- |
@@ -233,7 +220,7 @@ Domain の UseCase は、単純な委譲でも置きます（feature から Repo
 | 一覧取得 | `PokemonRepository` に委譲してページを返す |
 | お気に入りの切り替え | `FavoriteRepository` に委譲する |
 | テーマ色の監視 | `SettingsRepository` の値を `AsyncStream` で返す |
-| ポケモン名の言語解決 | アプリの言語を PokeAPI の言語コードに変換し、species の `names` から名前を選ぶ。該当言語が無ければ `en` にフォールバックする |
+| ポケモン名の言語解決 | [言語コードと変換ルール](#言語コードと変換ルール)に従い、species の `names` から名前を選ぶ |
 
 言語解決の例です（型名は仮で、あくまで例です）。
 
@@ -260,19 +247,17 @@ func resolvePokemonName(
 
 ## キャッシュ方針
 
-| 段階 | 方式 | 対象 | フェーズ |
-| --- | --- | --- | --- |
-| 段階1 | `URLSession` の `URLCache`（ディスク容量を大きめに設定）による HTTP キャッシュ。PokeAPI の `max-age=86400` に従う | 全 GET レスポンス | Phase 1 |
-| 段階2 | SwiftData に保存する | 全件の名前リスト、species など、オフラインでも使いたいもの | Phase 5（拡張フェーズ） |
+| 段階 | 方式 | 対象 |
+| --- | --- | --- |
+| 段階1 | `URLSession` の `URLCache`（ディスク容量を大きめに設定）による HTTP キャッシュ。PokeAPI の `max-age=86400` に従う | 全 GET レスポンス |
+| 段階2 | SwiftData に保存する | 全件の名前リスト、species など、オフラインでも使いたいもの |
 
 - 段階1で Fair Use Policy の「ローカルにキャッシュする」を満たします。
 - 画像のメモリ・ディスクキャッシュは Nuke（DesignSystem 内）が担当します。
-- 段階2のデータ構造と、お気に入り用の SwiftData との関係は Phase 5 の着手時に決めます。
 
 ## エラーハンドリング
 
 - `Common` にエラー型を置く程度に留めます。
-- ネットワーク失敗、デコード失敗、HTTP ステータス異常などの分類と、Store 上での表示方法（State にエラーを持つなど）の詳細は実装時に決めます。
 
 ## 関連 ADR
 

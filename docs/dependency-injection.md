@@ -1,19 +1,8 @@
 # 依存性注入
 
-swift-pokedex では DI に [swift-dependencies](https://github.com/pointfreeco/swift-dependencies)(Point-Free)を使います。決定の経緯は [ADR 0004](adr/0004-dependency-injection.md) を参照してください。ここでは「どう書くか」を説明します。
+swift-pokedex では DI に [swift-dependencies](https://github.com/pointfreeco/swift-dependencies)(Point-Free)を使います。選んだ理由と検討した代替案は [ADR 0004](adr/0004-dependency-injection.md) を参照してください。ここでは「どう書くか」を説明します。
 
 > 本書のコードは書き方を示す「例」です。型名やメソッド名は実装時に変わる可能性があります。
-
-## なぜ swift-dependencies か
-
-| 観点 | 内容 |
-| --- | --- |
-| Riverpod 経験との相性 | `ProviderScope` の `overrides` で差し替える感覚が、`withDependencies` にほぼそのまま対応します。 |
-| Injectable / get_it との違い | コード生成もグローバルな登録処理も不要です。`@Dependency` で宣言すれば、`DependencyValues` から取り出せます。 |
-| テスト・Preview | テスト用 (`testValue`)・Preview 用 (`previewValue`)・本番用 (`liveValue`) を依存ごとに持てます。 |
-| 学習目的 | Point-Free のライブラリなので、将来 TCA を試すときもそのまま使えます(TCA は不採用。[ADR 0002](adr/0002-state-management-custom-mvi.md) 参照)。 |
-
-Factory も同等の選択肢ですが、Riverpod 経験から swift-dependencies を選びました(短い比較のみ。詳細は [ADR 0005](adr/0005-external-libraries.md) を参照)。
 
 ## interface と実装を分ける
 
@@ -35,18 +24,11 @@ flowchart LR
 
 実装モジュールを依存に持つのは App ターゲットだけです。
 
-### 利点
-
-- feature のビルドが軽くなります。URLSession、SwiftData、UserDefaults の実装に依存せず、interface だけをビルドすれば済みます。
-- Preview が軽くなります。feature は `previewValue` だけで動くので、ネットワークや DB を使わずに画面を確認できます。
-- テストで差し替えやすくなります。interface が小さな struct なので、必要なクロージャだけ差し替えられます。
-- 依存ルールを target 単位で守れます。feature が実装モジュールを import しようとしてもビルドできません。
-
 ## 定義方法
 
 ### 依存は「クロージャを持つ struct」にする
 
-protocol ではなく、`@DependencyClient` マクロ(DependenciesMacros)を付けた struct で定義します。protocol 準拠の mock クラスを書かずに、クロージャを 1 つ差し替えるだけでテストできます。
+protocol ではなく、`@DependencyClient` マクロ(DependenciesMacros)を付けた struct で定義します。テストではクロージャを 1 つ差し替えるだけで済みます。
 
 ### interface モジュール側(NetworkClient)
 
@@ -86,7 +68,7 @@ extension DependencyValues {
 
 `PokemonListDTO` や `PokemonDTO` は NetworkClient モジュールに置く Codable な struct です。上の `.previewBulbasaur` はプレビュー用の固定値の例です。
 
-NetworkClient の interface は HTTP レベルではなく API レベル(一覧取得、詳細取得など)にします。Repository のテストで API レスポンスを直接差し替えられるからです。
+NetworkClient の interface は HTTP レベルではなく API レベル(一覧取得、詳細取得など)にします。
 
 ### 実装モジュール側(NetworkClientURLSession)
 

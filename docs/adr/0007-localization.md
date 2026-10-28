@@ -9,27 +9,9 @@ Settings に言語変更の機能を置きます。また、ポケモン名な�
 
 ## 決定
 
-### UI の言語
-
-UI の言語は iOS のアプリ別言語設定(iOS 13〜)に従います。Settings 画面からは設定アプリのこのアプリのページを開きます(`UIApplication.openSettingsURLString`)。アプリ内の言語切り替えは実装しません。
-
-### データの言語
-
-ポケモン名など PokeAPI のデータの言語もアプリの言語に追従させ、別設定にはしません。
-
-- `Bundle.main.preferredLocalizations.first` を PokeAPI の言語コードに変換します(`ja` → `ja-hrkt`、`en` → `en`)。
-- 該当言語の名前が無ければ `en` にフォールバックします。
-- この変換とフォールバックは Domain の UseCase で行います。
-
-```swift
-// 例(変換の考え方を示す。実際の実装は Phase 5 で決める)
-func pokeAPILanguageCode(preferred: String?) -> String {
-    switch preferred {
-    case "ja": "ja-hrkt"
-    default: "en"
-    }
-}
-```
+- UI の言語は iOS のアプリ別言語設定(iOS 13〜)に従います。アプリ内の言語切り替えは実装しません。Settings 画面からは設定アプリのこのアプリのページへ誘導します([SettingsFeature の README](../../feature/SettingsFeature/README.md) を参照)。
+- ポケモン名など PokeAPI のデータの言語もアプリの言語に追従させ、別設定にはしません。該当言語の名前が無ければ `en` にフォールバックし、この処理は Domain の UseCase で行います。
+- 言語コードの変換ルールは [data-layer.md](../data-layer.md#言語コードと変換ルール) を参照してください。
 
 ## 理由
 
@@ -56,7 +38,7 @@ func pokeAPILanguageCode(preferred: String?) -> String {
 
 - アプリ別言語設定で選べるのは、アプリ自体がローカライズしている言語だけ。
 - アプリ内で即座に切り替えることはできず、設定アプリへの遷移が必要。
-- 日本語名での検索は全 species の名前が必要になるため、拡張フェーズで方式を検討する(要調査)。
+- 日本語名での検索は全 species の名前が必要になり、データ量が増える。
 
 ## 参考リンク
 

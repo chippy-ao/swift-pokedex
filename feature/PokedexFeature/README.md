@@ -12,24 +12,13 @@
 
 全体の設計は [docs/architecture.md](../../docs/architecture.md)、依存ルールは [docs/package-dependencies.md](../../docs/package-dependencies.md)、DI の書き方は [docs/dependency-injection.md](../../docs/dependency-injection.md) を参照してください。
 
-## 依存してよいモジュール
+## 依存
 
-| 依存先 | 用途 |
-| --- | --- |
-| Domain | UseCase の呼び出し |
-| SharedUI | PokemonCard、PokemonRow など |
-| DesignSystem | テーマ、タイプバッジ、RemoteImage |
-| Model | Entity |
-| Common | 共通ユーティリティ、エラー型 |
-| Dependencies | `@Dependency` で UseCase を受け取る |
+依存ルール全般は [docs/package-dependencies.md](../../docs/package-dependencies.md#依存ルール) に従います。この feature 固有の点は次のとおりです。
 
-依存してはいけないもの。
-
-- Repository / NetworkClient / Database / Datastore(必ず UseCase 経由)
-- 実装モジュール(NetworkClientURLSession、DatabaseSwiftData、DatastoreUserDefaults)
-- 他の feature(SettingsFeature を含む)
-
-テーマ色は SettingsFeature に依存せず、Environment から読むだけです。
+- データ取得は UseCase 経由のみ（Repository / NetworkClient / Database / Datastore は import しない）
+- 他の feature（SettingsFeature を含む）には依存しない
+- テーマ色は Environment から読むだけで、SettingsFeature には依存しない（仕組みは [docs/architecture.md](../../docs/architecture.md#テーマ色の伝搬)）
 
 ## 画面一覧とフォルダ構成
 
@@ -46,7 +35,7 @@ feature/PokedexFeature/
 │   ├─ List/
 │   ├─ Detail/
 │   ├─ Favorites/
-│   └─ PokedexRoute.swift    … feature 内の Route(配置は実装時に決める)
+│   └─ PokedexRoute.swift    … feature 内の Route
 └─ Tests/
 ```
 
@@ -60,7 +49,7 @@ feature/PokedexFeature/
 flowchart LR
     List -->|"Route.detail(id)"| Detail
     Favorites -->|"Route.detail(id)"| Detail
-    Detail -->|"進化チェーンのタップ(Phase 5)"| Detail
+    Detail -->|"進化チェーンのタップ"| Detail
 ```
 
 Route の例です(名前は仮)。
@@ -126,12 +115,12 @@ enum PokemonListAction {
 
 | 項目 | 内容 |
 | --- | --- |
-| 表示項目 | 公式アートワーク、ID、名前、タイプ、ステータス、説明文(Phase 5)、進化チェーン(Phase 5) |
-| 操作 | お気に入りの追加・削除(Phase 3)、進化チェーンのタップで別のポケモンの Detail へ(Phase 5) |
+| 表示項目 | 公式アートワーク、ID、名前、タイプ、ステータス、説明文、進化チェーン |
+| 操作 | お気に入りの追加・削除、進化チェーンのタップで別のポケモンの Detail へ |
 | PokeAPI | `GET /pokemon/{id or name}`(types、stats、sprites)、`GET /pokemon-species/{id}`(names、flavor_text_entries、evolution_chain.url)、`GET /evolution-chain/{id}` |
 | UseCase 案 | `FetchPokemonDetailUseCase`、`FetchPokemonSpeciesUseCase`、`FetchEvolutionChainUseCase`、`ToggleFavoriteUseCase`、`ObserveIsFavoriteUseCase` |
 
-公式アートワークは `sprites.other["official-artwork"].front_default` から取得します。ID が 10000 を超えるものはフォーム違いなどの pokemon です。species は Phase 5 まで取得しません。
+公式アートワークは `sprites.other["official-artwork"].front_default` から取得します。ID が 10000 を超えるものはフォーム違いなどの pokemon です。
 
 ```swift
 struct PokemonDetailState: Equatable {
@@ -153,7 +142,7 @@ enum PokemonDetailAction {
 | --- | --- |
 | 読み込み中 | 全面の ProgressView |
 | エラー | エラーメッセージと再試行ボタン |
-| 説明文・進化チェーンが無い、または取得失敗 | そのセクションだけ非表示にし、画面全体は表示する(方針案) |
+| 説明文・進化チェーンが無い、または取得失敗 | そのセクションだけ非表示にし、画面全体は表示する |
 
 ### Favorites
 
@@ -185,25 +174,3 @@ enum FavoritesAction {
 | 読み込み中 | ProgressView |
 | 空 | 「お気に入りはまだありません」と図鑑タブへの案内 |
 | エラー | エラーメッセージと再試行ボタン |
-
-## 実装フェーズ
-
-フェーズ一覧と進捗は [GitHub Milestones](https://github.com/chippy-ao/swift-pokedex/milestones) で管理します。この feature に関わる範囲は次のとおりです。
-
-| フェーズ | この feature の内容 |
-| --- | --- |
-| Phase 1 | List と Detail の基本(ページング、無限スクロール、画像、タイプ、ステータス) |
-| Phase 2 | 検索(名前、ローカル絞り込み)とタイプフィルタ |
-| Phase 3 | お気に入り(Detail での切り替え、Favorites 画面) |
-| Phase 5 | ローカライズ名、説明文、進化チェーン、オフラインキャッシュ対応 |
-
-Phase 5 のローカライズでは、`Bundle.main.preferredLocalizations.first` を PokeAPI の言語コード(ja は ja-hrkt、en は en)に変換し、該当言語の名前が無ければ en にフォールバックします。この処理は Domain の UseCase で行い、feature 側は変換済みの Model を受け取ります。
-
-## 未決事項
-
-- 日本語名での検索方式。全 species の名前が必要になるため、Phase 5 で方式を検討する(要調査)
-- 一覧での日本語名表示のタイミング。一覧の `results` には名前(英語の識別子)しか無く、ローカライズ名には species の取得が必要。一覧で表示するか、Detail のみにするかは実装時に決める
-- 一覧の行にタイプを出すか。出す場合は行ごとに詳細取得が必要になり、リクエスト数が増える。PokeAPI の Fair Use Policy を踏まえて決める
-- タイプフィルタと名前検索を同時に使ったときの組み合わせ(AND にする想定だが実装時に確認する)
-- Detail の説明文に使う flavor_text のバージョン選択
-- フォーム違い(ID 10000 超)を一覧に含めるか

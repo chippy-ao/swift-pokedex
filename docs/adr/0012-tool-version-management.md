@@ -9,35 +9,12 @@ SwiftLint や Git フック用のツールは Xcode に含まれないため、�
 
 ## 決定
 
-### ツールは mise で固定する
+- 開発ツール(SwiftLint、prek、committed、pinact、actionlint、xcbeautify)は、ルートの `mise.toml` でバージョンを固定します。
+- Xcode 本体と、ツールチェーンに同梱されている swift-format は mise の管理外とし、Xcode のバージョンは README の「動作環境」に書きます。
+- 定型の操作(セットアップ、整形、Lint、テスト)は mise のタスクにし、人も AI も CI も同じタスクを使います。
+- fastlane や CocoaPods を使わないので、Ruby と Bundler は入れません。
 
-リポジトリのルートに `mise.toml` を置き、次のツールのバージョンを固定します。
-
-| ツール | 用途 |
-| --- | --- |
-| SwiftLint | Lint([ADR-0011](0011-lint-and-format.md)) |
-| prek | Git フックの管理 |
-| committed | コミットメッセージの検査([ADR-0010](0010-commit-and-pr-convention.md)) |
-| pinact | GitHub Actions を SHA で固定([ADR-0013](0013-ci-status-checks.md)) |
-| actionlint | GitHub Actions のワークフローの検査 |
-| xcbeautify | `xcodebuild` のログを読みやすくする |
-
-Xcode 本体と、ツールチェーンに同梱されている swift-format は mise の管理外です。Xcode のバージョンは README の「動作環境」に書きます。
-
-### 定型の操作は mise のタスクにする
-
-| タスク | 内容 |
-| --- | --- |
-| `mise run bootstrap` | ツールのインストールと prek のフックのインストール |
-| `mise run format` | swift-format による整形 |
-| `mise run lint` | swift-format と SwiftLint による検査 |
-| `mise run test` | `xcodebuild test` の実行 |
-
-CI からも同じタスクを呼びます。
-
-### Ruby は使わない
-
-fastlane や CocoaPods を使わないので、Ruby と Bundler は入れません。
+ツールとタスクの一覧は [development.md](../development.md#ツール) に書きます。
 
 ## 理由
 
