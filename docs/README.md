@@ -11,7 +11,7 @@ swift-pokedex のドキュメントの入口です。
 | [package-dependencies.md](package-dependencies.md) | モジュール構成と、target ごとの依存ルール |
 | [dependency-injection.md](dependency-injection.md) | swift-dependencies による DI の方針と interface / 実装の分け方 |
 | [data-layer.md](data-layer.md) | NetworkClient / Database / Datastore / Repository とキャッシュ方針、PokeAPI のメモ |
-| [development.md](development.md) | 開発の進め方（セットアップ、コミット規約、Lint、PR のチェック） |
+| [development.md](development.md) | 開発の進め方（セットアップ、コミット規約、Lint、テスト、PR のチェック） |
 | [adr/README.md](adr/README.md) | ADR（Architecture Decision Record）の一覧と書き方 |
 | [../feature/PokedexFeature/README.md](../feature/PokedexFeature/README.md) | Pokedex 機能（一覧 / 詳細 / お気に入り）の仕様 |
 | [../feature/SettingsFeature/README.md](../feature/SettingsFeature/README.md) | Settings 機能の仕様 |
@@ -51,3 +51,4 @@ swift-pokedex のドキュメントの入口です。
 ### 機能の挙動を変えたら同じ PR で README を更新する
 
 - 機能の挙動を変える PR では、該当 feature の `README.md` も同じ PR で更新します。コードとドキュメントのずれを防ぐためです。
+- 仕様（feature の `README.md`）は「意図」を書く場所で、コードの説明ではありません。実装中に分かった事実（API の制約など）で仕様を変えるのはかまいませんが、先に Issue / PR で理由を示して合意してからコードを合わせます。書いたコードに合わせて README を後から書き換えると、バグまで仕様になってしまうためです。
