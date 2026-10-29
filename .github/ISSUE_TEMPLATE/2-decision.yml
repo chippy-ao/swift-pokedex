@@ -1,0 +1,38 @@
+name: 検討
+description: 方針や仕様を決めるための議論
+labels: ["decision"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ここで議論して決めます。結論は Issue に残すだけにせず、置き場所の表に従って README / docs / ADR に反映します（[運用ルール](https://github.com/chippy-ao/swift-pokedex/blob/main/docs/README.md)）。
+        ADR に残すのは、開発者と AI の 2 人が合意したものだけです。
+  - type: textarea
+    id: background
+    attributes:
+      label: 背景
+      description: なぜ決める必要があるか。
+    validations:
+      required: true
+  - type: textarea
+    id: options
+    attributes:
+      label: 選択肢
+      description: 分かっていれば、候補とそれぞれの長所・短所。
+  - type: textarea
+    id: notes
+    attributes:
+      label: 検討メモ
+      description: 着手時に見直します。不要なら消してかまいません。
+  - type: dropdown
+    id: destination
+    attributes:
+      label: 結論の置き場所（想定）
+      options:
+        - feature の README
+        - docs/
+        - ADR（合意したら）
+        - コードのコメント
+        - 未定
+    validations:
+      required: true

@@ -9,7 +9,7 @@ SwiftUI 製のポケモン図鑑アプリ（学習用）。コードはまだ無
 - [docs/package-dependencies.md](docs/package-dependencies.md): モジュール構成と依存ルール
 - [docs/dependency-injection.md](docs/dependency-injection.md): DI の方針
 - [docs/data-layer.md](docs/data-layer.md): データ層とキャッシュ方針
-- [docs/development.md](docs/development.md): コミット規約、Lint、テスト、PR のチェック
+- [docs/development.md](docs/development.md): コミット規約、Lint、テスト、Issue、PR のチェック
 - [docs/adr/README.md](docs/adr/README.md): ADR の一覧と書式
 - [feature/PokedexFeature/README.md](feature/PokedexFeature/README.md): Pokedex 機能の仕様
 - [feature/SettingsFeature/README.md](feature/SettingsFeature/README.md): Settings 機能の仕様

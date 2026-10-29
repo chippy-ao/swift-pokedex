@@ -1,0 +1,45 @@
+name: 機能・タスク
+description: 機能の実装や開発基盤の作業
+labels: ["task"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        仕様は feature の `README.md` に書きます。Issue には仕様をコピーせず、リンクを貼ってください。
+        作業中に仕様を変えたくなったら、先にこの Issue で理由を示して合意します（[運用ルール](https://github.com/chippy-ao/swift-pokedex/blob/main/docs/README.md)）。
+  - type: textarea
+    id: purpose
+    attributes:
+      label: 目的
+      description: 何のためにやるか。1〜2 行で。
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: 範囲
+      description: やること、やらないこと。関係する README や docs へのリンク。
+      placeholder: |
+        やること:
+        - 
+        やらないこと:
+        - 
+        仕様: feature/PokedexFeature/README.md
+    validations:
+      required: true
+  - type: textarea
+    id: decisions
+    attributes:
+      label: 決めること
+      description: |
+        着手中に決める論点。すぐ着手するならチェックボックス（`- [ ]`）、先の話なら普通の箇条書きの検討メモにします（着手時に見直し、不要なら消してよい）。
+        決まったら、結論を README / docs / ADR に反映します。
+  - type: textarea
+    id: done
+    attributes:
+      label: 完了条件
+      placeholder: |
+        - [ ] README の仕様を満たすテストが通る
+        - [ ] README を更新した
+    validations:
+      required: true

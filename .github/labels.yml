@@ -1,0 +1,13 @@
+# ラベルの定義。main に push すると label-sync ワークフローが GitHub に同期する。
+# ここに無いラベルは削除されるので、ラベルは GitHub の画面ではなくこのファイルで管理する。
+- name: task
+  color: "#a2eeef"
+  description: 機能の実装、開発基盤の作業（テンプレート「機能・タスク」）
+  from_name: enhancement
+- name: decision
+  color: "#d876e3"
+  description: 方針や仕様を決める議論（テンプレート「検討」）
+  from_name: question
+- name: bug
+  color: "#d73a4a"
+  description: 仕様（README）どおりに動かない（テンプレート「バグ」）
