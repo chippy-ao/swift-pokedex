@@ -125,6 +125,13 @@ SwiftLint で無効にするルールは、導入時に swift-format と突き�
 - 機能の挙動を変えたら、該当 feature の `README.md` を同じ PR で更新します（[ADR-0001](adr/0001-documentation-policy.md)）。
 - 構造に関わる決定をしたら、ADR に残すかを相談します（[ADR を残す基準](README.md#adr-を残す基準)）。
 
+### マージ
+
+- マージ方式は通常のマージ（merge commit）だけを許可します。PR 内のコミットを main に残し、コミットメッセージの検査とテストを先に書いた順番を、履歴で確かめられるようにするためです。
+- マージコミットの 1 行目は PR タイトル（例: `feat(PokedexFeature): 一覧の無限スクロールを追加 (#12)`）になり、本文は空です。PR 単位の履歴は `git log --first-parent --oneline` で読めます。
+- マージ先の main が進んでいたら、PR のブランチを最新にしてからマージします。
+- main には直接 push できません。管理者も、ルールを迂回できるのは PR のマージ時だけです。
+
 ### ステータスチェック
 
 次のチェックがすべて通らないと main にマージできません（[ADR-0013](adr/0013-ci-status-checks.md)）。
