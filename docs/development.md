@@ -121,13 +121,9 @@ SwiftLint で無効にするルールは、導入時に swift-format と突き�
 
 ## PR
 
-- `.github/PULL_REQUEST_TEMPLATE.md` に従って書きます。テンプレートの項目は次のとおりです。
-  - 概要と関連 Issue（`Closes #N`）
-  - 変更内容
-  - 確認方法（スクリーンショットを含む）
-  - チェックリスト: feature の `README.md` を同じ PR で更新したか、仕様を変えた場合に Issue / PR で合意したか、既存テストの期待値を変えた場合にその理由を書いたか、設計を変えた場合に ADR を追加したか
+- [`.github/PULL_REQUEST_TEMPLATE.md`](../.github/PULL_REQUEST_TEMPLATE.md) に沿って書きます。タイトルはコミットと同じ形式で、ステータスチェックで検査します。
 - 機能の挙動を変えたら、該当 feature の `README.md` を同じ PR で更新します（[ADR-0001](adr/0001-documentation-policy.md)）。
-- 設計を変えたら ADR を追加します。
+- 構造に関わる決定をしたら、ADR に残すかを相談します（[ADR を残す基準](README.md#adr-を残す基準)）。
 
 ### ステータスチェック
 
