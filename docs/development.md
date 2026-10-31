@@ -160,6 +160,6 @@ SwiftLint で無効にするルールは、導入時に swift-format と突き�
 
 ## Xcode プロジェクト
 
-`app/Pokedex.xcodeproj` は生成ツールを使わずに直接管理し、buildable folder を使います（[ADR-0014](adr/0014-xcode-project-management.md)）。モジュールの追加や依存の変更は、すべてルートの `Package.swift` で行い、App ターゲットは `@main`、依存の注入、ルート画面と画面遷移だけを持ちます（app のフォルダ構成は [package-dependencies.md](./package-dependencies.md) を参照）。`project.pbxproj` を変更した PR は、Xcode で開けることを確認します。
+`app/App.xcodeproj` は生成ツールを使わずに直接管理し、buildable folder を使います（[ADR-0014](adr/0014-xcode-project-management.md)）。モジュールの追加や依存の変更は、すべてルートの `Package.swift` で行い、App ターゲットは `@main`、依存の注入、ルート画面と画面遷移だけを持ちます（app のフォルダ構成は [package-dependencies.md](./package-dependencies.md) を参照）。`project.pbxproj` を変更した PR は、Xcode で開けることを確認します。
 
-テスト target を追加したら、`app/Pokedex.xctestplan` にも登録します。登録漏れは依存チェックのスクリプトが検出します（[package-dependencies.md](package-dependencies.md#依存チェック)）。
+テスト target を追加したら、`app/AllTests.xctestplan` にも登録します。登録漏れは依存チェックのスクリプトが検出します（[package-dependencies.md](package-dependencies.md#依存チェック)）。

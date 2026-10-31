@@ -28,8 +28,8 @@ swift-pokedex/
 ├─ docs/
 │   └─ adr/
 ├─ app/
-│   ├─ Pokedex.xcodeproj        … Xcode プロジェクト（ルートの Package.swift をローカルパッケージとして参照する）
-│   ├─ Pokedex.xctestplan       … テストプラン（全テスト target を登録する）
+│   ├─ App.xcodeproj            … Xcode プロジェクト（ルートの Package.swift をローカルパッケージとして参照する。エントリーポイントごとにターゲットを置く）
+│   ├─ AllTests.xctestplan      … テストプラン（全テスト target を登録する）
 │   └─ Pokedex/                 … App ターゲットの buildable folder（@main、RootView、Router など）
 ├─ feature/
 │   ├─ PokedexFeature/          … Sources/{List,Detail,Favorites}、Tests、README.md
@@ -50,7 +50,7 @@ swift-pokedex/
     └─ TestSupport/             … フィクスチャ、テスト用ヘルパー
 ```
 
-feature と core の各モジュールは `<ディレクトリ>/Sources` と `<ディレクトリ>/Tests` を持ちます。`app/` の下は `Pokedex.xcodeproj` と `Pokedex/`（App ターゲットの buildable folder）です。`Pokedex.xcodeproj` は、ルートの `Package.swift` をローカルパッケージとして参照します（[Xcode との連携](#xcode-との連携)）。
+feature と core の各モジュールは `<ディレクトリ>/Sources` と `<ディレクトリ>/Tests` を持ちます。`app/` の下は `App.xcodeproj`、`AllTests.xctestplan`、`Pokedex/`（App ターゲットの buildable folder）です。`App.xcodeproj` は、ルートの `Package.swift` をローカルパッケージとして参照します（[Xcode との連携](#xcode-との連携)）。構成と名前の理由は [ADR 0015](./adr/0015-xcode-project-structure.md) を参照してください。
 
 app だけは `Sources` ではなくターゲット名のフォルダにします。エントリーポイント（例：デザインシステムのカタログアプリ）が増えたとき、`app/Catalog/` のようにターゲット名のフォルダとターゲットを足すだけで済むからです。各ターゲットは `project.pbxproj` で必要な product だけをリンクし、注入する実装もそれぞれの `@main` で決めます（実装モジュールをリンクしないターゲットは、プレビュー用の値やモックを入れます）。
 
@@ -306,15 +306,16 @@ Apple SDK や標準ライブラリのモジュール名・型名と衝突する�
 
 ### Xcode との連携
 
-- ワークスペースは作らない。
-- ルートの `Package.swift` が全モジュールを束ねるモノレポの役割を持つ（dart workspace のルート `pubspec.yaml` に相当）。`app/Pokedex.xcodeproj` はルートのパッケージをローカルパッケージとして参照する。同じ形の例として [isowords](https://github.com/pointfreeco/isowords) がある。
-- テストは Pokedex scheme のテストプラン（`app/Pokedex.xctestplan`）に全テスト target を登録し、⌘U や `xcodebuild test -project app/Pokedex.xcodeproj -scheme Pokedex` で全部回す。
+- ワークスペースは作らず、`app/App.xcodeproj` 1 つにエントリーポイントごとのターゲットを置く（[ADR 0015](./adr/0015-xcode-project-structure.md)）。
+- ルートの `Package.swift` が全モジュールを束ねるモノレポの役割を持つ（dart workspace のルート `pubspec.yaml` に相当）。`app/App.xcodeproj` はルートのパッケージをローカルパッケージとして参照する。同じ形の例として [isowords](https://github.com/pointfreeco/isowords) がある。
+- テストはテストプラン（`app/AllTests.xctestplan`）に全テスト target を登録し、⌘U や `xcodebuild test -project app/App.xcodeproj -scheme Pokedex` で全部回す。
 
 ## 関連 ADR
 
 - [ADR 0003 モジュール構成](./adr/0003-multi-module-structure.md)
 - [ADR 0005 外部ライブラリ選定](./adr/0005-external-libraries.md)
 - [ADR 0008 モジュール命名規約](./adr/0008-module-naming.md)
+- [ADR 0015 Xcode プロジェクトの構成と名前](./adr/0015-xcode-project-structure.md)
 
 関連ドキュメントです。
 

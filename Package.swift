@@ -6,7 +6,7 @@ let package = Package(
     name: "swift-pokedex",
     platforms: [.iOS(.v26)],
     products: [
-        // App ターゲット（app/Pokedex.xcodeproj）がリンクするものだけを公開する
+        // App ターゲット（app/App.xcodeproj）がリンクするものだけを公開する
         .library(name: "PokedexFeature", targets: ["PokedexFeature"]),
         .library(name: "SettingsFeature", targets: ["SettingsFeature"]),
         .library(name: "Domain", targets: ["Domain"]),
