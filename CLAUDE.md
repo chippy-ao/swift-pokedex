@@ -10,6 +10,7 @@ SwiftUI 製のポケモン図鑑アプリ（学習用）。進み具合は GitHu
 - [docs/dependency-injection.md](docs/dependency-injection.md): DI の方針
 - [docs/data-layer.md](docs/data-layer.md): データ層とキャッシュ方針
 - [docs/development.md](docs/development.md): コミット規約、Lint、テスト、Issue、PR のチェック
+- [docs/flutter-comparison/README.md](docs/flutter-comparison/README.md): Swift / iOS と Flutter の対応表（学習用）
 - [docs/adr/README.md](docs/adr/README.md): ADR の一覧と書式
 - [feature/PokedexFeature/README.md](feature/PokedexFeature/README.md): Pokedex 機能の仕様
 - [feature/SettingsFeature/README.md](feature/SettingsFeature/README.md): Settings 機能の仕様
@@ -21,6 +22,7 @@ SwiftUI 製のポケモン図鑑アプリ（学習用）。進み具合は GitHu
 - [MUST] 同じことは 2 か所に書かない。書きたくなったらリンクを貼る。
 - [MUST] 理由は、決めたもののすぐ近くに書く（値や実装の細部はコードのコメント、モジュールの仕様は README、全体ルールは docs、構造に関わる決定は ADR）。
 - [MUST] 何をどこに書くかは [docs/README.md](docs/README.md) の置き場所の表に従う。
+- [MUST] 新しいツールや概念を入れたら、同じ PR で docs/flutter-comparison/ の該当ファイルに Flutter での相当を足す。
 - [MUST] feature の挙動を変えたら、同じ PR でその feature の README を更新する。
 - [MUST] 実装中に仕様（feature の README）を変えたくなったら、先に理由を示してユーザーの合意を取る。
 - [Forbidden] 書いたコードに合わせて README を黙って書き換えること。
