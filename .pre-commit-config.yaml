@@ -8,17 +8,20 @@ repos:
         entry: mise x -- swift format format --in-place
         language: system
         types: [swift]
+        stages: [pre-commit]
       - id: swiftlint
         name: SwiftLint
         entry: mise x -- swiftlint --strict
         language: system
         types: [swift]
+        stages: [pre-commit]
       - id: pinact
         name: pinact（GitHub Actions を SHA で固定）
         entry: mise x -- pinact run
         language: system
         files: ^\.github/
         pass_filenames: false
+        stages: [pre-commit]
       - id: committed
         name: committed（コミットメッセージの検査）
         entry: mise x -- committed --commit-file
