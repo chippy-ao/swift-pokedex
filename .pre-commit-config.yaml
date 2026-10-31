@@ -1,0 +1,26 @@
+# Git フックの定義（prek）。実行するタイミングは docs/development.md の「Lint と整形」「コミット」を参照。
+# Git フックの環境には mise のツールの PATH が通っていないため、`mise x --` 経由で実行する。
+repos:
+  - repo: local
+    hooks:
+      - id: swift-format
+        name: swift format（整形）
+        entry: mise x -- swift format format --in-place
+        language: system
+        types: [swift]
+      - id: swiftlint
+        name: SwiftLint
+        entry: mise x -- swiftlint --strict
+        language: system
+        types: [swift]
+      - id: pinact
+        name: pinact（GitHub Actions を SHA で固定）
+        entry: mise x -- pinact run
+        language: system
+        files: ^\.github/
+        pass_filenames: false
+      - id: committed
+        name: committed（コミットメッセージの検査）
+        entry: mise x -- committed --commit-file
+        language: system
+        stages: [commit-msg]
