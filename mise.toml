@@ -16,12 +16,12 @@ run = [
 
 [tasks.format]
 description = "swift format で Swift ファイルを整形する"
-run = "swift format format --in-place --recursive app core feature Package.swift"
+run = "swift format format --in-place --recursive app core feature scripts Package.swift"
 
 [tasks.lint]
 description = "swift format lint、SwiftLint、actionlint、依存チェックを実行する"
 run = [
-  "swift format lint --strict --recursive app core feature Package.swift",
+  "swift format lint --strict --recursive app core feature scripts Package.swift",
   "swiftlint --strict",
   "actionlint",
   "swift scripts/check-dependencies.swift",

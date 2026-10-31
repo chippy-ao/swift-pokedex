@@ -3,6 +3,7 @@ included:
   - app
   - core
   - feature
+  - scripts
   - Package.swift
 
 excluded:
