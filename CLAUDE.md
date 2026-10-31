@@ -1,6 +1,6 @@
 # swift-pokedex
 
-SwiftUI 製のポケモン図鑑アプリ（学習用）。コードはまだ無く、計画段階でドキュメントだけがある。
+SwiftUI 製のポケモン図鑑アプリ（学習用）。進み具合は GitHub の [Milestones](https://github.com/chippy-ao/swift-pokedex/milestones) と Issues で管理している。
 
 ## ドキュメント
 
@@ -27,6 +27,12 @@ SwiftUI 製のポケモン図鑑アプリ（学習用）。コードはまだ無
 - [Forbidden] ユーザーと合意していない ADR の追加。
 - [Forbidden] 承認済み ADR の書き換え（誤字修正を除く）。覆すときは新しい ADR を追加し、古い ADR を Superseded にする。
 - [Forbidden] CLAUDE.md への docs の中身のコピー。要点とリンクだけを書く。
+
+### 開発
+
+- [MUST] PR を出す前に `mise run lint` と `mise run test` を通す（[docs/development.md](docs/development.md#タスク) 参照）。
+- [MUST] モジュールの追加と依存の変更は `Package.swift` で行う。テスト target を足したら `app/AllTests.xctestplan` にも登録する（[docs/development.md](docs/development.md#xcode-プロジェクト) 参照）。
+- [MUST] `project.pbxproj` を変えた PR は、Xcode で開けるかをユーザーに確かめてもらう。
 
 ### テスト
 
