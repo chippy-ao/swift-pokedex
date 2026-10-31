@@ -241,8 +241,6 @@ SwiftPM では、直接の依存に書いていないモジュールでも推移
 
 さらに、[依存グラフ](#依存グラフ)の矢印を許可リストとして、`Package.swift` の依存が図に載っているかを検査します。図に無い target や依存はエラーです。テスト target が依存してよいのは、自分の対象の target と TestSupport だけです。図にあって `Package.swift` に無い矢印はエラーにしません（外部ライブラリは最初に使う Issue で入れるため）。そのため、依存を変えるときは先に図を直します。図の書式（`A --> B` の矢印と、ノードのラベル末尾の括弧に書く product 名）を変えるときは、スクリプトの読み取りも直します。
 
-さらに、[依存グラフ](#依存グラフ)の矢印を許可リストとして、`Package.swift` の依存が図に載っているかを検査します。図に無い target や依存はエラーです。テスト target が依存してよいのは、自分の対象の target と TestSupport だけです。図にあって `Package.swift` に無い矢印はエラーにしません（外部ライブラリは最初に使う Issue で入れるため）。そのため、依存を変えるときは先に図を直します。図の書式（`A --> B` の矢印と、ノードのラベル末尾の括弧に書く product 名）を変えるときは、スクリプトの読み取りも直します。
-
 スクリプトは [`scripts/check-dependencies.swift`](../scripts/check-dependencies.swift) にあり、`mise run lint` の中で実行されます（タスクは [development.md](development.md#タスク) を参照）。
 
 ## 外部ライブラリ
