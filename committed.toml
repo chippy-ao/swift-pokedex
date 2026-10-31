@@ -1,0 +1,24 @@
+# コミットメッセージの検査ルール。方針は docs/development.md の「コミット」を参照。
+style = "conventional"
+
+# 説明を日本語で書くため、英語を前提にしたチェックは無効にする。
+# 先頭の大文字化と命令形の動詞のチェックは、日本語の説明には当てはまらない。
+subject_capitalized = false
+imperative_subject = false
+
+allowed_types = [
+  "feat", "fix", "docs", "style", "refactor", "perf",
+  "test", "build", "ci", "chore", "revert",
+]
+
+# target 名（Package.swift）とアプリの Pokedex。target を追加したら更新する。
+# テスト target 名は入れない（テストは type の test で表す）。
+allowed_scopes = [
+  "PokedexFeature", "SettingsFeature",
+  "Common", "Model", "Domain", "Repository",
+  "NetworkClient", "NetworkClientURLSession",
+  "Database", "DatabaseSwiftData",
+  "Datastore", "DatastoreUserDefaults",
+  "DesignSystem", "SharedUI", "TestSupport",
+  "Pokedex",
+]
