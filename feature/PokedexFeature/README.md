@@ -43,7 +43,7 @@ feature/PokedexFeature/
 
 ## 画面遷移
 
-遷移は feature 内で完結します。AppShared がタブごとに持つ NavigationStack と Router(path を保持)に対し、PokedexFeature が Route と `navigationDestination` を提供します。
+遷移は feature 内で完結します。App ターゲットがタブごとに持つ NavigationStack と Router(path を保持)に対し、PokedexFeature が Route と `navigationDestination` を提供します。
 
 ```mermaid
 flowchart LR
@@ -60,7 +60,7 @@ enum PokedexRoute: Hashable {
 }
 ```
 
-feature をまたぐ遷移は現時点ではありません。必要になったら delegate Action(例: `.delegate(.selectPokemon(id))`)を AppShared の Router が受け取ります。
+feature をまたぐ遷移は現時点ではありません。必要になったら delegate Action(例: `.delegate(.selectPokemon(id))`)を App ターゲットの Router が受け取ります。
 
 ## 画面仕様
 

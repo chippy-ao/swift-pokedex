@@ -35,7 +35,7 @@
 
 ## テーマ色の保存と伝搬
 
-この feature は UseCase 経由でテーマ色を保存するだけです。値の監視と Environment への配布は AppShared が行い、他の feature を直接参照しません。全体の流れは [docs/architecture.md](../../docs/architecture.md#テーマ色の伝搬) を参照してください。
+この feature は UseCase 経由でテーマ色を保存するだけです。値の監視と Environment への配布は App ターゲットが行い、他の feature を直接参照しません。全体の流れは [docs/architecture.md](../../docs/architecture.md#テーマ色の伝搬) を参照してください。
 
 ## State / Action の案
 
@@ -64,7 +64,7 @@ enum SettingsAction {
 | `.openLanguageSettingsTapped` | `UIApplication.openSettingsURLString` の URL を開く |
 | `.licensesTapped` | ライセンス画面(`LicenseListView`)へ遷移する |
 
-UseCase 案は `ObserveThemeColorUseCase`(AsyncStream。AppShared と共有)と `SaveThemeColorUseCase` です。Store は `@Dependency` で受け取ります。
+UseCase 案は `ObserveThemeColorUseCase`(AsyncStream。App ターゲットと共有)と `SaveThemeColorUseCase` です。Store は `@Dependency` で受け取ります。
 
 ## 画面表示の状態
 

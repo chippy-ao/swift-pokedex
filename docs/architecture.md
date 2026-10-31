@@ -35,8 +35,7 @@ swift-pokedex の設計の全体像をまとめます。変わりにくい設計
 ```mermaid
 flowchart TD
     subgraph app["app"]
-        Pokedex["Pokedex<br/>(Xcode プロジェクト)"]
-        AppShared["AppShared"]
+        Pokedex["Pokedex<br/>(App ターゲット)"]
     end
     subgraph feature["feature"]
         PokedexFeature["PokedexFeature"]
@@ -51,10 +50,9 @@ flowchart TD
         Impl["NetworkClientURLSession / DatabaseSwiftData /<br/>DatastoreUserDefaults (実装)"]
     end
 
-    Pokedex --> AppShared
+    Pokedex --> PokedexFeature
+    Pokedex --> SettingsFeature
     Pokedex -.->|"実装をリンクして注入"| Impl
-    AppShared --> PokedexFeature
-    AppShared --> SettingsFeature
     PokedexFeature --> Domain
     SettingsFeature --> Domain
     PokedexFeature --> UI
@@ -84,8 +82,7 @@ flowchart TD
 
 | モジュール | 責務 |
 | --- | --- |
-| Pokedex | `@main` のアプリ本体。実装モジュールをリンクして依存を注入する |
-| AppShared | ルート View、TabView、タブごとの NavigationStack と Router、テーマ適用 |
+| Pokedex（App ターゲット） | `@main`、ルート View、TabView、タブごとの NavigationStack と Router、テーマ適用。実装モジュールをリンクして依存を注入する。専用モジュールにしない理由は [package-dependencies.md](./package-dependencies.md#ディレクトリ構成) を参照 |
 
 ### feature
 
@@ -99,7 +96,7 @@ flowchart TD
 | モジュール | 責務 |
 | --- | --- |
 | Common | 共通ユーティリティ、エラー型 |
-| Model | ドメインの Entity（Sendable な struct / enum） |
+| Model | アプリ全体で使うモデル。Repository が返し、feature と SharedUI もそのまま使う（Sendable な struct / enum） |
 | NetworkClient | interface。PokeAPIClient と DTO |
 | NetworkClientURLSession | 実装。URLSession + swift-http-types |
 | Database | interface。FavoriteStore など |
@@ -385,14 +382,14 @@ sequenceDiagram
 
 | 要素 | 内容 |
 | --- | --- |
-| TabView | AppShared が持つ。タブは図鑑 / お気に入り / 設定 |
+| TabView | App ターゲットが持つ。タブは図鑑 / お気に入り / 設定 |
 | NavigationStack | タブごとに1つ |
 | Router | タブごとの `@Observable` クラス。`path` を持つ |
 | Route | PokedexFeature が提供する enum と `navigationDestination` |
 
 ```mermaid
 flowchart TD
-    Tab["AppShared: TabView"]
+    Tab["App ターゲット: TabView"]
     Tab --> T1["図鑑タブ<br/>NavigationStack + Router"]
     Tab --> T2["お気に入りタブ<br/>NavigationStack + Router"]
     Tab --> T3["設定タブ<br/>NavigationStack + Router"]
@@ -402,7 +399,7 @@ flowchart TD
 ```
 
 - List から Detail、Favorites から Detail の遷移は、同じ feature の中で完結します。
-- feature をまたぐ遷移が必要になったら、delegate Action を AppShared の Router が受け取って処理します。現時点ではまたぐ遷移はありません。
+- feature をまたぐ遷移が必要になったら、delegate Action を App ターゲットの Router が受け取って処理します。現時点ではまたぐ遷移はありません。
 - 例（Route と Router の形）。あくまで一例です。
 
 ```swift
@@ -427,13 +424,13 @@ PokedexFeature は Environment から読むだけで、SettingsFeature には依
 ```mermaid
 flowchart LR
     SF["SettingsFeature<br/>(色を選ぶ)"] -->|UseCase| DS["Datastore<br/>(UserDefaults)"]
-    DS -->|"UseCase (AsyncStream で監視)"| AS["AppShared"]
+    DS -->|"UseCase (AsyncStream で監視)"| AS["App ターゲット"]
     AS -->|".tint() + Theme を Environment に注入"| PF["各 feature"]
 ```
 
 1. SettingsFeature が UseCase 経由で Datastore に保存します。
-2. AppShared が UseCase（AsyncStream で監視）で値を受け取ります。
-3. AppShared が `.tint()` と DesignSystem の Theme を Environment で全体に流します。
+2. App ターゲットが UseCase（AsyncStream で監視）で値を受け取ります。
+3. App ターゲットが `.tint()` と DesignSystem の Theme を Environment で全体に流します。
 4. 各 feature は Environment から読み取ります。
 
 ## Concurrency の方針
@@ -447,7 +444,7 @@ flowchart LR
 | 非同期処理 | Store が `Task` を保持してキャンセルする。構造化されたものは async/await で書く |
 | AsyncStream | 設定値の監視など、継続的に変わる値の公開に使う |
 
-- Swift 6 言語モードでデータ競合を設計段階で避けます。警告の扱いなど具体的なビルド設定は導入時に決めます。
+- Swift 6 言語モードでデータ競合を設計段階で避けます。具体的なビルド設定は [package-dependencies.md](./package-dependencies.md#packageswift-の書き方の方針) を参照してください。
 - Flutter の Isolate と違い、同じアクターに隔離された値は共有できます。アクターの境界を越える値だけが Sendable である必要があります。
 
 ## 関連 ADR
