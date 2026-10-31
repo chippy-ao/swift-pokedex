@@ -2,8 +2,6 @@
 
 セットアップ、コミット、Lint、テスト、Issue、PR のチェックのルールをまとめます。決定の経緯は各 ADR を参照してください。
 
-> コードはまだ無いため、ここに書いたファイル（`mise.toml`、`committed.toml` など）とタスクは導入時に作ります。
-
 ## セットアップ
 
 1. README の「動作環境」に書いたバージョンの Xcode を入れる
@@ -33,8 +31,10 @@ fastlane や CocoaPods を使わないので、Ruby と Bundler は入れませ�
 | --- | --- |
 | `mise run bootstrap` | ツールと Git フックのインストール |
 | `mise run format` | swift-format による整形 |
-| `mise run lint` | swift-format と SwiftLint による検査 |
-| `mise run test` | `xcodebuild test` によるビルドとテスト |
+| `mise run lint` | swift-format、SwiftLint、actionlint による検査と、[依存チェック](package-dependencies.md#依存チェック) |
+| `mise run test` | `xcodebuild test`（scheme `Pokedex`、テストプラン `AllTests`）によるビルドとテスト |
+
+`mise run test` は iOS Simulator で実行します。既定では、利用できる iPhone のシミュレーターのうち最後のものを使います。別のものを使うときは、環境変数 `POKEDEX_TEST_DESTINATION` に `xcodebuild` の `-destination` の値（例: `platform=iOS Simulator,name=iPhone 17`）を指定します。
 
 ## コミット
 
@@ -71,9 +71,12 @@ fastlane や CocoaPods を使わないので、Ruby と Bundler は入れませ�
 | タイミング | 実行内容 |
 | --- | --- |
 | コミット時（prek の pre-commit フック） | 変更したファイルに `swift format` を適用し、`swiftlint` で検査する |
-| CI | `swift format lint --strict` と `swiftlint --strict` をリポジトリ全体に実行する |
+| コミット時（prek の pre-commit フック） | `.github/` の変更時は、`pinact run` で GitHub Actions を SHA で固定する |
+| CI | `mise run lint`（`swift format lint --strict`、`swiftlint --strict`、actionlint、依存チェック）をリポジトリ全体に実行する |
 
-SwiftLint で無効にするルールは、導入時に swift-format と突き合わせて決めます。
+swift-format の設定は、インデントだけを 4 スペースに上書きしています（`.swift-format`）。Xcode の既定のインデントに合わせ、Xcode の自動インデントと整形結果をそろえるためです。JSON にはコメントを書けないので、理由はここに書いています。ほかの設定は swift-format の既定のままです。
+
+SwiftLint で無効にしたルールと理由は `.swiftlint.yml` のコメントに書いています。swift-format で整形してから `swiftlint --strict` を実行し、整形結果とぶつかったルールだけを無効にしています。ルールを足すときも同じ手順で確かめます。
 
 ## テスト
 

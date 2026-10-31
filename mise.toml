@@ -1,0 +1,48 @@
+# 開発ツールのバージョン固定とタスク定義。方針は docs/development.md と ADR-0012 を参照。
+[tools]
+swiftlint = "0.65.1"
+prek = "0.5.7"
+committed = "1.1.11"
+pinact = "5.0.2"
+actionlint = "1.7.12"
+xcbeautify = "3.2.1"
+
+[tasks.bootstrap]
+description = "ツールと Git フック（pre-commit、commit-msg）をインストールする"
+run = [
+  "mise install",
+  "prek install --hook-type pre-commit --hook-type commit-msg",
+]
+
+[tasks.format]
+description = "swift format で Swift ファイルを整形する"
+run = "swift format format --in-place --recursive app core feature scripts Package.swift"
+
+[tasks.lint]
+description = "swift format lint、SwiftLint、actionlint、依存チェックを実行する"
+run = [
+  "swift format lint --strict --recursive app core feature scripts Package.swift",
+  "swiftlint --strict",
+  "actionlint",
+  "swift scripts/check-dependencies.swift",
+]
+
+[tasks.test]
+description = "xcodebuild test（scheme Pokedex、テストプラン AllTests）を iOS Simulator で実行する"
+# 既定のシミュレーターは、利用可能な iPhone のうち最後のもの。
+# 別のものを使うときは POKEDEX_TEST_DESTINATION を指定する（例: "platform=iOS Simulator,name=iPhone 17"）。
+run = """
+#!/usr/bin/env bash
+set -euo pipefail
+if [ -z "${POKEDEX_TEST_DESTINATION:-}" ]; then
+  sim_name="$(xcrun simctl list devices available | grep -E '^ +iPhone' | sed -E 's/^ +//; s/ \\([0-9A-F-]{36}\\).*//' | tail -n 1)"
+  POKEDEX_TEST_DESTINATION="platform=iOS Simulator,name=${sim_name}"
+fi
+echo "destination: ${POKEDEX_TEST_DESTINATION}"
+xcodebuild test \\
+  -project app/App.xcodeproj \\
+  -scheme Pokedex \\
+  -testPlan AllTests \\
+  -destination "${POKEDEX_TEST_DESTINATION}" \\
+  | xcbeautify
+"""

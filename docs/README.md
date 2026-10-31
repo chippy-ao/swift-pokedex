@@ -12,6 +12,7 @@ swift-pokedex のドキュメントの入口です。
 | [dependency-injection.md](dependency-injection.md) | swift-dependencies による DI の方針と interface / 実装の分け方 |
 | [data-layer.md](data-layer.md) | NetworkClient / Database / Datastore / Repository とキャッシュ方針、PokeAPI のメモ |
 | [development.md](development.md) | 開発の進め方（セットアップ、コミット規約、Lint、テスト、Issue、PR のチェック） |
+| [flutter-comparison/README.md](flutter-comparison/README.md) | Swift / iOS と Flutter の対応表（学習用） |
 | [adr/README.md](adr/README.md) | ADR（Architecture Decision Record）の一覧と書き方 |
 | [../feature/PokedexFeature/README.md](../feature/PokedexFeature/README.md) | Pokedex 機能（一覧 / 詳細 / お気に入り）の仕様 |
 | [../feature/SettingsFeature/README.md](../feature/SettingsFeature/README.md) | Settings 機能の仕様 |

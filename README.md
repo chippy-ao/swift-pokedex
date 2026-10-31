@@ -41,7 +41,7 @@ PokeAPI を使ったポケモン図鑑アプリです。久しぶりの Swift �
 
 ## ステータス
 
-計画段階です。コードはまだありません。ドキュメントから先に整備しています。
+開発中です。進み具合は [Milestones](https://github.com/chippy-ao/swift-pokedex/milestones) を見てください。
 
 ## ドキュメント
 

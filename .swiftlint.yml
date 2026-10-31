@@ -1,0 +1,19 @@
+# 方針は docs/development.md の「Lint と整形」を参照。
+included:
+  - app
+  - core
+  - feature
+  - scripts
+  - Package.swift
+
+excluded:
+  - .build
+  - DerivedData
+
+disabled_rules:
+  # swift-format の multiElementCollectionTrailingCommas: true が複数要素のコレクションの
+  # 末尾にカンマを付けるため、SwiftLint の既定（カンマ禁止）と衝突する。
+  - trailing_comma
+  # swift-format は、シグネチャや条件式を折り返すと `{` を次の行の行頭に置く。
+  # SwiftLint の既定は `{` を宣言と同じ行に置くことを求めるため衝突する。
+  - opening_brace
