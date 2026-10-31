@@ -170,7 +170,7 @@ func get(_ url: URL, session: URLSession) async throws -> Data {
 ### DTO から Model への変換
 
 - DTO は `NetworkClient` モジュールに置き、PokeAPI のレスポンス形状にそのまま合わせた `Codable` な struct にします。
-- アプリ内で使う Entity は `core/Model` に置く Sendable な struct / enum です。
+- アプリ全体で使うモデルは `core/Model` に置く Sendable な struct / enum です。
 - DTO から Model への変換は Repository で行います。feature や Domain は DTO を知りません。
 
 Flutter では Freezed / json_serializable で書いていた部分は、Swift では struct・enum・`Codable` で足ります。
@@ -184,7 +184,7 @@ Flutter では Freezed / json_serializable で書いていた部分は、Swift �
 
 - お気に入りを SwiftData に保存します。
 - `ModelContext` は Sendable ではないため、実装は `@ModelActor` を付けた actor で包みます。
-- `@Model` 型は `DatabaseSwiftData` の外に出しません。外へ出すのは `core/Model` の Entity だけです。
+- `@Model` 型は `DatabaseSwiftData` の外に出しません。外へ出すのは `core/Model` のモデルだけです。
 - 公開方法は fetch 関数や `AsyncStream` にします。View で `@Query` は使いません。
 
 選んだ理由と検討した代替案は [ADR 0006](./adr/0006-local-persistence.md) を参照してください。参考: [Apple SwiftData](https://developer.apple.com/documentation/swiftdata)。
@@ -197,7 +197,7 @@ Flutter では Freezed / json_serializable で書いていた部分は、Swift �
 | `DatastoreUserDefaults`（実装） | `UserDefaults` で保存する |
 
 - Flutter 版の `datastore` と `datastore_shared_preferences` の分割に相当します。
-- テーマ色は Settings で変更し、`AsyncStream` で監視できるようにします。流れは SettingsFeature → UseCase → Datastore と保存し、AppShared が UseCase 経由で値を受け取って全体に流します（[architecture.md](./architecture.md) を参照）。
+- テーマ色は Settings で変更し、`AsyncStream` で監視できるようにします。流れは SettingsFeature → UseCase → Datastore と保存し、App ターゲットが UseCase 経由で値を受け取って全体に流します（[architecture.md](./architecture.md) を参照）。
 
 ## Repository と UseCase
 

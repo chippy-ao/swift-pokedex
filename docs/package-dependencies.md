@@ -28,14 +28,15 @@ swift-pokedex/
 ├─ docs/
 │   └─ adr/
 ├─ app/
-│   ├─ Pokedex/                 … Xcode プロジェクト（@main のアプリ本体。実装モジュールをリンクして注入する）
-│   └─ AppShared/               … ルート View、TabView、タブごとの NavigationStack と Router、テーマ適用
+│   ├─ App.xcodeproj            … Xcode プロジェクト（ルートの Package.swift をローカルパッケージとして参照する。エントリーポイントごとにターゲットを置く）
+│   ├─ AllTests.xctestplan      … テストプラン（全テスト target を登録する）
+│   └─ Pokedex/                 … App ターゲットの buildable folder（@main、RootView、Router など）
 ├─ feature/
 │   ├─ PokedexFeature/          … Sources/{List,Detail,Favorites}、Tests、README.md
 │   └─ SettingsFeature/         … Sources、Tests、README.md
 └─ core/
     ├─ Common/                  … 共通ユーティリティ、エラー型
-    ├─ Model/                   … ドメインの Entity（Sendable な struct / enum）
+    ├─ Model/                   … アプリ全体で使うモデル（Sendable な struct / enum）
     ├─ NetworkClient/           … interface: PokeAPIClient と DTO（ネットワーク用モデル）
     ├─ NetworkClientURLSession/ … 実装: URLSession + swift-http-types
     ├─ Database/                … interface: FavoriteStore など
@@ -43,13 +44,21 @@ swift-pokedex/
     ├─ Datastore/               … interface: 設定値（テーマ色）
     ├─ DatastoreUserDefaults/   … 実装: UserDefaults
     ├─ Repository/              … Repository（NetworkClient / Database / Datastore を組み合わせ、DTO → Model 変換）
-    ├─ Domain/                  … UseCase
+    ├─ Domain/                  … UseCase（必要なときだけ Domain のモデル）
     ├─ DesignSystem/            … テーマ、色、タイプバッジ、RemoteImage（Nuke をラップ）
-    ├─ SharedUI/                … ドメインを知っている共通 UI（PokemonCard、PokemonRow など）
+    ├─ SharedUI/                … Model を知っている共通 UI（PokemonCard、PokemonRow など）
     └─ TestSupport/             … フィクスチャ、テスト用ヘルパー
 ```
 
-各モジュールは `<ディレクトリ>/Sources` と `<ディレクトリ>/Tests` を持ちます。`app/Pokedex` は Xcode プロジェクトで、ルートの `Package.swift` をローカルパッケージとして参照します。
+feature と core の各モジュールは `<ディレクトリ>/Sources` と `<ディレクトリ>/Tests` を持ちます。`app/` の下は `App.xcodeproj`、`AllTests.xctestplan`、`Pokedex/`（App ターゲットの buildable folder）です。`App.xcodeproj` は、ルートの `Package.swift` をローカルパッケージとして参照します（[Xcode との連携](#xcode-との連携)）。構成と名前の理由は [ADR 0015](./adr/0015-xcode-project-structure.md) を参照してください。
+
+app だけは `Sources` ではなくターゲット名のフォルダにします。エントリーポイント（例：デザインシステムのカタログアプリ）が増えたとき、`app/Catalog/` のようにターゲット名のフォルダとターゲットを足すだけで済むからです。各ターゲットは `project.pbxproj` で必要な product だけをリンクし、注入する実装もそれぞれの `@main` で決めます（実装モジュールをリンクしないターゲットは、プレビュー用の値やモックを入れます）。
+
+ルート View、TabView、タブごとの NavigationStack と Router、テーマの適用は、App ターゲット（`app/Pokedex/`）に置き、専用のモジュールには切り出しません。理由は次のとおりです。
+
+- エントリーポイントが 1 つで、カタログアプリや Widget が無い。画面遷移も薄い。
+- Now in Android もアプリ全体の画面遷移は `:app` に置いている。
+- Widget やカタログアプリを足す、Router が複雑になってテストしたくなる、といったときにモジュールへ切り出す。
 
 ## モジュール一覧
 
@@ -57,7 +66,7 @@ swift-pokedex/
 
 | 種別 | 意味 |
 | --- | --- |
-| app | アプリ本体、または app 層の共通モジュール |
+| app | アプリ本体（App ターゲット） |
 | feature | ドメイン単位の機能モジュール |
 | core-interface | 依存の interface（`TestDependencyKey` と `testValue` / `previewValue` を定義） |
 | core-impl | interface の実装（`DependencyKey` と `liveValue` を追加） |
@@ -65,12 +74,11 @@ swift-pokedex/
 
 | ディレクトリ | target 名 | 種別 | 責務 | Flutter 版で相当するパッケージ |
 | --- | --- | --- | --- | --- |
-| `app/Pokedex` | Pokedex | app | `@main`。実装モジュールをリンクして注入する唯一の場所 | `app/mobile` |
-| `app/AppShared` | AppShared | app | ルート View、TabView、タブごとの NavigationStack と Router、テーマ適用 | `app/shared` |
+| `app` | Pokedex | app | `@main`、ルート View、TabView、タブごとの NavigationStack と Router、テーマ適用。実装モジュールをリンクして注入する唯一の場所 | `app/mobile` |
 | `feature/PokedexFeature` | PokedexFeature | feature | 図鑑ドメイン（List / Detail / Favorites） | `feature/*` |
 | `feature/SettingsFeature` | SettingsFeature | feature | 設定（テーマ色、ライセンス表示、言語設定への誘導） | `feature/*` |
 | `core/Common` | Common | core | 共通ユーティリティ、エラー型 | `core/common` 相当 |
-| `core/Model` | Model | core | ドメイン Entity（Sendable な struct / enum） | `core/model` 相当 |
+| `core/Model` | Model | core | アプリ全体で使うモデル。データ層（Repository）が返し、feature と SharedUI もそのまま使う（Sendable な struct / enum） | `core/model` 相当 |
 | `core/NetworkClient` | NetworkClient | core-interface | PokeAPIClient（API レベルの interface）と DTO | network 系 interface パッケージ |
 | `core/NetworkClientURLSession` | NetworkClientURLSession | core-impl | URLSession + swift-http-types による実装 | network 系の実装パッケージ |
 | `core/Database` | Database | core-interface | FavoriteStore などの interface | `database` |
@@ -78,9 +86,9 @@ swift-pokedex/
 | `core/Datastore` | Datastore | core-interface | 設定値（テーマ色）の interface | `datastore` |
 | `core/DatastoreUserDefaults` | DatastoreUserDefaults | core-impl | UserDefaults による実装 | `datastore_shared_preferences` |
 | `core/Repository` | Repository | core | NetworkClient / Database / Datastore の組み合わせと DTO → Model 変換 | `core/data` |
-| `core/Domain` | Domain | core | UseCase | `core/domain` |
+| `core/Domain` | Domain | core | UseCase。UseCase で組み立てる型が要るときだけ、Domain のモデルを置く（まれ） | `core/domain` |
 | `core/DesignSystem` | DesignSystem | core | テーマ、色、タイプバッジ、RemoteImage（Nuke をラップ） | `core/designsystem` |
-| `core/SharedUI` | SharedUI | core | ドメインを知っている共通 UI（PokemonCard、PokemonRow など） | `core/ui` |
+| `core/SharedUI` | SharedUI | core | Model を知っている共通 UI（PokemonCard、PokemonRow など）。Model だけを見て、Domain は見ない | `core/ui` |
 | `core/TestSupport` | TestSupport | core | フィクスチャ、テスト用ヘルパー | テスト用ヘルパーのパッケージ |
 
 「相当」と付けたものは、開発者の Flutter プロジェクトの実際のパッケージ名と差があるかもしれない対応です。厳密な名前の一致は意図していません。
@@ -93,7 +101,6 @@ swift-pokedex/
 flowchart TD
   subgraph APP["app"]
     Pokedex["Pokedex (App target)"]
-    AppShared
   end
   subgraph FEATURE["feature"]
     PokedexFeature
@@ -126,15 +133,13 @@ flowchart TD
     SwiftData["SwiftData (Apple)"]
   end
 
-  Pokedex --> AppShared
+  Pokedex --> PokedexFeature
+  Pokedex --> SettingsFeature
+  Pokedex --> Domain
+  Pokedex --> DesignSystem
   Pokedex --> NetworkClientURLSession
   Pokedex --> DatabaseSwiftData
   Pokedex --> DatastoreUserDefaults
-
-  AppShared --> PokedexFeature
-  AppShared --> SettingsFeature
-  AppShared --> Domain
-  AppShared --> DesignSystem
 
   PokedexFeature --> Domain
   PokedexFeature --> SharedUI
@@ -202,6 +207,8 @@ flowchart TD
 
 - 依存の方向は常に app → feature → core です。逆向きの矢印はありません。
 - 実装モジュール（青）に矢印を向けているのは Pokedex（App ターゲット）だけです。
+- feature は Domain と Model の両方を見ます。SharedUI は Model だけを見ます（Domain は見ません）。
+- DTO は NetworkClient に置き、Repository で Model に変換します。
 - TestSupport は各モジュールの Tests ターゲットから使う想定です。上の図には通常ターゲットの依存だけを描いています。
 
 ## 依存ルール
@@ -209,12 +216,12 @@ flowchart TD
 | # | ルール | 理由 |
 | --- | --- | --- |
 | 1 | feature は Repository / NetworkClient / Database / Datastore を直接 import しない。必ず Domain の UseCase 経由にする（単純な委譲でも UseCase を置く） | データ取得の都合（HTTP、SwiftData、UserDefaults）が UI に漏れるのを防ぐ。開発者の Flutter プロジェクトと同じ運用にして迷いを減らす |
-| 2 | feature 同士は依存しない | 機能の追加・削除・並行開発で互いに影響しないようにする。feature をまたぐ遷移が必要になったら delegate Action を AppShared の Router が受け取る |
+| 2 | feature 同士は依存しない | 機能の追加・削除・並行開発で互いに影響しないようにする。feature をまたぐ遷移が必要になったら delegate Action を App ターゲットの Router が受け取る |
 | 3 | core は feature / app に依存しない | 依存の向きを一方向に保ち、循環を防ぐ |
 | 4 | 実装モジュール（NetworkClientURLSession、DatabaseSwiftData、DatastoreUserDefaults）を依存に持つのは App ターゲットだけ | ライブ実装の差し替えとテスト容易性のため。Riverpod の ProviderScope の overrides に近い役割を App ターゲットと swift-dependencies が担う |
 | 5 | Nuke に依存するのは DesignSystem だけ | 画像ライブラリの差し替え点を 1 か所に閉じ込める。他のモジュールは RemoteImage を使う |
 | 6 | LicenseList に依存するのは SettingsFeature だけ（プラグインの適用先は導入時に確認する） | ライセンス表示は Settings の関心事であり、他へ広げない |
-| 7 | SwiftData の `@Model` 型は DatabaseSwiftData の外に出さない | 永続化の技術詳細を interface の裏に隠し、Model の Entity だけをやり取りする |
+| 7 | SwiftData の `@Model` 型は DatabaseSwiftData の外に出さない | 永続化の技術詳細を interface の裏に隠し、Model だけをやり取りする |
 | 8 | interface モジュールは実装モジュールに依存しない | 依存性逆転。interface 側に `testValue` / `previewValue` を置き、Preview とテストで実装モジュールを不要にする |
 
 ### 禁止事項のまとめ
@@ -226,11 +233,15 @@ flowchart TD
 - DesignSystem 以外から Nuke を、SettingsFeature 以外から LicenseList を import すること
 - DatabaseSwiftData の外へ `@Model` 型を公開すること
 
-SwiftPM では、直接の依存に書いていないモジュールでも推移的な依存として import できてしまう場合があります。`Package.swift` の宣言だけでは境界を完全には守れないため、導入時に明示的な依存チェック（例: `swift build` の `--explicit-target-dependency-import-check`）が使えるかを確認し、CI に組み込みます。
+### 依存チェック
+
+SwiftPM では、直接の依存に書いていないモジュールでも推移的な依存として import できてしまう場合があります。`--explicit-target-dependency-import-check` はこれを検出できません。Swift 6.4.2 で確認したところ、Domain 経由で Repository に推移的に依存する PokedexFeature に `import Repository` を足しても、error モードでビルドが通りました（native / swiftbuild のどちらのビルドシステムでも同じ）。なお、依存に全く無いモジュールの import は、このフラグが無くてもビルドエラーになります。
+
+そのため、各 target の import と `swift package describe --type json` の直接依存を突き合わせる自前のスクリプトを作り、mise のタスクと CI で実行します（Issue #3 / #4）。このスクリプトはテストプランへの登録漏れも検出します。
 
 ## 外部ライブラリ
 
-方針は「標準で十分なものは標準を使い、実務で入れておく定番だけを入れる」です。バージョン番号はここには書きません。導入時に最新の安定版を確認します。
+方針は「標準で十分なものは標準を使い、実務で入れておく定番だけを入れる」です。バージョン番号はここには書きません（[Package.swift の書き方の方針](#packageswift-の書き方の方針)を参照）。
 
 ### 採用
 
@@ -282,74 +293,29 @@ Apple SDK や標準ライブラリのモジュール名・型名と衝突する�
 
 ## Package.swift の書き方の方針
 
+実物は [Package.swift](../Package.swift) です。ここには決めたことと理由だけを書きます。
+
 - リポジトリのルートに `Package.swift` を 1 つだけ置く。モジュールごとに置く案は記述量が多いので採用しない。
 - 各 target は `path` で `<ディレクトリ>/Sources` を、test target は `<ディレクトリ>/Tests` を指定する。
-- 依存は target 単位で宣言する。推移的な依存の import を防ぐチェックは導入時に確認する（[依存ルール](#依存ルール)の補足を参照）。
-- `Package` の `swiftLanguageModes: [.v6]` で、全 target を Swift 6 言語モードにする。
-- Xcode プロジェクト（`app/Pokedex`）はルートのパッケージをローカルパッケージとして参照する。ワークスペースの要否など Xcode プロジェクトの細部は導入時に決める。同様の構成の例として [isowords](https://github.com/pointfreeco/isowords) がある。
-- 外部ライブラリのバージョンは導入時に最新の安定版を確認して決める。
+- 依存は target 単位で宣言する。推移的な import を防ぐチェックは [依存チェック](#依存チェック) を参照。
+- swift-tools-version は 6.2。使う機能が 6.2 からあるため。LicenseList も Swift 6.2 が前提。
+- `platforms` は iOS 26。[README](../README.md) の動作環境に合わせる。
+- 外部ライブラリは、最初に使う Issue で追加し、そのときに最新の安定版を確認する。バージョンはここには書かない。
+- product は App ターゲットがリンクするものだけを公開する（PokedexFeature、SettingsFeature、Domain、DesignSystem、NetworkClientURLSession、DatabaseSwiftData、DatastoreUserDefaults）。それ以外の target は、公開しても使う場所がない。
+- Swift 6 の設定は `swiftLanguageModes: [.v6]` だけにする。警告をエラー扱いにするのは CI だけ（Issue #4 で設定）にして、ローカルの開発では警告で止まらないようにする。MainActor を既定の隔離にする設定は使わない。Store などに `@MainActor` を明示して書く方針のため（[architecture.md](./architecture.md#concurrency-の方針)）。
 
-### 例
+### Xcode との連携
 
-以下は構成のイメージを示す抜粋です。tools-version、外部パッケージのバージョン指定、product 名、`platforms` の書き方などは導入時に確定します。ここに書いた内容をそのまま使うわけではありません。
-
-```swift
-// swift-tools-version: （導入時に確定）
-import PackageDescription
-
-let package = Package(
-    name: "swift-pokedex",
-    platforms: [.iOS(.v26)],
-    products: [
-        // Xcode プロジェクトから参照する library product（導入時に確定）
-        .library(name: "AppShared", targets: ["AppShared"]),
-        .library(name: "NetworkClientURLSession", targets: ["NetworkClientURLSession"]),
-    ],
-    dependencies: [
-        // from: は導入時に最新の安定版を確認して記入する
-        .package(url: "https://github.com/pointfreeco/swift-dependencies", from: "（導入時に確認）"),
-        .package(url: "https://github.com/apple/swift-http-types", from: "（導入時に確認）"),
-    ],
-    targets: [
-        // core: interface
-        .target(
-            name: "NetworkClient",
-            dependencies: [
-                "Common",
-                .product(name: "Dependencies", package: "swift-dependencies"),
-                .product(name: "DependenciesMacros", package: "swift-dependencies"),
-            ],
-            path: "core/NetworkClient/Sources"
-        ),
-        // core: 実装
-        .target(
-            name: "NetworkClientURLSession",
-            dependencies: [
-                "NetworkClient",
-                .product(name: "HTTPTypes", package: "swift-http-types"),
-                .product(name: "HTTPTypesFoundation", package: "swift-http-types"),
-                .product(name: "Dependencies", package: "swift-dependencies"),
-            ],
-            path: "core/NetworkClientURLSession/Sources"
-        ),
-        .testTarget(
-            name: "NetworkClientURLSessionTests",
-            dependencies: ["NetworkClientURLSession", "TestSupport"],
-            path: "core/NetworkClientURLSession/Tests"
-        ),
-        // ...ほかの target も同じ形で書く
-    ],
-    swiftLanguageModes: [.v6]
-)
-```
-
-`Common` と `TestSupport` の target 定義は省略しています。
+- ワークスペースは作らず、`app/App.xcodeproj` 1 つにエントリーポイントごとのターゲットを置く（[ADR 0015](./adr/0015-xcode-project-structure.md)）。
+- ルートの `Package.swift` が全モジュールを束ねるモノレポの役割を持つ（dart workspace のルート `pubspec.yaml` に相当）。`app/App.xcodeproj` はルートのパッケージをローカルパッケージとして参照する。同じ形の例として [isowords](https://github.com/pointfreeco/isowords) がある。
+- テストはテストプラン（`app/AllTests.xctestplan`）に全テスト target を登録し、⌘U や `xcodebuild test -project app/App.xcodeproj -scheme Pokedex` で全部回す。
 
 ## 関連 ADR
 
 - [ADR 0003 モジュール構成](./adr/0003-multi-module-structure.md)
 - [ADR 0005 外部ライブラリ選定](./adr/0005-external-libraries.md)
 - [ADR 0008 モジュール命名規約](./adr/0008-module-naming.md)
+- [ADR 0015 Xcode プロジェクトの構成と名前](./adr/0015-xcode-project-structure.md)
 
 関連ドキュメントです。
 

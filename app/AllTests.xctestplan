@@ -1,0 +1,111 @@
+{
+  "configurations": [
+    {
+      "id": "A1B2C3D4-0000-4000-8000-000000000001",
+      "name": "Configuration 1",
+      "options": {}
+    }
+  ],
+  "defaultOptions": {},
+  "testTargets": [
+    {
+      "target": {
+        "containerPath": "container:..",
+        "identifier": "PokedexFeatureTests",
+        "name": "PokedexFeatureTests"
+      }
+    },
+    {
+      "target": {
+        "containerPath": "container:..",
+        "identifier": "SettingsFeatureTests",
+        "name": "SettingsFeatureTests"
+      }
+    },
+    {
+      "target": {
+        "containerPath": "container:..",
+        "identifier": "CommonTests",
+        "name": "CommonTests"
+      }
+    },
+    {
+      "target": {
+        "containerPath": "container:..",
+        "identifier": "ModelTests",
+        "name": "ModelTests"
+      }
+    },
+    {
+      "target": {
+        "containerPath": "container:..",
+        "identifier": "DomainTests",
+        "name": "DomainTests"
+      }
+    },
+    {
+      "target": {
+        "containerPath": "container:..",
+        "identifier": "RepositoryTests",
+        "name": "RepositoryTests"
+      }
+    },
+    {
+      "target": {
+        "containerPath": "container:..",
+        "identifier": "DesignSystemTests",
+        "name": "DesignSystemTests"
+      }
+    },
+    {
+      "target": {
+        "containerPath": "container:..",
+        "identifier": "SharedUITests",
+        "name": "SharedUITests"
+      }
+    },
+    {
+      "target": {
+        "containerPath": "container:..",
+        "identifier": "NetworkClientTests",
+        "name": "NetworkClientTests"
+      }
+    },
+    {
+      "target": {
+        "containerPath": "container:..",
+        "identifier": "DatabaseTests",
+        "name": "DatabaseTests"
+      }
+    },
+    {
+      "target": {
+        "containerPath": "container:..",
+        "identifier": "DatastoreTests",
+        "name": "DatastoreTests"
+      }
+    },
+    {
+      "target": {
+        "containerPath": "container:..",
+        "identifier": "NetworkClientURLSessionTests",
+        "name": "NetworkClientURLSessionTests"
+      }
+    },
+    {
+      "target": {
+        "containerPath": "container:..",
+        "identifier": "DatabaseSwiftDataTests",
+        "name": "DatabaseSwiftDataTests"
+      }
+    },
+    {
+      "target": {
+        "containerPath": "container:..",
+        "identifier": "DatastoreUserDefaultsTests",
+        "name": "DatastoreUserDefaultsTests"
+      }
+    }
+  ],
+  "version": 1
+}
