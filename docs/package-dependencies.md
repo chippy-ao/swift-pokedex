@@ -239,6 +239,8 @@ SwiftPM では、直接の依存に書いていないモジュールでも推移
 
 そのため、各 target の import と `swift package describe --type json` の直接依存を突き合わせる自前のスクリプトを作り、mise のタスクと CI で実行します（Issue #3 / #4）。このスクリプトはテストプランへの登録漏れも検出します。
 
+スクリプトは [`scripts/check-dependencies.swift`](../scripts/check-dependencies.swift) にあり、`mise run lint` の中で実行されます（タスクは [development.md](development.md#タスク) を参照）。
+
 ## 外部ライブラリ
 
 方針は「標準で十分なものは標準を使い、実務で入れておく定番だけを入れる」です。バージョン番号はここには書きません（[Package.swift の書き方の方針](#packageswift-の書き方の方針)を参照）。
