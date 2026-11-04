@@ -1,6 +1,6 @@
 # 開発ツール
 
-バージョン管理、Git フック、Lint、整形、テストの実行に使うツールの対応です。表の書き方は [README](README.md#表の書き方) を参照してください。方針は [development.md](../development.md) にあります。
+バージョン管理、Git フック、Lint、整形、テストの実行、CI、依存の更新に使うツールの対応です。表の書き方は [README](README.md#表の書き方) を参照してください。方針は [development.md](../development.md) にあります。
 
 | Swift / iOS | Flutter での相当 | 違い | このリポジトリで使っている場所 |
 | --- | --- | --- | --- |
@@ -11,6 +11,10 @@
 | SwiftLint | analysis_options.yaml の lint / flutter analyze | 整形は別ツールが担うので、整形とぶつかるルールは切っている。コンパイラの解析（型エラーなど）は含まない | [.swiftlint.yml](../../.swiftlint.yml) |
 | xcbeautify | 相当なし | `xcodebuild` のログを読みやすくするだけの整形ツール。flutter test の出力は最初から読みやすい | [mise.toml](../../mise.toml) |
 | `swift x.swift`（スクリプト実行） | `dart run tool/x.dart` | ファイルを 1 つ指定して直接実行できる。ビルド設定は不要 | [scripts/check-dependencies.swift](../../scripts/check-dependencies.swift) |
+| CI のランナーイメージの Xcode（`DEVELOPER_DIR`、`xcode-select`） | `subosito/flutter-action` で Flutter SDK をジョブごとに取得 | Flutter SDK はバージョンを指定して取得できる。Xcode は取得できず、ランナーイメージに入っているものから `DEVELOPER_DIR` で選ぶ | [ci.yml](../../.github/workflows/ci.yml) |
+| Renovate（swift / mise / github-actions マネージャー） | Renovate（pub マネージャー） | 仕組みは同じ。対象のマネージャーが違う。Dependabot は `mise.toml` に対応しない | [renovate.json5](../../.github/renovate.json5) |
+| `committed --no-merge-commit` | 相当なし（Git の話で、言語に依らない） | PR 内のマージコミットを禁止し、main の取り込みは rebase にする | [conventions.yml](../../.github/workflows/conventions.yml) |
+| ルールセットの必須チェックと集約ジョブ | 同じ（GitHub の機能で、言語に依らない） | 違いなし。個々のジョブでなく集約ジョブを必須にする | [ci.yml](../../.github/workflows/ci.yml) |
 | `xcodebuild test` / `mise run test` | `flutter test` | 走らせる target と実行先のシミュレーターを明示する。`flutter test` は `test/` を自動で見つける | [mise.toml](../../mise.toml) |
 
 ## 参考リンク
@@ -24,4 +28,5 @@
 - [fvm](https://fvm.app/) / [asdf](https://asdf-vm.com/) / [melos](https://pub.dev/packages/melos)
 - [lefthook](https://github.com/evilmartians/lefthook) / [husky](https://typicode.github.io/husky/) / [commitlint](https://commitlint.js.org/)
 - [dart format](https://dart.dev/tools/dart-format) / [flutter analyze と analysis_options.yaml](https://dart.dev/tools/analysis)
+- [subosito/flutter-action](https://github.com/subosito/flutter-action) / [Renovate](https://docs.renovatebot.com/)
 - [dart run](https://dart.dev/tools/dart-run) / [flutter test](https://docs.flutter.dev/testing/overview)

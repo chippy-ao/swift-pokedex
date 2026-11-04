@@ -35,7 +35,7 @@ PokeAPI を使ったポケモン図鑑アプリです。久しぶりの Swift �
 
 ## 動作環境
 
-- Xcode 27.0
+- Xcode 27.2
 - Swift 6.4（Swift 6 言語モード）
 - iOS 26 以上（暫定。最新 API を学ぶため）
 

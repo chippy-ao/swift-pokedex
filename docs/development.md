@@ -10,7 +10,7 @@
 
 ## ツール
 
-ツールのバージョンはルートの `mise.toml` で固定します（[ADR-0012](adr/0012-tool-version-management.md)）。Xcode と、Xcode に同梱されている swift-format は mise の管理外です。ローカルと CI の Xcode のバージョンは手で揃えます。
+ツールのバージョンはルートの `mise.toml` で固定します（[ADR-0012](adr/0012-tool-version-management.md)）。Xcode と、Xcode に同梱されている swift-format は mise の管理外です。ローカルと CI の Xcode のバージョンは手で揃えます（CI 側の指定は[ステータスチェック](#ステータスチェック)を参照）。
 
 fastlane や CocoaPods を使わないので、Ruby と Bundler は入れません。必要になったら新しい ADR を追加します。
 
@@ -54,8 +54,10 @@ fastlane や CocoaPods を使わないので、Ruby と Bundler は入れませ�
 | どこで | 何を | ツール |
 | --- | --- | --- |
 | ローカル | コミットメッセージ | [prek](https://github.com/j178/prek) の commit-msg フックで [committed](https://github.com/crate-ci/committed) を実行。形式が違えばコミットを止める |
-| CI | PR 内のすべてのコミットメッセージ | committed にベースから HEAD までの範囲を渡して実行 |
-| CI | PR タイトル | [amannn/action-semantic-pull-request](https://github.com/amannn/action-semantic-pull-request) |
+| CI | PR 内のすべてのコミットメッセージ | committed にベースから HEAD までの範囲を渡し、`--no-merge-commit` を付けて実行（[conventions.yml](../.github/workflows/conventions.yml)） |
+| CI | PR タイトル | committed の `--commit-file` にタイトルを書いたファイルを渡して実行（同上） |
+
+PR タイトルの検査に action-semantic-pull-request を使わないのは、type と scope の一覧を `committed.toml` の 1 か所に保つためです。
 
 ## Lint と整形
 
@@ -132,7 +134,16 @@ SwiftLint で無効にしたルールと理由は `.swiftlint.yml` のコメン�
 
 - マージ方式は通常のマージ（merge commit）だけを許可します。PR 内のコミットを main に残し、コミットメッセージの検査とテストを先に書いた順番を、履歴で確かめられるようにするためです。
 - マージコミットの 1 行目は PR タイトル（例: `feat(PokedexFeature): 一覧の無限スクロールを追加 (#12)`）になり、本文は空です。PR 単位の履歴は `git log --first-parent --oneline` で読めます。
-- マージ先の main が進んでいたら、PR のブランチを最新にしてからマージします。
+- マージ先の main が進んでいたら、PR のブランチを最新にしてからマージします（ルールセットの strict）。
+- main の取り込みは rebase で行います。PR 内にマージコミットを作ると CI の `--no-merge-commit` で落ちます。PR 内のコミットをすべて main に残し、すべて検査するためです。
+
+  ```sh
+  git fetch origin
+  git rebase origin/main
+  git push --force-with-lease
+  ```
+
+- GitHub の「Update branch」ボタンは、PR のブランチに main のマージコミットを作るので、リポジトリの設定でオフにします。
 - main には直接 push できません。管理者も、ルールを迂回できるのは PR のマージ時だけです。
 
 ### ステータスチェック
@@ -141,12 +152,19 @@ SwiftLint で無効にしたルールと理由は `.swiftlint.yml` のコメン�
 
 | チェック | 内容 | ランナー |
 | --- | --- | --- |
-| PR タイトル | Conventional Commits 形式か | Linux |
-| コミットメッセージ | PR 内の全コミットを committed で検査 | Linux |
-| Lint | swift-format、SwiftLint、actionlint | macOS |
-| Build / Test | `xcodebuild test` で全モジュールとアプリをビルドし、Swift Testing のテストを実行 | macOS |
+| PR タイトル（`pr-title`） | Conventional Commits 形式か | `ubuntu-latest` |
+| コミットメッセージ（`commit-messages`） | PR 内の全コミットを committed で検査 | `ubuntu-latest` |
+| Lint（`lint`） | swift-format、SwiftLint、actionlint、依存チェック | `xcode-27` |
+| Build / Test（`build-test`） | `xcodebuild test` で全モジュールとアプリをビルドし、Swift Testing のテストを実行 | `xcode-27` |
 
 - main のルールセットで必須にするのは、個々のジョブではなく、ワークフローごとの集約ジョブ（結果をまとめるだけのジョブ）です。変更のない領域のジョブをスキップしても、集約ジョブが成功すればマージできます。
+
+  | 必須にするジョブ | ワークフロー | まとめるジョブ |
+  | --- | --- | --- |
+  | `conventions-status` | [conventions.yml](../.github/workflows/conventions.yml) | `pr-title`、`commit-messages` |
+  | `ci-status` | [ci.yml](../.github/workflows/ci.yml) | `lint`、`build-test` |
+
+- `xcode-27` は Xcode 27 を入れた GitHub のプレビューのランナーイメージです。ジョブの環境変数 `DEVELOPER_DIR=/Applications/Xcode_27.2.app` で Xcode のバージョンを選び、README の「動作環境」と揃えます。正式なラベルになったら、`.github/actionlint.yaml` の登録を外します。
 - CI から呼ぶコマンドは mise のタスクに揃えます。
 
 ### GitHub Actions を書くとき
@@ -160,6 +178,17 @@ SwiftLint で無効にしたルールと理由は `.swiftlint.yml` のコメン�
 - SHA の固定は手で書かず、pinact で行います。`.github/` 配下の変更時に prek のフックで自動で実行されます。
 - ワークフローとジョブの `permissions` は必要な最小限にします。
 - `pull_request_target` では PR のコードを checkout しません。
+
+## 依存の更新
+
+GitHub Actions、mise のツール、Swift のパッケージの更新は、[Mend Renovate App](https://github.com/apps/renovate) が PR を出します（[ADR-0016](adr/0016-dependency-updates.md)）。設定の値と理由は [`.github/renovate.json5`](../.github/renovate.json5) のコメントに書きます。
+
+- 月 1 回、minor / patch / digest を「GitHub Actions」「mise のツール」「Swift のパッケージ」の 3 つの PR にまとめます。
+- major はまとめず、依存ごとに別の PR にします。
+- 自動マージはしません。差分を読んでから、通常の PR と同じ流れ（ステータスチェックとレビュー）でマージします。
+- 全 PR に `dependencies` ラベルが付きます。公開から 3 日たっていないリリースは更新の対象にしません。
+- 脆弱性の修正は、月 1 回の予定を待たずに、タイトルの末尾に `[SECURITY]` が付いた PR が出ます。入力は GitHub の Dependabot alerts で、alerts はオン、Dependabot security updates はオフにします。`dependabot.yml` は作りません。
+- Renovate の PR のタイトルとコミットは、`ci:`（GitHub Actions）か `build:`（mise と Swift のパッケージ）で始まる日本語の説明にして、コミット規約の検査を通します。
 
 ## Xcode プロジェクト
 

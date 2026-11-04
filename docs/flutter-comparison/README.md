@@ -6,7 +6,7 @@
 
 | ファイル | 分野 |
 | --- | --- |
-| [tooling.md](tooling.md) | 開発ツール（バージョン管理、Git フック、Lint、整形、テストの実行） |
+| [tooling.md](tooling.md) | 開発ツール（バージョン管理、Git フック、Lint、整形、テストの実行、CI、依存の更新） |
 | [project-structure.md](project-structure.md) | プロジェクトの構成（Package.swift、Xcode プロジェクト、テストプラン、依存チェック） |
 
 すでに別のドキュメントにある Flutter との対応は、コピーせずにリンクします。
