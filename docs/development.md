@@ -175,7 +175,7 @@ PR を開く・タイトルを編集する・コミットを push するたび�
 | --- | --- | --- |
 | `type:<type>` | PR タイトル先頭の type | `feat(Domain)!: ...` なら `type:feat` |
 | `package:<名前>` | 変更ファイルが `core/<名前>/`、`feature/<名前>/`、`app/`（`package:Pokedex`）にある | 複数にまたがれば複数付く |
-| `size:<XS〜XL>` | 追加と削除の行数の合計 | 区切りはワークフローのコメントを参照 |
+| `size:<XS〜XL>` | 追加と削除の行数の合計 | 区切りは pr-labels.yml のスクリプトを参照 |
 
 - 外すのは、今回付けるべきでない `type:` / `package:` / `size:` だけです。`dependencies` など他のラベルには触りません。
 - type や package を足したら、`.github/labels.yml` にもラベルを足します。足し忘れるとワークフローが失敗します。ラベルは main への push で GitHub に同期されるため、足した PR 自身ではまだ付かず、警告になります。
