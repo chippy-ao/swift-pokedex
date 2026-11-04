@@ -1,0 +1,6 @@
+# actionlint の設定。実行は mise run lint（docs/development.md）。
+self-hosted-runner:
+  # GitHub のプレビューイメージ。actionlint の既知ラベルに無いため登録する。
+  # 正式なラベル（macos-27 など）になったら、このファイルごと削除する。
+  labels:
+    - xcode-27

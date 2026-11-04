@@ -1,0 +1,65 @@
+name: ci
+
+# Lint と Build / Test。必須チェックにするのは、集約ジョブの ci-status だけ（ADR-0013）。
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions: {}
+
+# 同じ PR の古い実行は止める。main への push は止めない（run_id で別グループにする）。
+concurrency:
+  group: ci-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # GitHub のプレビューイメージ xcode-27 に入っている Xcode
+  DEVELOPER_DIR: /Applications/Xcode_27.2.app
+
+jobs:
+  lint:
+    name: lint
+    runs-on: xcode-27
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
+      - run: mise run lint
+
+  build-test:
+    name: build-test
+    runs-on: xcode-27
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
+      - run: mise run test
+
+  ci-status:
+    name: ci-status
+    needs: [lint, build-test]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: 全ジョブの成功を確認する
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "results: $RESULTS"
+          for r in $RESULTS; do
+            if [ "$r" != "success" ]; then
+              exit 1
+            fi
+          done
