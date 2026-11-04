@@ -1,0 +1,79 @@
+name: conventions
+
+# PR タイトルとコミットメッセージを committed.toml のルールで検査する。
+# 必須チェックにするのは、集約ジョブの conventions-status だけ（ADR-0013）。
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+    branches: [main]
+
+permissions: {}
+
+# 同じ PR の古い実行は止める
+concurrency:
+  group: conventions-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  pr-title:
+    name: pr-title
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # committed だけを入れる（mise.toml の他のツールは Linux では不要）
+      - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
+        with:
+          install_args: committed
+      - name: PR タイトルを検査する
+        env:
+          # スクリプトインジェクションを避けるため、${{ }} を run に直接埋めず env 経由で渡す
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          printf '%s\n' "$PR_TITLE" > "$RUNNER_TEMP/pr-title.txt"
+          committed --commit-file "$RUNNER_TEMP/pr-title.txt"
+
+  commit-messages:
+    name: commit-messages
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
+        with:
+          install_args: committed
+      - name: コミットメッセージを検査する
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        # PR 内のマージコミットは禁止。main の取り込みは rebase で行う。
+        run: committed "$BASE_SHA..$HEAD_SHA" --no-merge-commit
+
+  conventions-status:
+    name: conventions-status
+    needs: [pr-title, commit-messages]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: 全ジョブの成功を確認する
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "results: $RESULTS"
+          for r in $RESULTS; do
+            if [ "$r" != "success" ]; then
+              exit 1
+            fi
+          done
