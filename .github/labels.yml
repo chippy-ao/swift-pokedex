@@ -14,3 +14,99 @@
 - name: dependencies
   color: "#0366d6"
   description: 依存の更新（Renovate が付ける）
+- name: type:feat
+  color: "#5319e7"
+  description: PR の type が feat（新機能）
+- name: type:fix
+  color: "#5319e7"
+  description: PR の type が fix（バグ修正）
+- name: type:docs
+  color: "#5319e7"
+  description: PR の type が docs（ドキュメントのみの変更）
+- name: type:style
+  color: "#5319e7"
+  description: PR の type が style（動作に影響しない整形）
+- name: type:refactor
+  color: "#5319e7"
+  description: PR の type が refactor（動作を変えない内部の整理）
+- name: type:perf
+  color: "#5319e7"
+  description: PR の type が perf（性能の改善）
+- name: type:test
+  color: "#5319e7"
+  description: PR の type が test（テストの追加・修正）
+- name: type:build
+  color: "#5319e7"
+  description: PR の type が build（ビルドや依存の変更）
+- name: type:ci
+  color: "#5319e7"
+  description: PR の type が ci（CI の設定の変更）
+- name: type:chore
+  color: "#5319e7"
+  description: PR の type が chore（その他の雑務）
+- name: type:revert
+  color: "#5319e7"
+  description: PR の type が revert（過去の変更の取り消し）
+- name: package:Common
+  color: "#0e8a16"
+  description: Common の変更を含む
+- name: package:Database
+  color: "#0e8a16"
+  description: Database の変更を含む
+- name: package:DatabaseSwiftData
+  color: "#0e8a16"
+  description: DatabaseSwiftData の変更を含む
+- name: package:Datastore
+  color: "#0e8a16"
+  description: Datastore の変更を含む
+- name: package:DatastoreUserDefaults
+  color: "#0e8a16"
+  description: DatastoreUserDefaults の変更を含む
+- name: package:DesignSystem
+  color: "#0e8a16"
+  description: DesignSystem の変更を含む
+- name: package:Domain
+  color: "#0e8a16"
+  description: Domain の変更を含む
+- name: package:Model
+  color: "#0e8a16"
+  description: Model の変更を含む
+- name: package:NetworkClient
+  color: "#0e8a16"
+  description: NetworkClient の変更を含む
+- name: package:NetworkClientURLSession
+  color: "#0e8a16"
+  description: NetworkClientURLSession の変更を含む
+- name: package:Repository
+  color: "#0e8a16"
+  description: Repository の変更を含む
+- name: package:SharedUI
+  color: "#0e8a16"
+  description: SharedUI の変更を含む
+- name: package:TestSupport
+  color: "#0e8a16"
+  description: TestSupport の変更を含む
+- name: package:PokedexFeature
+  color: "#0e8a16"
+  description: PokedexFeature の変更を含む
+- name: package:SettingsFeature
+  color: "#0e8a16"
+  description: SettingsFeature の変更を含む
+- name: package:Pokedex
+  color: "#0e8a16"
+  description: Pokedex の変更を含む（app/）
+- name: size:XS
+  color: "#c2e0c6"
+  description: 変更行数（追加と削除の合計）が 10 行未満
+- name: size:S
+  color: "#bfdadc"
+  description: 変更行数（追加と削除の合計）が 10 行以上 30 行未満
+- name: size:M
+  color: "#fef2c0"
+  description: 変更行数（追加と削除の合計）が 30 行以上 100 行未満
+- name: size:L
+  color: "#f9d0c4"
+  description: 変更行数（追加と削除の合計）が 100 行以上 500 行未満
+- name: size:XL
+  color: "#e99695"
+  description: 変更行数（追加と削除の合計）が 500 行以上
