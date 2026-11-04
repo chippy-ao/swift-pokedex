@@ -1,0 +1,71 @@
+// Renovate（Mend Renovate App）の設定。依存の更新方針は docs/development.md を参照。
+// 公式ドキュメント: https://docs.renovatebot.com/configuration-options/
+{
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+
+  // 月 1 回、月初（日本時間）にまとめて PR を出す。
+  // 脆弱性修正の PR は vulnerabilityAlerts の既定で schedule と minimumReleaseAge を無視して即時に出る
+  // （GitHub の Dependabot alerts を入力に使う）。
+  extends: ["schedule:monthly"],
+  timezone: "Asia/Tokyo",
+
+  // 公開直後のリリースは避ける（公開後に取り下げられる版や、不具合の修正版を避けるため）。
+  minimumReleaseAge: "3 days",
+
+  // 自動マージはしない。差分を読んでから人が閉じる。
+  automerge: false,
+  labels: ["dependencies"],
+
+  // コミットと PR タイトルは committed.toml の規約（Conventional Commits、説明は日本語）に合わせる。
+  // scope は付けない。"ci: actions/checkout を v8 に更新する" の語順にするため、
+  // 既定の "Update dependency X to Y" を日本語の語順に組み替えている。
+  // Renovate 側の semanticCommits は type を小文字化するだけで日本語の語順に使えないため、prefix は自前で付ける。
+  semanticCommits: "disabled",
+  // グループの PR は "ci: GitHub Actions を更新する" の形にする（topic はグループごとに packageRules で指定）。
+  group: {
+    commitMessageAction: "",
+    commitMessageExtra: "",
+  },
+
+  packageRules: [
+    // マネージャーごとの既定の commitMessageTopic（例: "{{{depName}}} action"）より優先させるため、
+    // 組み替えは top-level ではなく packageRules に書く。
+    {
+      matchManagers: ["github-actions", "mise", "swift"],
+      commitMessageAction: "",
+      commitMessageTopic: "{{{depName}}} を",
+      commitMessageExtra:
+        "{{#if isPinDigest}}{{{newDigestShort}}}{{else}}{{#if isMajor}}{{prettyNewMajor}}{{else}}{{#if isSingleVersion}}{{prettyNewVersion}}{{else}}{{#if newValue}}{{{newValue}}}{{else}}{{{newDigestShort}}}{{/if}}{{/if}}{{/if}}{{/if}} に更新する",
+    },
+    // type はマネージャーで決める。
+    {
+      matchManagers: ["github-actions"],
+      commitMessagePrefix: "ci:",
+    },
+    {
+      matchManagers: ["mise", "swift"],
+      commitMessagePrefix: "build:",
+    },
+
+    // minor / patch / digest は 3 グループにまとめる。
+    {
+      matchManagers: ["github-actions"],
+      matchUpdateTypes: ["minor", "patch", "digest"],
+      groupName: "GitHub Actions",
+      group: { commitMessageTopic: "GitHub Actions を更新する" },
+    },
+    {
+      matchManagers: ["mise"],
+      matchUpdateTypes: ["minor", "patch", "digest"],
+      groupName: "mise のツール",
+      group: { commitMessageTopic: "mise のツールを更新する" },
+    },
+    {
+      matchManagers: ["swift"],
+      matchUpdateTypes: ["minor", "patch", "digest"],
+      groupName: "Swift のパッケージ",
+      group: { commitMessageTopic: "Swift のパッケージを更新する" },
+    },
+    // major はグループに入れない（groupName を付けない）ので、1 つずつ別の PR になる。
+  ],
+}

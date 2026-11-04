@@ -11,3 +11,6 @@
 - name: bug
   color: "#d73a4a"
   description: 仕様（README）どおりに動かない（テンプレート「バグ」）
+- name: dependencies
+  color: "#0366d6"
+  description: 依存の更新（Renovate が付ける）
