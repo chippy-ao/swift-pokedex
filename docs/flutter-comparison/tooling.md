@@ -15,6 +15,7 @@
 | Renovate（swift / mise / github-actions マネージャー） | Renovate（pub マネージャー） | 仕組みは同じ。対象のマネージャーが違う。Dependabot は `mise.toml` に対応しない | [renovate.json5](../../.github/renovate.json5) |
 | `committed --no-merge-commit` | 相当なし（Git の話で、言語に依らない） | PR 内のマージコミットを禁止し、main の取り込みは rebase にする | [conventions.yml](../../.github/workflows/conventions.yml) |
 | ルールセットの必須チェックと集約ジョブ | 同じ（GitHub の機能で、言語に依らない） | 違いなし。個々のジョブでなく集約ジョブを必須にする | [ci.yml](../../.github/workflows/ci.yml) |
+| 自動ラベル（GitHub Actions の workflow で `gh` を使って付ける） | 同じ（GitHub の機能で、言語に依らない） | 違いなし。Flutter のモノレポでも `actions/labeler` や `gh` で同じことができる。ここでは取得したバイナリを実行するアクションを避け、`gh` / `jq` / `yq` だけで書く | [pr-labels.yml](../../.github/workflows/pr-labels.yml) |
 | `xcodebuild test` / `mise run test` | `flutter test` | 走らせる target と実行先のシミュレーターを明示する。`flutter test` は `test/` を自動で見つける | [mise.toml](../../mise.toml) |
 
 ## 参考リンク

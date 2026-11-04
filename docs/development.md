@@ -167,6 +167,20 @@ SwiftLint で無効にしたルールと理由は `.swiftlint.yml` のコメン�
 - `xcode-27` は Xcode 27 を入れた GitHub のプレビューのランナーイメージです。ジョブの環境変数 `DEVELOPER_DIR=/Applications/Xcode_27.2.app` で Xcode のバージョンを選び、README の「動作環境」と揃えます。正式なラベルになったら、`.github/actionlint.yaml` の登録を外します。
 - CI から呼ぶコマンドは mise のタスクに揃えます。
 
+### PR ラベル
+
+PR を開く・タイトルを編集する・コミットを push するたびに、[pr-labels.yml](../.github/workflows/pr-labels.yml) が次のラベルを付け直します。ラベルの一覧と色は [`.github/labels.yml`](../.github/labels.yml) にあります。
+
+| 種類 | 付くとき | 例 |
+| --- | --- | --- |
+| `type:<type>` | PR タイトル先頭の type | `feat(Domain)!: ...` なら `type:feat` |
+| `package:<名前>` | 変更ファイルが `core/<名前>/`、`feature/<名前>/`、`app/`（`package:Pokedex`）にある | 複数にまたがれば複数付く |
+| `size:<XS〜XL>` | 追加と削除の行数の合計 | 区切りは pr-labels.yml のスクリプトを参照 |
+
+- 外すのは、今回付けるべきでない `type:` / `package:` / `size:` だけです。`dependencies` など他のラベルには触りません。
+- type や package を足したら、`.github/labels.yml` にもラベルを足します。足し忘れるとワークフローが失敗します。ラベルは main への push で GitHub に同期されるため、足した PR 自身ではまだ付かず、警告になります。
+- フォークからの PR では動きません。
+
 ### GitHub Actions を書くとき
 
 - `uses:` はタグではなくフルコミット SHA で固定し、末尾にバージョンをコメントで残します。
