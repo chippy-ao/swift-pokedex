@@ -1,0 +1,129 @@
+name: pr-labels
+
+# PR に type・package・size のラベルを自動で付ける。付け方は docs/development.md の「PR ラベル」を参照。
+# ラベルの定義は .github/labels.yml。ここで付けるラベルが labels.yml に無ければ失敗させる。
+# サードパーティの labeler アクションは使わない。実行時にバイナリを取得するものがあり、
+# uses: をコミット SHA で固定しても中身が固定されないため。ランナーに入っている gh / jq / yq だけで書く。
+# ユニットテストは書かず、本物の PR で確かめる。
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+    branches: [main]
+
+permissions: {}
+
+# 同じ PR の古い実行は止める
+concurrency:
+  group: pr-labels-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  label:
+    name: label
+    # フォークからの PR では GITHUB_TOKEN が読み取り専用になりラベルを付けられないので飛ばす。
+    # pull_request_target は PR のコードを扱う危険があるので使わない。
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      # ラベルの付け外しと変更ファイルの取得に使う（GitHub Docs: Issues か Pull requests の write で足りる）
+      pull-requests: write
+    steps:
+      # labels.yml を読むためだけに checkout する。PR のコードは実行しない。
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: ラベルを付ける
+        env:
+          # スクリプトインジェクションを避けるため、${{ }} を run に直接埋めず env 経由で渡す
+          GH_TOKEN: ${{ github.token }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          # --- 付けるべきラベルを求める ---
+          desired=()
+
+          # type: タイトル先頭の type（例 "feat(Domain)!: ..." -> feat）。
+          # 許可する type は committed.toml の allowed_types と同じ（不正なタイトルは conventions.yml が落とす）
+          type=$(printf '%s' "$PR_TITLE" | sed -nE 's/^([a-z]+)(\([^)]*\))?!?:.*/\1/p')
+          case "$type" in
+            feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert) desired+=("type:$type") ;;
+            *) echo "::warning::PR タイトルから type を読み取れないので type ラベルは付けません" ;;
+          esac
+
+          # 変更ファイルと行数。1 ページ最大 100 件、全体で 3000 件まで取れる（GitHub Docs: List pull request files）
+          files=$(gh api --paginate "repos/$REPO/pulls/$PR_NUMBER/files" \
+            | jq -s 'add // []')
+
+          # package: core/<X>/ と feature/<X>/ は <X>、app/ は Pokedex（committed.toml の allowed_scopes と同じ名前）
+          while IFS= read -r pkg; do
+            [ -n "$pkg" ] && desired+=("package:$pkg")
+          done < <(
+            printf '%s' "$files" | jq -r '
+              .[] | [.filename, (.previous_filename // empty)][]
+              | if test("^(core|feature)/[^/]+/") then split("/")[1]
+                elif test("^app/") then "Pokedex"
+                else empty end' | sort -u
+          )
+
+          # size: 追加と削除の合計。Kubernetes prow の size プラグインのしきい値に合わせる。
+          # 生成物で膨らむ Package.resolved と *.pbxproj は数えない。
+          lines=$(printf '%s' "$files" | jq '
+            [.[] | select(.filename | test("(^|/)Package\\.resolved$|\\.pbxproj$") | not)
+             | .additions + .deletions] | add // 0')
+          if   [ "$lines" -lt 10 ];  then size=XS
+          elif [ "$lines" -lt 30 ];  then size=S
+          elif [ "$lines" -lt 100 ]; then size=M
+          elif [ "$lines" -lt 500 ]; then size=L
+          else size=XL; fi
+          desired+=("size:$size")
+          echo "変更行数: $lines"
+
+          # --- 検証 ---
+          # labels.yml に無いラベルは足し忘れなので失敗させる
+          defined=$(yq '.[].name' .github/labels.yml)
+          failed=0
+          for l in "${desired[@]}"; do
+            if ! printf '%s\n' "$defined" | grep -qxF "$l"; then
+              echo "::error::ラベル $l が .github/labels.yml にありません"
+              failed=1
+            fi
+          done
+
+          # GitHub にまだ無いラベルは付けない。label-sync は main への push で動くので、
+          # ラベルを足した PR 自身では存在しない。
+          existing=$(gh api --paginate "repos/$REPO/labels" --jq '.[].name')
+          final=()
+          for l in "${desired[@]}"; do
+            if printf '%s\n' "$existing" | grep -qxF "$l"; then
+              final+=("$l")
+            else
+              echo "::warning::ラベル $l はまだ GitHub にありません（label-sync 後に付きます）"
+            fi
+          done
+
+          # --- 付け外し ---
+          # 外すのは type: / package: / size: のうち、今回付けるべきでないものだけ。dependencies など他は触らない。
+          current=$(gh api --paginate "repos/$REPO/issues/$PR_NUMBER/labels" --jq '.[].name')
+          while IFS= read -r l; do
+            case "$l" in
+              type:*|package:*|size:*)
+                if ! printf '%s\n' "${desired[@]}" | grep -qxF "$l"; then
+                  echo "外す: $l"
+                  gh api -X DELETE "repos/$REPO/issues/$PR_NUMBER/labels/$(jq -rn --arg l "$l" '$l|@uri')" --silent
+                fi ;;
+            esac
+          done <<< "$current"
+
+          for l in "${final[@]}"; do
+            if ! printf '%s\n' "$current" | grep -qxF "$l"; then
+              echo "付ける: $l"
+              gh api -X POST "repos/$REPO/issues/$PR_NUMBER/labels" -f "labels[]=$l" --silent
+            fi
+          done
+
+          exit "$failed"
