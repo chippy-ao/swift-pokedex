@@ -17,6 +17,7 @@
 | ルールセットの必須チェックと集約ジョブ | 同じ（GitHub の機能で、言語に依らない） | 違いなし。個々のジョブでなく集約ジョブを必須にする | [ci.yml](../../.github/workflows/ci.yml) |
 | 自動ラベル（GitHub Actions の workflow で `gh` を使って付ける） | 同じ（GitHub の機能で、言語に依らない） | 違いなし。Flutter のモノレポでも `actions/labeler` や `gh` で同じことができる。ここでは取得したバイナリを実行するアクションを避け、`gh` / `jq` / `yq` だけで書く | [pr-labels.yml](../../.github/workflows/pr-labels.yml) |
 | `xcodebuild test` / `mise run test` | `flutter test` | 走らせる target と実行先のシミュレーターを明示する。`flutter test` は `test/` を自動で見つける | [mise.toml](../../mise.toml) |
+| 変わったところだけ CI を走らせる（`changes` ジョブ + `if`。skipped は必須チェックで成功扱い） | melos の `--diff` に近い | 変更ファイルから走らせるジョブを決める点は同じ。違いは、飛ばしたジョブを skipped として成功扱いにし、必須チェックをまとめるジョブで結果を報告する必要があること | [ci.yml](../../.github/workflows/ci.yml) |
 
 ## 参考リンク
 
