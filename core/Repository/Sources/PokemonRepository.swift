@@ -1,5 +1,6 @@
 import Dependencies
 import DependenciesMacros
+import Foundation
 import Model
 import NetworkClient
 
@@ -19,15 +20,49 @@ extension PokemonRepository: TestDependencyKey {
 }
 
 extension PokemonRepository: DependencyKey {
-    // 枠のみ。DTO から Model への変換とエラー変換は後続のコミットで実装する
     public static let liveValue = PokemonRepository(
-        fetchList: { _, _ in
-            throw NotImplemented()
+        fetchList: { limit, offset in
+            @Dependency(\.pokeAPIClient) var client
+            do {
+                let dto = try await client.fetchPokemonList(limit, offset)
+                let items = try dto.results.map { entry in
+                    guard let id = pokemonID(fromURL: entry.url) else {
+                        // 1 件でも ID を取り出せなければ、ページ全体を失敗にする
+                        throw LoadError.unavailable
+                    }
+                    return PokemonSummary(id: id, name: entry.name)
+                }
+                return PokemonPage(items: items, hasNext: dto.next != nil)
+            } catch {
+                throw loadError(from: error)
+            }
         }
     )
 }
 
-private struct NotImplemented: Error {}
+/// `https://pokeapi.co/api/v2/pokemon/25/` の末尾の `25` を取り出す。
+private func pokemonID(fromURL url: String) -> Int? {
+    url.split(separator: "/").last.flatMap { Int($0) }
+}
+
+/// NetworkClient のエラーを画面に見せる `LoadError` に変える。
+/// キャンセルは失敗ではないので変換せずそのまま投げ直す。
+private func loadError(from error: any Error) -> any Error {
+    if error is CancellationError || error is LoadError {
+        return error
+    }
+    if let urlError = error as? URLError {
+        switch urlError.code {
+        case .cancelled:
+            return error
+        case .notConnectedToInternet, .networkConnectionLost, .dataNotAllowed:
+            return LoadError.offline
+        default:
+            return LoadError.unavailable
+        }
+    }
+    return LoadError.unavailable
+}
 
 extension DependencyValues {
     public var pokemonRepository: PokemonRepository {
