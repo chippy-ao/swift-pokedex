@@ -1,26 +1,92 @@
 name: ci
 
 # Lint と Build / Test。必須チェックにするのは、集約ジョブの ci-status だけ（ADR-0013）。
+#
+# main への push では走らせない。ルールセットが strict（main に追いついていないとマージできない）で、
+# マージ方法も merge commit だけなので、マージコミットのツリーは PR で CI が通った head と同じになる。
+# main で同じものを再テストしても得るものがない。
+#
+# on.pull_request.paths は使わない。ワークフローごと飛ぶと、必須チェックの ci-status が
+# Pending のまま残ってマージできなくなる（GitHub Docs「Troubleshooting required status checks」）。
+# 代わりに changes ジョブで変更ファイルを調べ、ジョブ単位で if で飛ばす。
+# 条件で skipped になったジョブは成功として扱われる。
 on:
   pull_request:
-    branches: [main]
-  push:
     branches: [main]
 
 permissions: {}
 
-# 同じ PR の古い実行は止める。main への push は止めない（run_id で別グループにする）。
+# 同じ PR の古い実行は止める
 concurrency:
-  group: ci-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.run_id }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 env:
   # GitHub のプレビューイメージ xcode-27 に入っている Xcode
   DEVELOPER_DIR: /Applications/Xcode_27.2.app
 
 jobs:
+  # 変更ファイルから、重いジョブを走らせるかを決める。PR のコードは取得も実行もしない。
+  changes:
+    name: changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      # 変更ファイルの取得に使う
+      pull-requests: read
+    outputs:
+      swift: ${{ steps.filter.outputs.swift }}
+      workflows: ${{ steps.filter.outputs.workflows }}
+    steps:
+      - id: filter
+        name: 変更ファイルを調べる
+        env:
+          # スクリプトインジェクションを避けるため、${{ }} を run に直接埋めず env 経由で渡す
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          # リネーム前のパスも見る（Swift のファイルを docs などに移したときに取りこぼさないため）。
+          # 1 ページ最大 100 件、全体で 3000 件まで取れる（GitHub Docs: List pull request files）
+          files=$(gh api --paginate "repos/$REPO/pulls/$PR_NUMBER/files" | jq -s 'add // []')
+          names=$(printf '%s' "$files" \
+            | jq -r '.[] | [.filename, (.previous_filename // empty)][]' \
+            | sort -u)
+
+          # lint / build-test の対象。.swift には Package.swift と scripts/ 内の Swift も含まれる。
+          # ci.yml 自身の変更でも走らせて、この判定の変更を PR で確かめられるようにする。
+          swift_re='\.swift$|(^|/)Package\.resolved$|^app/|^mise\.toml$|^\.swiftlint\.yml$|^\.swift-format$|^\.github/workflows/ci\.yml$'
+          # lint だけ走らせる対象（actionlint のため）
+          workflows_re='^\.github/workflows/|^\.github/actionlint\.yaml$'
+
+          # 上限（3000 件）に達した PR は取りこぼしの恐れがあるので、Swift に関わるものとして倒す
+          file_count=$(printf '%s' "$files" | jq 'length')
+          truncated=false
+          [ "$file_count" -ge 3000 ] && truncated=true
+
+          swift_hits=$(printf '%s\n' "$names" | grep -E "$swift_re" || true)
+          workflows_hits=$(printf '%s\n' "$names" | grep -E "$workflows_re" || true)
+
+          swift=false
+          workflows=false
+          [ -n "$swift_hits" ] && swift=true
+          [ "$truncated" = true ] && swift=true
+          [ -n "$workflows_hits" ] && workflows=true
+
+          echo "swift=$swift"
+          printf '%s\n' "$swift_hits"
+          echo "workflows=$workflows"
+          printf '%s\n' "$workflows_hits"
+
+          echo "swift=$swift" >> "$GITHUB_OUTPUT"
+          echo "workflows=$workflows" >> "$GITHUB_OUTPUT"
+
   lint:
     name: lint
+    needs: changes
+    if: needs.changes.outputs.swift == 'true' || needs.changes.outputs.workflows == 'true'
     runs-on: xcode-27
     timeout-minutes: 15
     permissions:
@@ -34,6 +100,8 @@ jobs:
 
   build-test:
     name: build-test
+    needs: changes
+    if: needs.changes.outputs.swift == 'true'
     runs-on: xcode-27
     timeout-minutes: 45
     permissions:
@@ -47,19 +115,25 @@ jobs:
 
   ci-status:
     name: ci-status
-    needs: [lint, build-test]
+    needs: [changes, lint, build-test]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: {}
     steps:
-      - name: 全ジョブの成功を確認する
+      # changes は必ず success。lint と build-test は success か skipped（対象外で飛ばした）なら成功。
+      # failure、cancelled、changes の skipped などは失敗にする。
+      - name: 全ジョブの結果を確認する
         env:
-          RESULTS: ${{ join(needs.*.result, ' ') }}
+          CHANGES: ${{ needs.changes.result }}
+          LINT: ${{ needs.lint.result }}
+          BUILD_TEST: ${{ needs.build-test.result }}
         run: |
-          echo "results: $RESULTS"
-          for r in $RESULTS; do
-            if [ "$r" != "success" ]; then
-              exit 1
-            fi
+          echo "changes: $CHANGES, lint: $LINT, build-test: $BUILD_TEST"
+          [ "$CHANGES" = "success" ] || exit 1
+          for r in "$LINT" "$BUILD_TEST"; do
+            case "$r" in
+              success|skipped) ;;
+              *) exit 1 ;;
+            esac
           done
