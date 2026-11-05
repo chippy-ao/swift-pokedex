@@ -117,9 +117,10 @@ struct NetworkClientURLSessionTests {
     @Test("URLError は包まずにそのまま届く") func propagatesURLErrorUnwrapped() async {
         let client = makeClient { _ in throw URLError(.notConnectedToInternet) }
 
-        await #expect(throws: URLError(.notConnectedToInternet)) {
+        let error = await #expect(throws: URLError.self) {
             try await client.fetchPokemonList(20, 0)
         }
+        #expect(error?.code == .notConnectedToInternet)
     }
 
     @Test("壊れたJSONはDecodingErrorになる") func brokenJSONThrowsDecodingError() async {
