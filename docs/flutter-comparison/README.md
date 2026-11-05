@@ -1,31 +1,39 @@
-# Swift / iOS と Flutter の対応表
+# Swift と Dart / Flutter の比較ノート
 
-学習用に、このリポジトリで使う Swift / iOS の概念やツールと、Flutter / Dart での相当を残します。Flutter の経験から Swift の世界を読み解くための表で、仕様やルールではありません。
+Swift の言語機能と Apple 標準の部品を、Dart / Flutter の同じ層のものと比べる、自分用の学習ノートです。仕様やルールではありません。
 
-## ファイルの一覧
+## 入れる範囲
 
-| ファイル | 分野 |
+- Swift に関係することだけを入れます。Swift の言語機能、Apple 標準（Foundation、URLSession、Xcode など）、Swift のツール（swift-format、SwiftLint など）、Swift の外部ライブラリです。
+- 言語に依らないツール（mise、prek、committed、GitHub Actions など）は入れません。
+- 比べる相手は、言語は言語どうし、標準は標準どうし、外部ライブラリは外部ライブラリどうしです。Dart 側は普段のアプリ開発で使うものに合わせます。
+
+## 書き方
+
+- 1 Issue 1 ファイルで、その Issue で初めて出てきたものを書きます。ファイル名は `issue-<番号>-<名前>.md` です。
+- 理解が進んだら、Issue ごとのファイルを分野ごとにまとめ直すことがあります。
+- 前の Issue で説明した言葉は、書き直さずにその項目へリンクします。
+- 1 項目は次の順に書きます。
+  1. 何の話か
+  2. 意味
+  3. Swift のコード
+  4. Dart のコード
+  5. 違いと間違えやすいところ
+  6. ダメな例（必要なときだけ）
+  7. 出典（公式ドキュメントなど。推測で書かない）
+
+## ノートの一覧
+
+| Issue | ノート |
 | --- | --- |
-| [tooling.md](tooling.md) | 開発ツール（バージョン管理、Git フック、Lint、整形、テストの実行、CI、依存の更新） |
-| [project-structure.md](project-structure.md) | プロジェクトの構成（Package.swift、Xcode プロジェクト、テストプラン、依存チェック） |
-| [networking.md](networking.md) | 通信とエラー（JSON のデコード、URLSession、throws、キャッシュ、テストのスタブ） |
+| #2 | [Package.swift とモジュールの骨組み](issue-02-package-structure.md) |
+| #3 | [Lint と整形（swift-format と SwiftLint）](issue-03-lint.md) |
+| #4 | [CI ワークフロー](issue-04-ci.md) |
+| #6 | [NetworkClient と API の共通部分](issue-06-network-client.md) |
 
-すでに別のドキュメントにある Flutter との対応は、コピーせずにリンクします。
+## 外部ライブラリの対応表
+
+すでに別のドキュメントにある対応は、コピーせずにリンクします。
 
 - モジュールごとの対応: [モジュール一覧](../package-dependencies.md#モジュール一覧)の「Flutter 版で相当するパッケージ」列
 - ライブラリの対応: [Flutter のよく使うパッケージとの対応](../package-dependencies.md#flutter-のよく使うパッケージとの対応)
-
-## 表の書き方
-
-各ファイルの表の列は次の 4 つで固定します。
-
-| 列 | 書くこと |
-| --- | --- |
-| Swift / iOS | 概念やツールの名前 |
-| Flutter での相当 | 近いもの。無いときは「相当なし」と書き、短く説明する |
-| 違い | 必ず埋める。例えが当てはまらない点、誤解しやすい点を 1 行で |
-| このリポジトリで使っている場所 | リポジトリ内のファイルへの相対リンク |
-
-- 内容は公式ドキュメントで確かめられる事実に限り、各ファイルの末尾に参考リンクを置きます。推測で書きません。
-- 行を足すときは、既存のファイルの該当する分野の表に足します。
-- 新しい分野（例: 状態管理、ルーティング、async）は、ファイルを足してこの README の一覧に載せます。
