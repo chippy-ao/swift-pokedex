@@ -15,6 +15,10 @@ let package = Package(
         .library(name: "DatabaseSwiftData", targets: ["DatabaseSwiftData"]),
         .library(name: "DatastoreUserDefaults", targets: ["DatastoreUserDefaults"]),
     ],
+    dependencies: [
+        .package(url: "https://github.com/pointfreeco/swift-dependencies", from: "1.17.2"),
+        .package(url: "https://github.com/apple/swift-http-types", from: "1.8.0"),
+    ],
     targets: [
         // feature
         .target(
@@ -70,7 +74,11 @@ let package = Package(
         ),
         .target(
             name: "Repository",
-            dependencies: ["NetworkClient", "Database", "Datastore", "Model", "Common"],
+            dependencies: [
+                "NetworkClient", "Database", "Datastore", "Model", "Common",
+                .product(name: "Dependencies", package: "swift-dependencies"),
+                .product(name: "DependenciesMacros", package: "swift-dependencies"),
+            ],
             path: "core/Repository/Sources"
         ),
         .testTarget(
@@ -107,7 +115,11 @@ let package = Package(
         // core: interface
         .target(
             name: "NetworkClient",
-            dependencies: ["Common"],
+            dependencies: [
+                "Common",
+                .product(name: "Dependencies", package: "swift-dependencies"),
+                .product(name: "DependenciesMacros", package: "swift-dependencies"),
+            ],
             path: "core/NetworkClient/Sources"
         ),
         .testTarget(
@@ -139,7 +151,12 @@ let package = Package(
         // core: 実装（依存してよいのは App ターゲットだけ）
         .target(
             name: "NetworkClientURLSession",
-            dependencies: ["NetworkClient"],
+            dependencies: [
+                "NetworkClient",
+                .product(name: "HTTPTypes", package: "swift-http-types"),
+                .product(name: "HTTPTypesFoundation", package: "swift-http-types"),
+                .product(name: "Dependencies", package: "swift-dependencies"),
+            ],
             path: "core/NetworkClientURLSession/Sources"
         ),
         .testTarget(
