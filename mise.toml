@@ -30,6 +30,8 @@ run = [
 [tasks.test]
 description = "xcodebuild test（scheme Pokedex、テストプラン AllTests）を iOS Simulator で実行する"
 # 既定のシミュレーターは、利用可能な iPhone のうち最後のもの。
+# -skipMacroValidation: Swift のマクロはサンドボックスで動き（WWDC23 Expand on Swift macros）、
+# 承認ボタンは中身を見せないので守りとして薄い。守りは Package.resolved の固定と Renovate の PR の確認。
 # 別のものを使うときは POKEDEX_TEST_DESTINATION を指定する（例: "platform=iOS Simulator,name=iPhone 17"）。
 run = """
 #!/usr/bin/env bash
@@ -44,5 +46,6 @@ xcodebuild test \\
   -scheme Pokedex \\
   -testPlan AllTests \\
   -destination "${POKEDEX_TEST_DESTINATION}" \\
+  -skipMacroValidation \\
   | xcbeautify
 """
