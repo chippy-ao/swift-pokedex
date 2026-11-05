@@ -95,8 +95,8 @@ flowchart TD
 
 | モジュール | 責務 |
 | --- | --- |
-| Common | 共通ユーティリティ、エラー型 |
-| Model | アプリ全体で使うモデル。Repository が返し、feature と SharedUI もそのまま使う（Sendable な struct / enum） |
+| Common | 共通ユーティリティ |
+| Model | アプリ全体で使うモデルと、画面に見せるエラー型（LoadError）。Repository が返し、feature と SharedUI もそのまま使う（Sendable な struct / enum） |
 | NetworkClient | interface。PokeAPIClient と DTO |
 | NetworkClientURLSession | 実装。URLSession + swift-http-types |
 | Database | interface。FavoriteStore など |

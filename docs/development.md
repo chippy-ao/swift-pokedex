@@ -36,6 +36,8 @@ fastlane や CocoaPods を使わないので、Ruby と Bundler は入れませ�
 
 `mise run test` は iOS Simulator で実行します。既定では、利用できる iPhone のシミュレーターのうち最後のものを使います。別のものを使うときは、環境変数 `POKEDEX_TEST_DESTINATION` に `xcodebuild` の `-destination` の値（例: `platform=iOS Simulator,name=iPhone 17`）を指定します。
 
+このタスクではマクロの承認ダイアログを `-skipMacroValidation` で省きます（理由は [mise.toml](../mise.toml) のコメント）。Xcode の GUI では引き続き承認を求められます。
+
 ## コミット
 
 [Conventional Commits](https://www.conventionalcommits.org/ja/v1.0.0/) に従います（[ADR-0010](adr/0010-commit-and-pr-convention.md)）。
