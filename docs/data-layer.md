@@ -143,27 +143,7 @@ extension DependencyValues {
 
 ### swift-http-types による GET の例
 
-[swift-http-types](https://github.com/apple/swift-http-types) の `HTTPRequest` と、`HTTPTypesFoundation` が提供する `URLSession` 拡張を使います。以下は例です（実装は `core/NetworkClientURLSession` の `get`）。URLSession は 2xx 以外のステータスでも投げないので、自分で調べて `PokeAPIError` を投げます。
-
-```swift
-import Foundation
-import HTTPTypes
-import HTTPTypesFoundation
-import NetworkClient
-
-func get<Response: Decodable>(
-  _ type: Response.Type,
-  path: String,
-  session: URLSession
-) async throws -> Response {
-  let request = HTTPRequest(method: .get, scheme: "https", authority: "pokeapi.co", path: path)
-  let (data, response) = try await session.data(for: request)
-  guard (200..<300).contains(response.status.code) else {
-    throw PokeAPIError.httpStatus(response.status.code)
-  }
-  return try decoder.decode(Response.self, from: data)
-}
-```
+[swift-http-types](https://github.com/apple/swift-http-types) の `HTTPRequest` と、`HTTPTypesFoundation` が提供する `URLSession` 拡張を使います。実装は [PokeAPIClient+Live.swift](../core/NetworkClientURLSession/Sources/PokeAPIClient+Live.swift) の GET です。URLSession は 2xx 以外のステータスでも投げないので、ステータスを自分で調べて `PokeAPIError` を投げています。
 
 ### DTO から Model への変換
 
