@@ -352,13 +352,15 @@ class PokeApiClient {
 
 - Dart のコードは、1 つの isolate の中では 1 本のスレッドで動き、他のコードが割り込めるのは `await` の地点だけです。そのため、普段の `async` / `await` では「同時に触って壊れる」ことが起きず、印が要りません。
 - Swift は複数のスレッドで同時に動けるので、安全であることを型システムで示す必要があります。`struct` の中身がすべて `Sendable` なら、`struct` も `Sendable` になれます。`@Sendable` のクロージャがキャプチャする値も `Sendable` である必要があります。
+- モジュールの中だけで使う（`public` でない）`struct` / `enum` は、保存プロパティや関連値がすべて `Sendable` なら、コンパイラが暗黙に `Sendable` とみなします。`public` な型は暗黙には推論されないので、`Sendable` と自分で書きます（SE-0302 では、`frozen` な `public` 型だけ例外です）。
+- `public` な型で暗黙にしないのは、`Sendable` であることが他のモジュールとの約束（公開 API）になるからです。あとで中身を変えたときに、使う側を黙って壊さないようにしています。[PokemonSummary](../../core/Model/Sources/PokemonSummary.swift) や [PokemonPage](../../core/Model/Sources/PokemonPage.swift) に `Sendable` と書いてあるのはこのためです。
 - `@Sendable` は**クロージャ**に付ける属性で、`Sendable` は**型**に準拠させるプロトコルです。別物ですが、同じ「同時に使っても安全」を表します。
 - 補足: Dart にも Isolate があり、Isolate 間はメモリを共有せず、メッセージを渡します。Swift の `Sendable` が守る問題は、Dart では「共有しない」ことで避けています。Isolate は普段のアプリ開発ではあまり使いません。
 
 **出典:**
 
 - [Concurrency（Sendable Types）](https://docs.swift.org/swift-book/documentation/the-swift-programming-language/concurrency/#Sendable-Types)
-- [SE-0302: Sendable and @Sendable closures](https://github.com/swiftlang/swift-evolution/blob/main/proposals/0302-concurrent-value-and-concurrent-closures.md)
+- [SE-0302: Sendable and @Sendable closures](https://github.com/swiftlang/swift-evolution/blob/main/proposals/0302-concurrent-value-and-concurrent-closures.md)（「Implicit struct/enum conformance to `Sendable`」の節）
 - [Dart の concurrency（isolates）](https://dart.dev/language/concurrency)
 - [Dart の asynchronous programming](https://dart.dev/libraries/async/async-await)
 
@@ -904,7 +906,7 @@ dev_dependencies:
 | `static let` | `static final` / トップレベルの `final` | 実行時に 1 回だけ初期化される。`static const` はコンパイル時定数 | [PokeAPISession.swift](../../core/NetworkClientURLSession/Sources/PokeAPISession.swift) |
 | `get<Response: Decodable>(_ type: Response.Type)` | `get<T>(fromJson)` | 型から `init(from:)` を呼べるので、型を渡すだけで済む | [PokeAPIClient+Live.swift](../../core/NetworkClientURLSession/Sources/PokeAPIClient+Live.swift) |
 | `Equatable` / `Hashable` / `Identifiable` / `Codable` の自動準拠 | 言語では手書き。外部ライブラリなら freezed + json_serializable | 言語が合成するので生成ファイル不要。全プロパティが準拠済みのときだけ合成される | [PokemonSummary.swift](../../core/Model/Sources/PokemonSummary.swift) |
-| `Sendable` / `@Sendable` | 相当なし（isolate 内は 1 本のスレッド） | 同時に触っても安全かをコンパイラが検査する | [PokeAPIClient.swift](../../core/NetworkClient/Sources/PokeAPIClient.swift) |
+| `Sendable` / `@Sendable` | 相当なし（isolate 内は 1 本のスレッド） | 同時に触っても安全かをコンパイラが検査する（`public` な型は自分で `Sendable` と書く） | [PokeAPIClient.swift](../../core/NetworkClient/Sources/PokeAPIClient.swift) |
 | `public` / `internal` / `private`、`@testable import` | `_`、`lib/src`、`@visibleForTesting` | 単位は Swift がモジュール、Dart がファイル。`@visibleForTesting` は警告だけ | [NetworkClientURLSessionTests.swift](../../core/NetworkClientURLSession/Tests/NetworkClientURLSessionTests.swift) |
 | `throws` / `try` / `any Error` / `do-catch` | `throw` / `try-catch` | Swift は `throws` が型に入る。キャンセルは `CancellationError`、Dart の `Future` に標準のキャンセルはない | [PokemonRepository.swift](../../core/Repository/Sources/PokemonRepository.swift) |
 | マクロ（`@DependencyClient`） | 言語には相当なし。外部ツールの build_runner が近い | マクロはコンパイル中に展開され、生成ファイルが残らない | [PokeAPIClient.swift](../../core/NetworkClient/Sources/PokeAPIClient.swift) |
