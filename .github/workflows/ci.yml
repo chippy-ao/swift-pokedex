@@ -50,8 +50,8 @@ jobs:
 
           # リネーム前のパスも見る（Swift のファイルを docs などに移したときに取りこぼさないため）。
           # 1 ページ最大 100 件、全体で 3000 件まで取れる（GitHub Docs: List pull request files）
-          names=$(gh api --paginate "repos/$REPO/pulls/$PR_NUMBER/files" \
-            | jq -s 'add // []' \
+          files=$(gh api --paginate "repos/$REPO/pulls/$PR_NUMBER/files" | jq -s 'add // []')
+          names=$(printf '%s' "$files" \
             | jq -r '.[] | [.filename, (.previous_filename // empty)][]' \
             | sort -u)
 
@@ -61,12 +61,18 @@ jobs:
           # lint だけ走らせる対象（actionlint のため）
           workflows_re='^\.github/workflows/|^\.github/actionlint\.yaml$'
 
+          # 上限（3000 件）に達した PR は取りこぼしの恐れがあるので、Swift に関わるものとして倒す
+          file_count=$(printf '%s' "$files" | jq 'length')
+          truncated=false
+          [ "$file_count" -ge 3000 ] && truncated=true
+
           swift_hits=$(printf '%s\n' "$names" | grep -E "$swift_re" || true)
           workflows_hits=$(printf '%s\n' "$names" | grep -E "$workflows_re" || true)
 
           swift=false
           workflows=false
           [ -n "$swift_hits" ] && swift=true
+          [ "$truncated" = true ] && swift=true
           [ -n "$workflows_hits" ] && workflows=true
 
           echo "swift=$swift"

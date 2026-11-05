@@ -164,12 +164,12 @@ SwiftLint で無効にしたルールと理由は `.swiftlint.yml` のコメン�
   | `conventions-status` | [conventions.yml](../.github/workflows/conventions.yml) | `pr-title`、`commit-messages` |
   | `ci-status` | [ci.yml](../.github/workflows/ci.yml) | `changes`、`lint`、`build-test` |
 
-- `ci.yml` は PR でだけ走り、main への push では走りません。マージ方法が merge commit だけで、main に追いついていないとマージできないので、マージコミットのツリーは PR で CI が通ったものと同じになるためです。
+- `ci.yml` は PR でだけ走り、main への push では走りません。理由は [ci.yml](../.github/workflows/ci.yml) 冒頭のコメントを参照してください。
 - `lint` と `build-test` は、`changes` ジョブが PR の変更ファイルを調べた結果で走らせるかを決めます。対象ファイルの一覧は [ci.yml](../.github/workflows/ci.yml) の `changes` ジョブを参照してください。
   - Swift に関わる変更（Swift のコードや設定など）: `lint` と `build-test` を走らせる
   - ワークフローだけの変更: `lint` だけ走らせる（actionlint のため）
   - docs だけの変更など: どちらも走らせない（skipped）
-- 走らせなかったジョブは skipped になり、成功として扱われます。`ci-status` は `changes` が success で、`lint` と `build-test` が success か skipped のときに成功します。`on.pull_request.paths` を使うと必須チェックが Pending のまま残るので使いません。
+- 走らせなかったジョブは skipped になり、成功として扱われます。`ci-status` は `changes` が success で、`lint` と `build-test` が success か skipped のときに成功します。`on.pull_request.paths` を使わない理由は [ci.yml](../.github/workflows/ci.yml) 冒頭のコメントを参照してください。
 - `xcode-27` は Xcode 27 を入れた GitHub のプレビューのランナーイメージです。ジョブの環境変数 `DEVELOPER_DIR=/Applications/Xcode_27.2.app` で Xcode のバージョンを選び、README の「動作環境」と揃えます。正式なラベルになったら、`.github/actionlint.yaml` の登録を外します。
 - CI から呼ぶコマンドは mise のタスクに揃えます。
 
