@@ -145,6 +145,8 @@ SwiftLint で無効にしたルールと理由は `.swiftlint.yml` のコメン�
 
 - GitHub の「Update branch」ボタンは、PR のブランチに main のマージコミットを作るので、リポジトリの設定でオフにします。
 - main には直接 push できません。管理者も、ルールを迂回できるのは PR のマージ時だけです。
+- マージに承認は求めません。コラボレーターが 1 人で、自分の PR は承認できないためです。代わりに、必須のステータスチェックが通ることを条件にします。
+- ルールを迂回する権限（bypass）は緊急用で、普段のマージでは使いません。bypass はステータスチェックも迂回するためです。
 
 ### ステータスチェック
 
@@ -205,7 +207,7 @@ GitHub Actions、mise のツール、Swift のパッケージの更新は、[Men
 
 - 月 1 回、minor / patch / digest を「GitHub Actions」「mise のツール」「Swift のパッケージ」の 3 つの PR にまとめます。
 - major はまとめず、依存ごとに別の PR にします。
-- 自動マージはしません。差分を読んでから、通常の PR と同じ流れ（ステータスチェックとレビュー）でマージします。
+- 自動マージはしません。差分を読み、ステータスチェックが通ってからマージします。
 - 全 PR に `dependencies` ラベルが付きます。公開から 3 日たっていないリリースは更新の対象にしません。
 - 脆弱性の修正は、月 1 回の予定を待たずに、タイトルの末尾に `[SECURITY]` が付いた PR が出ます。入力は GitHub の Dependabot alerts で、alerts はオン、Dependabot security updates はオフにします。`dependabot.yml` は作りません。
 - Renovate の PR のタイトルとコミットは、`ci:`（GitHub Actions）か `build:`（mise と Swift のパッケージ）で始まる日本語の説明にして、コミット規約の検査を通します。
