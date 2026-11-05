@@ -8,6 +8,7 @@ Package.swift、Xcode プロジェクト、テストプラン、依存チェッ�
 | SwiftPM の target / product | melos 配下の各 package / 公開ライブラリ | target がモジュール（ビルドの単位）で、product は外部に公開するもの。公開しない target は同じパッケージ内でだけ使える | [Package.swift](../../Package.swift) |
 | app/App.xcodeproj | Flutter の ios/Runner.xcodeproj に近い | Flutter の Runner は Flutter アプリの iOS 側の入れ物だが、こちらはアプリ本体の target を持つ | [app/App.xcodeproj](../../app/App.xcodeproj) |
 | テストプラン（AllTests.xctestplan） | 相当なし | `flutter test` は `test/` を自動で見つけるが、Xcode は走らせる target をテストプランに明示する | [app/AllTests.xctestplan](../../app/AllTests.xctestplan) |
+| テスト target の依存（`.testTarget(dependencies:)`） | pubspec.yaml の `dev_dependencies`。`test/` は `dependencies` も使える | SwiftPM はテスト target ごとに依存を書く。このリポジトリは対象の依存の型もテストに使えるよう、対象の target が依存するものまで許している | [Package.swift](../../Package.swift)、[依存チェック](../package-dependencies.md#依存チェック) |
 | 依存チェックのスクリプト | depend_on_referenced_packages lint + 層の許可リスト | Flutter の標準には層の許可リストが無い。このリポジトリは docs の依存グラフを許可リストにしている | [scripts/check-dependencies.swift](../../scripts/check-dependencies.swift) |
 | `swift package describe` | `melos list --graph` / `dart pub deps` | 依存の一覧を JSON でも出せるので、スクリプトから読める | [scripts/check-dependencies.swift](../../scripts/check-dependencies.swift) |
 

@@ -35,8 +35,8 @@ swift-pokedex/
 │   ├─ PokedexFeature/          … Sources/{List,Detail,Favorites}、Tests、README.md
 │   └─ SettingsFeature/         … Sources、Tests、README.md
 └─ core/
-    ├─ Common/                  … 共通ユーティリティ、エラー型
-    ├─ Model/                   … アプリ全体で使うモデル（Sendable な struct / enum）
+    ├─ Common/                  … 共通ユーティリティ
+    ├─ Model/                   … アプリ全体で使うモデルと、画面に見せるエラー型 LoadError（Sendable な struct / enum）
     ├─ NetworkClient/           … interface: PokeAPIClient と DTO（ネットワーク用モデル）
     ├─ NetworkClientURLSession/ … 実装: URLSession + swift-http-types
     ├─ Database/                … interface: FavoriteStore など
@@ -77,8 +77,8 @@ app だけは `Sources` ではなくターゲット名のフォルダにしま�
 | `app` | Pokedex | app | `@main`、ルート View、TabView、タブごとの NavigationStack と Router、テーマ適用。実装モジュールをリンクして注入する唯一の場所 | `app/mobile` |
 | `feature/PokedexFeature` | PokedexFeature | feature | 図鑑ドメイン（List / Detail / Favorites） | `feature/*` |
 | `feature/SettingsFeature` | SettingsFeature | feature | 設定（テーマ色、ライセンス表示、言語設定への誘導） | `feature/*` |
-| `core/Common` | Common | core | 共通ユーティリティ、エラー型 | `core/common` 相当 |
-| `core/Model` | Model | core | アプリ全体で使うモデル。データ層（Repository）が返し、feature と SharedUI もそのまま使う（Sendable な struct / enum） | `core/model` 相当 |
+| `core/Common` | Common | core | 共通ユーティリティ | `core/common` 相当 |
+| `core/Model` | Model | core | アプリ全体で使うモデルと、画面に見せるエラー型（LoadError）。データ層（Repository）が返し、feature と SharedUI もそのまま使う（Sendable な struct / enum） | `core/model` 相当 |
 | `core/NetworkClient` | NetworkClient | core-interface | PokeAPIClient（API レベルの interface）と DTO | network 系 interface パッケージ |
 | `core/NetworkClientURLSession` | NetworkClientURLSession | core-impl | URLSession + swift-http-types による実装 | network 系の実装パッケージ |
 | `core/Database` | Database | core-interface | FavoriteStore などの interface | `database` |
