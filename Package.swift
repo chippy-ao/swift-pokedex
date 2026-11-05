@@ -83,7 +83,10 @@ let package = Package(
         ),
         .testTarget(
             name: "RepositoryTests",
-            dependencies: ["Repository", "TestSupport"],
+            dependencies: [
+                "Repository", "NetworkClient", "Model", "TestSupport",
+                .product(name: "Dependencies", package: "swift-dependencies"),
+            ],
             path: "core/Repository/Tests"
         ),
         .target(
@@ -161,7 +164,7 @@ let package = Package(
         ),
         .testTarget(
             name: "NetworkClientURLSessionTests",
-            dependencies: ["NetworkClientURLSession", "TestSupport"],
+            dependencies: ["NetworkClientURLSession", "NetworkClient", "TestSupport"],
             path: "core/NetworkClientURLSession/Tests"
         ),
         .target(

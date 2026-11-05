@@ -274,13 +274,19 @@ func checkDependencyGraph(in package: PackageDescription) -> [String] {
             (target.targetDependencies ?? []).map { ($0, graph.node(forDependency: $0)) }
             + (target.productDependencies ?? []).map { ($0, graph.node(forDependency: $0)) }
         if target.type == "test" {
-            // テスト target は、名前から Tests を除いた自分の target と TestSupport だけを許可する。
+            // テスト target は、名前から Tests を除いた対象の target、TestSupport、
+            // 対象の target の直接の依存（target と product）だけを許可する。
             let subject =
                 target.name.hasSuffix("Tests") ? String(target.name.dropLast(5)) : target.name
-            for (name, _) in dependencies where name != subject && name != "TestSupport" {
+            let subjectTarget = package.targets.first { $0.name == subject }
+            let allowedNames = Set(
+                [subject, "TestSupport"]
+                    + (subjectTarget?.targetDependencies ?? [])
+                    + (subjectTarget?.productDependencies ?? []))
+            for (name, _) in dependencies where !allowedNames.contains(name) {
                 errors.append(
                     "Package.swift: テスト target \(target.name) が \(name) に依存していますが、"
-                        + "許可されているのは \(subject) と TestSupport だけです。\(guide)")
+                        + "許可されているのは \(subject)、TestSupport、\(subject) が依存しているものだけです。\(guide)")
             }
             continue
         }
