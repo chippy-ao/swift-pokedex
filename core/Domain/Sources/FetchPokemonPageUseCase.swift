@@ -15,9 +15,22 @@ extension FetchPokemonPageUseCase: TestDependencyKey {
 }
 
 extension FetchPokemonPageUseCase: DependencyKey {
-    // 実装前のスタブ。誤った値を返す。
+    /// 1 ページの件数。PokeAPI の初期値で、1 画面を少し超える量。
+    private static let pageSize = 20
+
+    /// 一覧に入れる ID の上限。PokeAPI の `/pokemon` は 1..1025 のあとに、
+    /// フォーム違い（10001〜）が続く。フォーム違いは詳細で扱う。
+    /// 世代で絞り込むときは、この「止める位置」を世代の終わりに差し替える。
+    private static let lastListedID = 10000
+
     public static let liveValue = FetchPokemonPageUseCase(
-        execute: { _ in PokemonPage(items: [], hasNext: true) }
+        execute: { offset in
+            @Dependency(\.pokemonRepository) var repository
+            let page = try await repository.fetchList(pageSize, offset)
+            let items = page.items.filter { $0.id <= lastListedID }
+            let reachedEnd = items.count < page.items.count
+            return PokemonPage(items: items, hasNext: reachedEnd ? false : page.hasNext)
+        }
     )
 }
 
