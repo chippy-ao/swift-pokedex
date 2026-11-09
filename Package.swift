@@ -18,6 +18,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/pointfreeco/swift-dependencies", from: "1.17.2"),
         .package(url: "https://github.com/apple/swift-http-types", from: "1.8.0"),
+        .package(url: "https://github.com/kean/Nuke", from: "13.2.3"),
     ],
     targets: [
         // feature
@@ -104,7 +105,10 @@ let package = Package(
         ),
         .target(
             name: "DesignSystem",
-            dependencies: ["Common"],
+            dependencies: [
+                "Common",
+                .product(name: "NukeUI", package: "Nuke"),
+            ],
             path: "core/DesignSystem/Sources"
         ),
         .testTarget(
