@@ -72,10 +72,10 @@ feature をまたぐ遷移は現時点ではありません。必要になった
 | --- | --- |
 | 表示項目 | 画像(小さいドット絵 `spriteURL`)、ID、名前。タイプは出さない(下の「一覧の決めごと」) |
 | 操作 | 最後の行が画面に出たら次ページ取得、行タップで Detail へ、検索欄への入力、タイプフィルタの選択 |
-| PokeAPI | `GET /pokemon?limit=&offset=`(ページング)、`GET /pokemon/{id or name}`(行にタイプ等を出す場合)、`GET /type/{name}`(タイプフィルタ) |
+| PokeAPI | `GET /pokemon?limit=&offset=`(ページング)、`GET /type/{name}`(タイプフィルタ) |
 | UseCase 案 | `FetchPokemonPageUseCase`、`FetchAllPokemonNamesUseCase`、`FetchPokemonByTypeUseCase` |
 
-ページングは limit / offset 方式で、1ページは 20 件です(PokeAPI の初期値で、1 画面を少し超える量)。ID は `results` の url 末尾から取り出します。名前検索の API は無いため、全件の名前リスト(limit を count 以上にして1回取得)をキャッシュし、ローカルで絞り込みます。
+ページングは limit / offset 方式で、1ページは 20 件です(PokeAPI の初期値で、1 画面を少し超える量)。ID の取り出し方は [docs/data-layer.md](../../docs/data-layer.md) を参照してください。名前検索の API は無いため、全件の名前リスト(limit を count 以上にして1回取得)をキャッシュし、ローカルで絞り込みます。
 
 一覧の決めごとです。
 
@@ -83,29 +83,23 @@ feature をまたぐ遷移は現時点ではありません。必要になった
 - ID が 10000 を超えるフォーム違いは一覧に入れず、詳細で扱います。PokeAPI の `/pokemon` は 1..1025 のあとに 10001.. が続くので、読んだページに ID > 10000 があれば捨てて `hasNext = false` にします。これは図鑑のきまりなので Domain の `FetchPokemonPageUseCase` で行います。
 - 行にタイプは出しません。出すには 1 行ごとに詳細 API を呼ぶことになり、PokeAPI の Fair Use Policy に反しやすいためです。出したくなったら、この理由を見直してから決めます。
 
-State / Action の案です。
+State / Action です。一覧の実装に合わせてあり、検索とタイプフィルタは #10、#11 で足します。
 
 ```swift
-struct PokemonListState: Equatable {
+struct State: Equatable {
     var items: [PokemonSummary] = []
-    var phase: Phase = .idle          // idle / loading / loaded / failed
+    var phase: Phase = .idle          // idle / loading / loaded / failed(LoadError)
     var hasNext = true
-    var query = ""
-    var selectedType: PokemonType?
 }
 
-enum PokemonListAction {
+enum Action {
     case onAppear
     case reachedBottom
-    case pageResponse(Result<PokemonPage, any Error>)
-    case queryChanged(String)
-    case typeSelected(PokemonType?)
     case retryTapped
-    case rowTapped(id: Int)
-    case delegate(Delegate)
-    enum Delegate { case selectPokemon(id: Int) }
 }
 ```
+
+エラーは `phase = .failed(LoadError)` に入れ、文言は View が `LoadError` から決めます。`CancellationError` は失敗にしません。行タップで Detail へ進む操作は #8 で足します。
 
 検索の debounce は Store が Task を保持して cancel します(`Task.sleep` を使用)。
 
