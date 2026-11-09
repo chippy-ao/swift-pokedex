@@ -2,7 +2,7 @@
 
 - Issue: https://github.com/chippy-ao/swift-pokedex/issues/7
 
-一覧画面で初めて出てきた Apple 標準（SwiftUI の `List`、`.task`、`@State` と `@Observable`）と外部ライブラリ（Nuke）を、Dart / Flutter の同じ層のものと比べる学習ノートです。前の Issue で説明した言葉（`@DependencyClient`、Swift Testing など）は [issue-06-network-client.md](issue-06-network-client.md) を見てください。
+一覧画面で初めて出てきた Apple 標準（SwiftUI の `List`、`.task`、`@State` と `@Observable`、`@ViewBuilder`）と外部ライブラリ（Nuke）を、Dart / Flutter の同じ層のものと比べる学習ノートです。前の Issue で説明した言葉（`@DependencyClient`、Swift Testing など）は [issue-06-network-client.md](issue-06-network-client.md) を見てください。
 
 ## Apple 標準
 
@@ -72,6 +72,80 @@ final controller = ref.watch(pokemonListProvider); // Riverpod の例
 **違いと間違えやすいところ:** Flutter の `ChangeNotifier` は `notifyListeners()` を自分で呼びますが、`@Observable` は読み取りを自動で追跡します。`@State` に入れないと、View が作り直されるたびに Store も作り直されます。
 
 **出典:** [Observation](https://developer.apple.com/documentation/observation)、[State](https://developer.apple.com/documentation/swiftui/state)
+
+### @ViewBuilder と let（body の中で分岐する）
+
+**何の話か:** 状態によって出す View を切り替える書き方です。
+
+**意味:** `body` や `@ViewBuilder` の中では、`if` や `switch` がそのまま View の分岐になり、`let` で値を置けます。一覧では、items が空なら全面表示、あれば `List` と切り替え、`phase` で末尾の表示を `switch` で選んでいます。
+
+```swift
+@ViewBuilder
+private func footer(_ state: State) -> some View {
+    switch state.phase {
+    case .loading: ProgressView()
+    case .failed(let error): Text(message(for: error))
+    case .idle, .loaded: EmptyView()
+    }
+}
+```
+
+```dart
+Widget footer(State state) => switch (state.phase) {
+  Loading() => const CircularProgressIndicator(),
+  Failed(:final error) => Text(message(error)),
+  _ => const SizedBox.shrink(),
+};
+```
+
+**違いと間違えやすいところ:** 何も出さないときは `EmptyView()` を返します。Dart の `SizedBox.shrink()` に近い使い方です。`switch` は全ケースを書かないとコンパイルが通らないので、`phase` に状態を足すと View の直しもれに気づけます。
+
+**出典:** [ViewBuilder](https://developer.apple.com/documentation/swiftui/viewbuilder)
+
+### @MainActor と @Observable の Store
+
+**何の話か:** 画面の状態を 1 か所に持ち、画面だけが読む入れ物です。
+
+**意味:** Store は `@MainActor @Observable final class` で、`send(_ action:)` だけが状態を変えます。画面の更新はメインスレッドで行うので `@MainActor` を付け、`await` のあとに戻っても状態を書き換えられます。`@Dependency` のようにプロパティラッパーで持つ値は `@ObservationIgnored` を付けて監視から外します。
+
+```swift
+@MainActor @Observable
+final class PokemonListStore {
+    private(set) var state = State()
+    @ObservationIgnored @Dependency(\.fetchPokemonPage) private var fetchPokemonPage
+}
+```
+
+```dart
+class PokemonListNotifier extends Notifier<State> {
+  @override
+  State build() => const State();
+  Future<void> load(int offset) async { /* state = ... */ }
+}
+```
+
+**違いと間違えやすいところ:** Riverpod の `Notifier` は `state` に代入すると購読者へ通知されます。`@Observable` は View が読んだプロパティだけを追跡します。Dart は 1 スレッドで動くので、`@MainActor` に当たる指定はありません。
+
+**出典:** [MainActor](https://developer.apple.com/documentation/swift/mainactor)、[Observation](https://developer.apple.com/documentation/observation)
+
+### @discardableResult
+
+**何の話か:** 戻り値を使わなくても警告が出ない関数にする指定です。
+
+**意味:** `send` は読み込みを始めたときだけ `Task` を返し、テストはそれを `await` して完了を待ちます。View は戻り値を使わないので `@discardableResult` を付けています。
+
+```swift
+@discardableResult
+func send(_ action: Action) -> Task<Void, Never>? { ... }
+```
+
+```dart
+Future<void>? send(Action action) { ... } // 呼び出し側が await しなくてもよい
+```
+
+**違いと間違えやすいところ:** Swift は戻り値を捨てると警告が出ます。Dart は `unawaited_futures` の lint を入れたときだけ似た警告が出ます。
+
+**出典:** [Attributes（discardableResult）](https://docs.swift.org/swift-book/documentation/the-swift-programming-language/attributes/)
 
 ## 外部ライブラリ
 
