@@ -60,12 +60,20 @@ struct NetworkClientURLSessionTests {
         return PokeAPIClient.live(session: URLSession(configuration: configuration))
     }
 
+    private static func spriteURL(id: Int) -> URL {
+        URL(
+            string:
+                "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/\(id).png"
+        )!
+    }
+
     private static func response(for request: URLRequest, status: Int) -> HTTPURLResponse {
         HTTPURLResponse(
             url: request.url!, statusCode: status, httpVersion: "HTTP/1.1", headerFields: nil)!
     }
 
-    @Test("一覧のJSONがDTOになる") func decodesListJSONIntoDTO() async throws {
+    @Test("一覧のJSONから id・name・画像のURL・hasNext が作られる")
+    func buildsEntriesFromListJSON() async throws {
         let client = makeClient { request in
             (Self.response(for: request, status: 200), Data(listJSON.utf8))
         }
@@ -75,14 +83,64 @@ struct NetworkClientURLSessionTests {
         #expect(
             dto
                 == PokemonListDTO(
-                    count: 1351,
-                    next: "https://pokeapi.co/api/v2/pokemon?offset=2&limit=2",
-                    previous: nil,
-                    results: [
-                        .init(name: "bulbasaur", url: "https://pokeapi.co/api/v2/pokemon/1/"),
-                        .init(name: "ivysaur", url: "https://pokeapi.co/api/v2/pokemon/2/"),
-                    ]
+                    items: [
+                        .init(id: 1, name: "bulbasaur", spriteURL: Self.spriteURL(id: 1)),
+                        .init(id: 2, name: "ivysaur", spriteURL: Self.spriteURL(id: 2)),
+                    ],
+                    hasNext: true
                 ))
+    }
+
+    @Test("番号は url の末尾から取り出す") func extractsIDFromURLTail() async throws {
+        let client = makeClient { request in
+            let json = """
+                { "count": 2, "next": null, "previous": null, "results": [
+                  { "name": "pikachu", "url": "https://pokeapi.co/api/v2/pokemon/25/" },
+                  { "name": "venusaur-mega", "url": "https://pokeapi.co/api/v2/pokemon/10033/" }
+                ] }
+                """
+            return (Self.response(for: request, status: 200), Data(json.utf8))
+        }
+
+        let dto = try await client.fetchPokemonList(2, 24)
+
+        #expect(
+            dto.items == [
+                .init(id: 25, name: "pikachu", spriteURL: Self.spriteURL(id: 25)),
+                .init(id: 10033, name: "venusaur-mega", spriteURL: Self.spriteURL(id: 10033)),
+            ])
+    }
+
+    @Test("next が null なら hasNext は false") func hasNextIsFalseWhenNextIsNull() async throws {
+        let client = makeClient { request in
+            let json = """
+                { "count": 1, "next": null, "previous": null, "results": [
+                  { "name": "bulbasaur", "url": "https://pokeapi.co/api/v2/pokemon/1/" }
+                ] }
+                """
+            return (Self.response(for: request, status: 200), Data(json.utf8))
+        }
+
+        let dto = try await client.fetchPokemonList(20, 0)
+
+        #expect(dto.hasNext == false)
+    }
+
+    @Test("番号を取り出せない要素があれば一覧全体が unavailable になる")
+    func unparsableIDMakesListUnavailable() async {
+        let client = makeClient { request in
+            let json = """
+                { "count": 2, "next": null, "previous": null, "results": [
+                  { "name": "pikachu", "url": "https://pokeapi.co/api/v2/pokemon/25/" },
+                  { "name": "broken", "url": "https://pokeapi.co/api/v2/pokemon/" }
+                ] }
+                """
+            return (Self.response(for: request, status: 200), Data(json.utf8))
+        }
+
+        await #expect(throws: PokeAPIError.unavailable) {
+            try await client.fetchPokemonList(20, 0)
+        }
     }
 
     @Test("リクエストURLにlimitとoffsetが入る") func requestURLContainsLimitAndOffset() async throws {
@@ -103,35 +161,84 @@ struct NetworkClientURLSessionTests {
         #expect(items == ["limit": "20", "offset": "40"])
     }
 
-    @Test("成功以外のステータスはPokeAPIErrorになる", arguments: [404, 500])
-    func nonSuccessStatusThrowsPokeAPIError(status: Int) async {
+    @Test("成功以外のステータスは unavailable になる", arguments: [404, 500])
+    func nonSuccessStatusBecomesUnavailable(status: Int) async {
         let client = makeClient { request in
             (Self.response(for: request, status: status), Data("{}".utf8))
         }
 
-        await #expect(throws: PokeAPIError.httpStatus(status)) {
+        await #expect(throws: PokeAPIError.unavailable) {
             try await client.fetchPokemonList(20, 0)
         }
     }
 
-    @Test("URLError は包まずにそのまま届く") func propagatesURLErrorUnwrapped() async {
-        let client = makeClient { _ in throw URLError(.notConnectedToInternet) }
+    @Test(
+        "オフラインのURLErrorは offline になる",
+        arguments: [
+            URLError.Code.notConnectedToInternet, .networkConnectionLost, .dataNotAllowed,
+        ])
+    func offlineURLErrorsBecomeOffline(code: URLError.Code) async {
+        let client = makeClient { _ in throw URLError(code) }
 
-        let error = await #expect(throws: URLError.self) {
+        await #expect(throws: PokeAPIError.offline) {
             try await client.fetchPokemonList(20, 0)
         }
-        #expect(error?.code == .notConnectedToInternet)
     }
 
-    @Test("壊れたJSONはDecodingErrorになる") func brokenJSONThrowsDecodingError() async {
+    @Test(
+        "それ以外のURLErrorは unavailable になる",
+        arguments: [URLError.Code.timedOut, .cannotFindHost, .badServerResponse])
+    func otherURLErrorsBecomeUnavailable(code: URLError.Code) async {
+        let client = makeClient { _ in throw URLError(code) }
+
+        await #expect(throws: PokeAPIError.unavailable) {
+            try await client.fetchPokemonList(20, 0)
+        }
+    }
+
+    @Test("壊れたJSONは unavailable になる") func brokenJSONBecomesUnavailable() async {
         let client = makeClient { request in
             (Self.response(for: request, status: 200), Data("{ \"count\": ".utf8))
         }
 
-        await #expect {
+        await #expect(throws: PokeAPIError.unavailable) {
             try await client.fetchPokemonList(20, 0)
+        }
+    }
+
+    @Test("results の形が違うJSONは unavailable になる") func wrongShapeBecomesUnavailable() async {
+        let client = makeClient { request in
+            (Self.response(for: request, status: 200), Data("{ \"count\": 1 }".utf8))
+        }
+
+        await #expect(throws: PokeAPIError.unavailable) {
+            try await client.fetchPokemonList(20, 0)
+        }
+    }
+
+    @Test("URLError(.cancelled) は CancellationError として投げる") func convertsCancelledURLError() async
+    {
+        let client = makeClient { _ in throw URLError(.cancelled) }
+
+        await #expect(throws: CancellationError.self) {
+            try await client.fetchPokemonList(20, 0)
+        }
+    }
+
+    @Test("タスクのキャンセルは PokeAPIError にならずキャンセルとして届く")
+    func taskCancellationIsNotConverted() async {
+        let client = makeClient { request in
+            Thread.sleep(forTimeInterval: 0.2)
+            return (Self.response(for: request, status: 200), Data(listJSON.utf8))
+        }
+
+        let task = Task { try await client.fetchPokemonList(2, 0) }
+        task.cancel()
+
+        await #expect {
+            try await task.value
         } throws: { error in
-            error is DecodingError
+            error is CancellationError
         }
     }
 

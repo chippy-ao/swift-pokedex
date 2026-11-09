@@ -1,24 +1,24 @@
-/// `GET /api/v2/pokemon?limit=&offset=` のレスポンス。PokeAPI の形にそのまま合わせる。
-public struct PokemonListDTO: Codable, Equatable, Sendable {
-    public struct Entry: Codable, Equatable, Sendable {
-        public var name: String
-        public var url: String
+import Foundation
 
-        public init(name: String, url: String) {
+/// ポケモン一覧の 1 ページぶん。通信方式（REST など）の仕組みを知らなくても使える値だけを持つ。
+public struct PokemonListDTO: Equatable, Sendable {
+    public struct Entry: Equatable, Sendable {
+        public var id: Int
+        public var name: String
+        public var spriteURL: URL
+
+        public init(id: Int, name: String, spriteURL: URL) {
+            self.id = id
             self.name = name
-            self.url = url
+            self.spriteURL = spriteURL
         }
     }
 
-    public var count: Int
-    public var next: String?
-    public var previous: String?
-    public var results: [Entry]
+    public var items: [Entry]
+    public var hasNext: Bool
 
-    public init(count: Int, next: String? = nil, previous: String? = nil, results: [Entry]) {
-        self.count = count
-        self.next = next
-        self.previous = previous
-        self.results = results
+    public init(items: [Entry], hasNext: Bool) {
+        self.items = items
+        self.hasNext = hasNext
     }
 }

@@ -52,7 +52,10 @@ extension PokeAPIClient: TestDependencyKey {
   // Preview 用の固定データ
   public static let previewValue = PokeAPIClient(
     fetchPokemonList: { _, _ in
-      PokemonListDTO(count: 1, results: [.init(name: "bulbasaur", url: "https://pokeapi.co/api/v2/pokemon/1/")])
+      PokemonListDTO(
+        items: [.init(id: 1, name: "bulbasaur", spriteURL: URL(string: "https://example.com/1.png")!)],
+        hasNext: false
+      )
     },
     fetchPokemon: { _ in .previewBulbasaur }
   )
@@ -66,9 +69,9 @@ extension DependencyValues {
 }
 ```
 
-`PokemonListDTO` や `PokemonDTO` は NetworkClient モジュールに置く Codable な struct です。上の `.previewBulbasaur` はプレビュー用の固定値の例です。
+`PokemonListDTO` や `PokemonDTO` は NetworkClient モジュールに置く、通信方式に依らない Sendable な struct です。上の `.previewBulbasaur` はプレビュー用の固定値の例です。
 
-NetworkClient の interface は HTTP レベルではなく API レベル(一覧取得、詳細取得など)にします。
+NetworkClient の interface は HTTP レベルではなく API レベル(一覧取得、詳細取得など)にします。さらに、返す DTO とエラーは通信方式に依らない値だけにします(リソース URL や HTTP ステータスは入れません)。理由は [ADR 0017](adr/0017-network-client-interface-independent-of-transport.md)、DTO とエラーの具体は [data-layer.md](data-layer.md#networkclient-と-networkclienturlsession) を参照してください。
 
 ### 実装モジュール側(NetworkClientURLSession)
 
@@ -97,7 +100,7 @@ private func get<T: Decodable>(_ path: String) async throws -> T {
   let request = HTTPRequest(method: .get, scheme: "https", authority: "pokeapi.co", path: path)
   let (data, response) = try await URLSession.shared.data(for: request)
   guard response.status == .ok else {
-    throw URLError(.badServerResponse)  // 実際のエラー型は Common に定義して使う
+    throw PokeAPIError.unavailable  // 通信方式のエラーは interface 側の PokeAPIError に仕分ける
   }
   return try JSONDecoder().decode(T.self, from: data)
 }
@@ -284,6 +287,7 @@ Preview では `previewValue` が使われます。特定の依存だけ別の�
 ## 関連
 
 - [ADR 0004: DI に swift-dependencies を使う](adr/0004-dependency-injection.md)
+- [ADR 0017: NetworkClient の interface を通信方式に依らない形にする](adr/0017-network-client-interface-independent-of-transport.md)
 - [architecture.md](architecture.md)
 - [package-dependencies.md](package-dependencies.md)
 - [data-layer.md](data-layer.md)
