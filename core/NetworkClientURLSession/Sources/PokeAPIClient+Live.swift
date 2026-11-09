@@ -82,7 +82,9 @@ private func pokeAPIError(from error: any Error) -> any Error {
     if let urlError = error as? URLError {
         switch urlError.code {
         case .cancelled:
-            return error
+            // 上の層が Foundation を知らずに、CancellationError 1 種類だけで
+            // キャンセルを見分けられるようにそろえる。
+            return CancellationError()
         case .notConnectedToInternet, .networkConnectionLost, .dataNotAllowed:
             return PokeAPIError.offline
         default:
