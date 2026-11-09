@@ -1,5 +1,6 @@
 import Dependencies
 import DependenciesMacros
+import Foundation
 
 @DependencyClient
 public struct PokeAPIClient: Sendable {
@@ -14,8 +15,15 @@ extension PokeAPIClient: TestDependencyKey {
     public static let previewValue = PokeAPIClient(
         fetchPokemonList: { _, _ in
             PokemonListDTO(
-                count: 1,
-                results: [.init(name: "bulbasaur", url: "https://pokeapi.co/api/v2/pokemon/1/")]
+                items: [
+                    .init(
+                        id: 1, name: "bulbasaur",
+                        spriteURL: URL(
+                            string:
+                                "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png"
+                        )!)
+                ],
+                hasNext: false
             )
         }
     )

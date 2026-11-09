@@ -14,7 +14,16 @@ extension PokemonRepository: TestDependencyKey {
 
     public static let previewValue = PokemonRepository(
         fetchList: { _, _ in
-            PokemonPage(items: [PokemonSummary(id: 1, name: "bulbasaur")], hasNext: false)
+            PokemonPage(
+                items: [
+                    PokemonSummary(
+                        id: 1, name: "bulbasaur",
+                        spriteURL: URL(
+                            string:
+                                "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png"
+                        )!)
+                ],
+                hasNext: false)
         }
     )
 }
@@ -25,14 +34,10 @@ extension PokemonRepository: DependencyKey {
             @Dependency(\.pokeAPIClient) var client
             do {
                 let dto = try await client.fetchPokemonList(limit, offset)
-                let items = try dto.results.map { entry in
-                    guard let id = pokemonID(fromURL: entry.url) else {
-                        // 1 件でも ID を取り出せなければ、ページ全体を失敗にする
-                        throw LoadError.unavailable
-                    }
-                    return PokemonSummary(id: id, name: entry.name)
+                let items = dto.items.map {
+                    PokemonSummary(id: $0.id, name: $0.name, spriteURL: $0.spriteURL)
                 }
-                return PokemonPage(items: items, hasNext: dto.next != nil)
+                return PokemonPage(items: items, hasNext: dto.hasNext)
             } catch {
                 throw loadError(from: error)
             }
@@ -40,28 +45,17 @@ extension PokemonRepository: DependencyKey {
     )
 }
 
-/// `https://pokeapi.co/api/v2/pokemon/25/` の末尾の `25` を取り出す。
-private func pokemonID(fromURL url: String) -> Int? {
-    url.split(separator: "/").last.flatMap { Int($0) }
-}
-
 /// NetworkClient のエラーを画面に見せる `LoadError` に変える。
 /// キャンセルは失敗ではないので変換せずそのまま投げ直す。
 private func loadError(from error: any Error) -> any Error {
-    if error is CancellationError || error is LoadError {
+    switch error {
+    case is CancellationError, is LoadError:
         return error
+    case PokeAPIError.offline:
+        return LoadError.offline
+    default:
+        return LoadError.unavailable
     }
-    if let urlError = error as? URLError {
-        switch urlError.code {
-        case .cancelled:
-            return error
-        case .notConnectedToInternet, .networkConnectionLost, .dataNotAllowed:
-            return LoadError.offline
-        default:
-            return LoadError.unavailable
-        }
-    }
-    return LoadError.unavailable
 }
 
 extension DependencyValues {
