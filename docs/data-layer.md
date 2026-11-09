@@ -265,14 +265,15 @@ func resolvePokemonName(
 | 受け取ったもの | 投げるエラー |
 | --- | --- |
 | `URLError` の code が `.notConnectedToInternet`、`.networkConnectionLost`、`.dataNotAllowed` | `PokeAPIError.offline` |
-| `CancellationError`、`URLError(.cancelled)` | 変換せずそのまま |
+| `CancellationError` | 変換せずそのまま |
+| `URLError(.cancelled)` | `CancellationError` に変えて投げる |
 | それ以外（他の `URLError`、2xx 以外のステータス（404 を含む）、`DecodingError`、番号を取り出せない要素） | `PokeAPIError.unavailable` |
 
 一覧のレスポンスに番号を取り出せない要素があるときも、ページ全体を `unavailable` にします。
 
 Repository は `PokeAPIError` を `LoadError` に移すだけです（`offline` は `offline`、`unavailable` は `unavailable`）。キャンセルと `LoadError` はそのまま投げ、`PokeAPIError` 以外の未知のエラーは `unavailable` にします（[PokemonRepository.swift](../core/Repository/Sources/PokemonRepository.swift)）。Repository は Foundation の `URLError` を知りません。
 
-画面は「オフライン」と「それ以外」で文言を変えます（[PokedexFeature の README](../feature/PokedexFeature/README.md#list)）。キャンセルは失敗ではないので、Store が `CancellationError` と `URLError(.cancelled)` を無視します（Store は #7 で作ります）。
+画面は「オフライン」と「それ以外」で文言を変えます（[PokedexFeature の README](../feature/PokedexFeature/README.md#list)）。キャンセルは失敗ではありません。通信の実装が `CancellationError` にそろえるので、上の層は `CancellationError` だけを見ればよく、Store はそれを無視します（Store は #7 で作ります）。
 
 理由です。
 
