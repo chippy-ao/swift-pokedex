@@ -57,7 +57,7 @@ private func spriteURL(id: Int) -> URL {
 }
 
 /// 共通の GET とデコード。URLSession は 2xx 以外でも投げないので、ここで失敗にする。
-/// 通信方式のエラーは `PokeAPIError` に仕分ける。キャンセルは変えずにそのまま投げる。
+/// 通信方式のエラーは `PokeAPIError` に仕分ける。キャンセルは `URLError(.cancelled)` も含めて `CancellationError` にそろえて投げる。
 private func get<Response: Decodable>(
     _ type: Response.Type,
     path: String,
@@ -66,7 +66,7 @@ private func get<Response: Decodable>(
     let request = HTTPRequest(method: .get, scheme: "https", authority: "pokeapi.co", path: path)
     do {
         let (data, response) = try await session.data(for: request)
-        guard (200..<300).contains(response.status.code) else {
+        guard response.status.kind == .successful else {
             throw PokeAPIError.unavailable
         }
         return try pokeAPIDecoder.decode(Response.self, from: data)
