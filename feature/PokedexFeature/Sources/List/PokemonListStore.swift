@@ -32,9 +32,39 @@ public final class PokemonListStore {
 
     public init() {}
 
-    // 実装前のスタブ。何もしない。
+    /// 読み込みを始めたときだけ、その Task を返す（無視した Action は nil）。
     @discardableResult
     public func send(_ action: Action) -> Task<Void, Never>? {
-        nil
+        switch action {
+        case .onAppear:
+            guard state.phase == .idle else { return nil }
+            return load(offset: 0)
+        case .reachedBottom:
+            // onAppear は何度も呼ばれるので、読み込み中と末尾の後は無視する
+            guard state.phase == .loaded, state.hasNext else { return nil }
+            return load(offset: state.items.count)
+        case .retryTapped:
+            guard case .failed = state.phase else { return nil }
+            return load(offset: state.items.count)
+        }
+    }
+
+    private func load(offset: Int) -> Task<Void, Never> {
+        state.phase = .loading
+        return Task {
+            do {
+                let page = try await fetchPokemonPage.execute(offset)
+                state.items += page.items
+                state.hasNext = page.hasNext
+                state.phase = .loaded
+            } catch is CancellationError {
+                // キャンセルは失敗ではない。やり直せる状態に戻す
+                state.phase = state.items.isEmpty ? .idle : .loaded
+            } catch let error as LoadError {
+                state.phase = .failed(error)
+            } catch {
+                state.phase = .failed(.unavailable)
+            }
+        }
     }
 }

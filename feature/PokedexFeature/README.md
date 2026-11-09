@@ -70,12 +70,18 @@ feature をまたぐ遷移は現時点ではありません。必要になった
 
 | 項目 | 内容 |
 | --- | --- |
-| 表示項目 | 画像、ID、名前、タイプ(取得できる範囲) |
-| 操作 | 末尾付近までスクロールで次ページ取得、行タップで Detail へ、検索欄への入力、タイプフィルタの選択 |
+| 表示項目 | 画像(小さいドット絵 `spriteURL`)、ID、名前。タイプは出さない(下の「一覧の決めごと」) |
+| 操作 | 最後の行が画面に出たら次ページ取得、行タップで Detail へ、検索欄への入力、タイプフィルタの選択 |
 | PokeAPI | `GET /pokemon?limit=&offset=`(ページング)、`GET /pokemon/{id or name}`(行にタイプ等を出す場合)、`GET /type/{name}`(タイプフィルタ) |
 | UseCase 案 | `FetchPokemonPageUseCase`、`FetchAllPokemonNamesUseCase`、`FetchPokemonByTypeUseCase` |
 
-ページングは limit / offset 方式で、1ページのデフォルトは 20 件です。ID は `results` の url 末尾から取り出します。名前検索の API は無いため、全件の名前リスト(limit を count 以上にして1回取得)をキャッシュし、ローカルで絞り込みます。
+ページングは limit / offset 方式で、1ページは 20 件です(PokeAPI の初期値で、1 画面を少し超える量)。ID は `results` の url 末尾から取り出します。名前検索の API は無いため、全件の名前リスト(limit を count 以上にして1回取得)をキャッシュし、ローカルで絞り込みます。
+
+一覧の決めごとです。
+
+- 続きを読むタイミングは、最後の行の `onAppear` で `reachedBottom` を送ります。`onAppear` は何度も呼ばれるので、Store は読み込み中と `hasNext == false` のときの `reachedBottom` を無視します。
+- ID が 10000 を超えるフォーム違いは一覧に入れず、詳細で扱います。PokeAPI の `/pokemon` は 1..1025 のあとに 10001.. が続くので、読んだページに ID > 10000 があれば捨てて `hasNext = false` にします。これは図鑑のきまりなので Domain の `FetchPokemonPageUseCase` で行います。
+- 行にタイプは出しません。出すには 1 行ごとに詳細 API を呼ぶことになり、PokeAPI の Fair Use Policy に反しやすいためです。出したくなったら、この理由を見直してから決めます。
 
 State / Action の案です。
 
