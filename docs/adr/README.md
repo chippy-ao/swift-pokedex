@@ -32,6 +32,7 @@ ADR を残す基準、書き換えない原則、置き場所の考え方は [do
 | [0014](0014-xcode-project-management.md) | Xcode プロジェクトの管理方法 | 承認済み | 2026-10-28 |
 | [0015](0015-xcode-project-structure.md) | Xcode プロジェクトの構成と名前 | 承認済み | 2026-10-31 |
 | [0016](0016-dependency-updates.md) | 依存の更新に Renovate を使う | 承認済み | 2026-11-04 |
+| [0017](0017-network-client-interface-independent-of-transport.md) | NetworkClient の interface を通信方式に依らない形にする | 承認済み | 2026-11-09 |
 
 ## テンプレート
 

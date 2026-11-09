@@ -105,10 +105,12 @@ ID が 10000 を超えるものはフォーム違いなどの pokemon です。
 
 | モジュール | 役割 | 主な依存 |
 | --- | --- | --- |
-| `NetworkClient`（interface） | `PokeAPIClient`、DTO（ネットワーク用モデル）、`PokeAPIError` を定義する | Common、Dependencies、DependenciesMacros |
+| `NetworkClient`（interface） | `PokeAPIClient`、DTO（通信方式に依らないネットワーク用モデル）、`PokeAPIError` を定義する | Common、Dependencies、DependenciesMacros |
 | `NetworkClientURLSession`（実装） | API 専用の URLSession（[キャッシュ方針](#キャッシュ方針)）と swift-http-types で `liveValue` を提供する | NetworkClient、HTTPTypes、HTTPTypesFoundation、Dependencies |
 
 interface は HTTP レベルではなく API レベル（一覧取得、詳細取得など）にします。Repository のテストで API レスポンスを差し替えやすくするためです。
+
+さらに、interface が返す DTO とエラーには、REST の仕組みを知らないと使えない値（番号を切り出すためのリソース URL、次のページの URL、HTTP ステータスなど）を入れません。REST のレスポンスの読み取り、番号の取り出し、画像の URL づくり、エラーの仕分けは、すべて `NetworkClientURLSession` の中で行います。選んだ理由と検討した代替案は [ADR 0017](./adr/0017-network-client-interface-independent-of-transport.md) を参照してください。
 
 ### PokeAPIClient の例
 
@@ -143,17 +145,18 @@ extension DependencyValues {
 
 ### swift-http-types による GET の例
 
-[swift-http-types](https://github.com/apple/swift-http-types) の `HTTPRequest` と、`HTTPTypesFoundation` が提供する `URLSession` 拡張を使います。実装は [PokeAPIClient+Live.swift](../core/NetworkClientURLSession/Sources/PokeAPIClient+Live.swift) の GET です。URLSession は 2xx 以外のステータスでも投げないので、ステータスを自分で調べて `PokeAPIError` を投げています。
+[swift-http-types](https://github.com/apple/swift-http-types) の `HTTPRequest` と、`HTTPTypesFoundation` が提供する `URLSession` 拡張を使います。実装は [PokeAPIClient+Live.swift](../core/NetworkClientURLSession/Sources/PokeAPIClient+Live.swift) の GET です。URLSession は 2xx 以外のステータスでも投げないので、ステータスを自分で調べ、2xx 以外は `PokeAPIError.unavailable` にしています（仕分けの全体は[エラーハンドリング](#エラーハンドリング)）。
 
 ### DTO から Model への変換
 
-- DTO は `NetworkClient` モジュールに置き、PokeAPI のレスポンス形状にそのまま合わせた `Codable` な struct にします。
+- DTO は `NetworkClient` モジュールに置く、通信方式に依らない Sendable な struct です。たとえば一覧の `PokemonListDTO` は `items`（`id`・`name`・`spriteURL`）と `hasNext` だけを持ちます。
+- PokeAPI のレスポンスをそのまま読む `Decodable` な型は、`NetworkClientURLSession` の中（private）だけに置きます。そこで DTO に変換してから interface の外へ返します。
 - アプリ全体で使うモデルは `core/Model` に置く Sendable な struct / enum です。
-- DTO から Model への変換は Repository で行います。feature や Domain は DTO を知りません。
+- DTO から Model への変換は Repository で行います。feature や Domain は DTO を知りません。DTO と Model はほぼ同じ形ですが、答える問いが違うので分けます（[ADR 0017](./adr/0017-network-client-interface-independent-of-transport.md)）。
 
 #### デコーダーの設定
 
-- `JSONDecoder` は `keyDecodingStrategy = .convertFromSnakeCase` にして、1 か所で作って使い回します。`evolution_chain` のような snake_case のキーは、プロパティ名 `evolutionChain` で受けられます。
+- レスポンスを読む `JSONDecoder`（`NetworkClientURLSession` の中）は `keyDecodingStrategy = .convertFromSnakeCase` にして、1 か所で作って使い回します。`evolution_chain` のような snake_case のキーは、プロパティ名 `evolutionChain` で受けられます。
 - `CodingKeys` が要るのはハイフン入りのキー（`"official-artwork"` など）だけです。`convertFromSnakeCase` を使うときに `CodingKeys` へ snake_case を書くと、変換後のキーと一致せず `keyNotFound` になります。
 
 Flutter では Freezed / json_serializable で書いていた部分は、Swift では struct・enum・`Codable` で足ります。
@@ -254,18 +257,20 @@ func resolvePokemonName(
 
 | 段 | 型 | 置き場所 | 内容 |
 | --- | --- | --- | --- |
-| NetworkClient | `PokeAPIError` | `NetworkClient` | `httpStatus(Int)` だけ。2xx 以外のときに実装が投げる。`URLError` と `DecodingError` は包まずそのまま投げる |
+| NetworkClient | `PokeAPIError` | `NetworkClient` | `offline`（通信できない）と `unavailable`（通信できたが取得できない）の 2 つだけ |
 | 画面に見せる | `LoadError` | `Model` | `offline` と `unavailable`。feature から見えるエラーはこれだけ |
 
-Repository が次の規則で変換します。
+`PokeAPIError` への仕分けは、通信の実装（`NetworkClientURLSession`）の中で行います。
 
-| 受け取ったエラー | 投げ直すエラー |
+| 受け取ったもの | 投げるエラー |
 | --- | --- |
-| `URLError` の code が `.notConnectedToInternet`、`.networkConnectionLost`、`.dataNotAllowed` | `LoadError.offline` |
+| `URLError` の code が `.notConnectedToInternet`、`.networkConnectionLost`、`.dataNotAllowed` | `PokeAPIError.offline` |
 | `CancellationError`、`URLError(.cancelled)` | 変換せずそのまま |
-| それ以外（他の `URLError`、`PokeAPIError`、`DecodingError`、その他） | `LoadError.unavailable` |
+| それ以外（他の `URLError`、2xx 以外のステータス（404 を含む）、`DecodingError`、番号を取り出せない要素） | `PokeAPIError.unavailable` |
 
-一覧の `results` に ID を取り出せない要素があるときも、ページ全体を `LoadError.unavailable` にします。
+一覧のレスポンスに番号を取り出せない要素があるときも、ページ全体を `unavailable` にします。
+
+Repository は `PokeAPIError` を `LoadError` に移すだけです（`offline` は `offline`、`unavailable` は `unavailable`）。キャンセルと `LoadError` はそのまま投げ、`PokeAPIError` 以外の未知のエラーは `unavailable` にします（[PokemonRepository.swift](../core/Repository/Sources/PokemonRepository.swift)）。Repository は Foundation の `URLError` を知りません。
 
 画面は「オフライン」と「それ以外」で文言を変えます（[PokedexFeature の README](../feature/PokedexFeature/README.md#list)）。キャンセルは失敗ではないので、Store が `CancellationError` と `URLError(.cancelled)` を無視します（Store は #7 で作ります）。
 
@@ -274,12 +279,14 @@ Repository が次の規則で変換します。
 - feature は NetworkClient を import できません（[依存ルール 1](./package-dependencies.md#依存ルール)）。そのため、画面で扱うエラー型は Model に置きます。
 - 画面で必要な区別は、オフラインかどうかだけです。HTTP ステータスごとの出し分けはしません。
 - PokeAPI に認証は無いので、401 などを別扱いする必要がありません。
+- `PokeAPIError` に HTTP ステータスを残さないのは、通信方式を変えても Repository を直さずに済ませるためです（[ADR 0017](./adr/0017-network-client-interface-independent-of-transport.md)）。
 - `throws` に型は書きません（`throws(LoadError)` にしない）。キャンセルなど `LoadError` 以外のエラーも流れるためで、型付き throws の使いどころは [SE-0413](https://github.com/swiftlang/swift-evolution/blob/main/proposals/0413-typed-throws.md) の方針に沿って絞ります。
 
 ## 関連 ADR
 
 - [ADR 0006: 永続化](./adr/0006-local-persistence.md)
 - [ADR 0007: 言語](./adr/0007-localization.md)
+- [ADR 0017: NetworkClient の interface を通信方式に依らない形にする](./adr/0017-network-client-interface-independent-of-transport.md)
 
 ## 参考リンク
 
