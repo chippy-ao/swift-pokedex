@@ -216,13 +216,13 @@ struct NetworkClientURLSessionTests {
         }
     }
 
-    @Test("URLError(.cancelled) は変換せずそのまま投げる") func rethrowsCancelledURLError() async {
+    @Test("URLError(.cancelled) は CancellationError として投げる") func convertsCancelledURLError() async
+    {
         let client = makeClient { _ in throw URLError(.cancelled) }
 
-        let error = await #expect(throws: URLError.self) {
+        await #expect(throws: CancellationError.self) {
             try await client.fetchPokemonList(20, 0)
         }
-        #expect(error?.code == .cancelled)
     }
 
     @Test("タスクのキャンセルは PokeAPIError にならずキャンセルとして届く")
@@ -238,7 +238,7 @@ struct NetworkClientURLSessionTests {
         await #expect {
             try await task.value
         } throws: { error in
-            error is CancellationError || (error as? URLError)?.code == .cancelled
+            error is CancellationError
         }
     }
 
