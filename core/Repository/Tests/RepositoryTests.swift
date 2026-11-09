@@ -27,92 +27,55 @@ struct RepositoryTests {
         }
     }
 
-    @Test("url の末尾から ID を取り出す") func extractsIDFromURLTail() async throws {
+    private static func spriteURL(id: Int) -> URL {
+        URL(string: "https://example.com/sprites/\(id).png")!
+    }
+
+    @Test("DTO の items が PokemonSummary（画像のURL含む）に移る") func mapsItemsToSummaries() async throws {
         let page = try await fetchList(
             returning: PokemonListDTO(
-                count: 1351,
-                results: [
-                    .init(name: "pikachu", url: "https://pokeapi.co/api/v2/pokemon/25/"),
-                    .init(name: "venusaur-mega", url: "https://pokeapi.co/api/v2/pokemon/10033/"),
-                ]
+                items: [
+                    .init(id: 25, name: "pikachu", spriteURL: Self.spriteURL(id: 25)),
+                    .init(id: 10033, name: "venusaur-mega", spriteURL: Self.spriteURL(id: 10033)),
+                ],
+                hasNext: true
             ))
 
         #expect(
             page.items == [
-                PokemonSummary(id: 25, name: "pikachu"),
-                PokemonSummary(id: 10033, name: "venusaur-mega"),
+                PokemonSummary(id: 25, name: "pikachu", spriteURL: Self.spriteURL(id: 25)),
+                PokemonSummary(
+                    id: 10033, name: "venusaur-mega", spriteURL: Self.spriteURL(id: 10033)),
             ])
     }
 
-    @Test("IDを取り出せない要素があればページ全体が unavailable になる") func unparsableIDMakesPageUnavailable() async {
-        await #expect(throws: LoadError.unavailable) {
-            try await fetchList(
-                returning: PokemonListDTO(
-                    count: 2,
-                    results: [
-                        .init(name: "pikachu", url: "https://pokeapi.co/api/v2/pokemon/25/"),
-                        .init(name: "broken", url: "https://pokeapi.co/api/v2/pokemon/"),
-                    ]
-                ))
-        }
-    }
-
-    @Test(
-        "nextからhasNextが決まる",
-        arguments: [
-            ("https://pokeapi.co/api/v2/pokemon?offset=20&limit=20", true),
-            (nil, false),
-        ] as [(String?, Bool)])
-    func hasNextFollowsNext(next: String?, expected: Bool) async throws {
+    @Test("DTO の hasNext が PokemonPage に移る", arguments: [true, false])
+    func mapsHasNext(hasNext: Bool) async throws {
         let page = try await fetchList(
             returning: PokemonListDTO(
-                count: 1351,
-                next: next,
-                results: [.init(name: "bulbasaur", url: "https://pokeapi.co/api/v2/pokemon/1/")]
+                items: [.init(id: 1, name: "bulbasaur", spriteURL: Self.spriteURL(id: 1))],
+                hasNext: hasNext
             ))
 
-        #expect(page.hasNext == expected)
+        #expect(page.hasNext == hasNext)
     }
 
-    @Test(
-        "オフラインのURLErrorはofflineになる",
-        arguments: [
-            URLError.Code.notConnectedToInternet, .networkConnectionLost, .dataNotAllowed,
-        ])
-    func offlineURLErrorsBecomeOffline(code: URLError.Code) async {
+    @Test("PokeAPIError.offline は LoadError.offline になる") func offlineBecomesOffline() async {
         await #expect(throws: LoadError.offline) {
-            try await fetchList(throwing: URLError(code))
+            try await fetchList(throwing: PokeAPIError.offline)
         }
     }
 
-    @Test(
-        "それ以外のエラーはunavailableになる",
-        arguments: [
-            URLError(.timedOut) as any Error,
-            URLError(.cannotFindHost),
-            URLError(.badServerResponse),
-            PokeAPIError.httpStatus(404),
-            PokeAPIError.httpStatus(500),
-            DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "broken")),
-            NSError(domain: "test", code: 1),
-        ])
-    func otherErrorsBecomeUnavailable(error: any Error) async {
+    @Test("PokeAPIError.unavailable は LoadError.unavailable になる")
+    func unavailableBecomesUnavailable() async {
         await #expect(throws: LoadError.unavailable) {
-            try await fetchList(throwing: error)
+            try await fetchList(throwing: PokeAPIError.unavailable)
         }
     }
 
     @Test("CancellationError はそのまま投げ直す") func rethrowsCancellationError() async {
         await #expect(throws: CancellationError.self) {
             try await fetchList(throwing: CancellationError())
-        }
-    }
-
-    @Test("URLError(.cancelled) はそのまま投げ直す") func rethrowsCancelledURLError() async {
-        await #expect {
-            try await fetchList(throwing: URLError(.cancelled))
-        } throws: { error in
-            (error as? URLError)?.code == .cancelled
         }
     }
 }
