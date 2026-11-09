@@ -23,12 +23,18 @@ let package = Package(
         // feature
         .target(
             name: "PokedexFeature",
-            dependencies: ["Domain", "SharedUI", "DesignSystem", "Model", "Common"],
+            dependencies: [
+                "Domain", "SharedUI", "DesignSystem", "Model", "Common",
+                .product(name: "Dependencies", package: "swift-dependencies"),
+            ],
             path: "feature/PokedexFeature/Sources"
         ),
         .testTarget(
             name: "PokedexFeatureTests",
-            dependencies: ["PokedexFeature", "TestSupport"],
+            dependencies: [
+                "PokedexFeature", "Domain", "Model", "TestSupport",
+                .product(name: "Dependencies", package: "swift-dependencies"),
+            ],
             path: "feature/PokedexFeature/Tests"
         ),
         .target(
@@ -64,12 +70,19 @@ let package = Package(
         ),
         .target(
             name: "Domain",
-            dependencies: ["Repository", "Model", "Common"],
+            dependencies: [
+                "Repository", "Model", "Common",
+                .product(name: "Dependencies", package: "swift-dependencies"),
+                .product(name: "DependenciesMacros", package: "swift-dependencies"),
+            ],
             path: "core/Domain/Sources"
         ),
         .testTarget(
             name: "DomainTests",
-            dependencies: ["Domain", "TestSupport"],
+            dependencies: [
+                "Domain", "Repository", "Model", "TestSupport",
+                .product(name: "Dependencies", package: "swift-dependencies"),
+            ],
             path: "core/Domain/Tests"
         ),
         .target(
