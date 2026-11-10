@@ -5,36 +5,36 @@ import Observation
 
 @MainActor
 @Observable
-public final class PokemonListStore {
-    public enum Phase: Equatable {
+final class PokemonListStore {
+    enum Phase: Equatable {
         case idle
         case loading
         case loaded
         case failed(LoadError)
     }
 
-    public struct State: Equatable {
-        public var items: [PokemonSummary] = []
-        public var phase: Phase = .idle
-        public var hasNext = true
+    struct State: Equatable {
+        var items: [PokemonSummary] = []
+        var phase: Phase = .idle
+        var hasNext = true
     }
 
-    public enum Action {
+    enum Action {
         case onAppear
         case reachedBottom
         case retryTapped
     }
 
-    public private(set) var state = State()
+    private(set) var state = State()
 
     @ObservationIgnored
     @Dependency(\.fetchPokemonPage) private var fetchPokemonPage
 
-    public init() {}
+    init() {}
 
     /// 読み込みを始めたときだけ、その Task を返す（無視した Action は nil）。
     @discardableResult
-    public func send(_ action: Action) -> Task<Void, Never>? {
+    func send(_ action: Action) -> Task<Void, Never>? {
         switch action {
         case .onAppear:
             guard state.phase == .idle else { return nil }

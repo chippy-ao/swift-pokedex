@@ -6,7 +6,11 @@ import SwiftUI
 public struct PokemonListView: View {
     @State private var store: PokemonListStore
 
-    public init(store: PokemonListStore = PokemonListStore()) {
+    public init() {
+        self.init(store: PokemonListStore())
+    }
+
+    init(store: PokemonListStore) {
         _store = State(initialValue: store)
     }
 

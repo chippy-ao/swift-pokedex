@@ -6,12 +6,12 @@ import Repository
 /// 図鑑の一覧を 1 ページぶん取得する。
 /// 1 ページの件数と、一覧に入れる ID の範囲（図鑑のきまり）はここで決める。
 @DependencyClient
-public struct FetchPokemonPageUseCase: Sendable {
-    public var execute: @Sendable (_ offset: Int) async throws -> PokemonPage
+package struct FetchPokemonPageUseCase: Sendable {
+    package var execute: @Sendable (_ offset: Int) async throws -> PokemonPage
 }
 
 extension FetchPokemonPageUseCase: TestDependencyKey {
-    public static let testValue = FetchPokemonPageUseCase()
+    package static let testValue = FetchPokemonPageUseCase()
 }
 
 extension FetchPokemonPageUseCase: DependencyKey {
@@ -23,7 +23,7 @@ extension FetchPokemonPageUseCase: DependencyKey {
     /// 世代で絞り込むときは、この「止める位置」を世代の終わりに差し替える。
     private static let lastListedID = 10000
 
-    public static let liveValue = FetchPokemonPageUseCase(
+    package static let liveValue = FetchPokemonPageUseCase(
         execute: { offset in
             @Dependency(\.pokemonRepository) var repository
             let page = try await repository.fetchList(pageSize, offset)
@@ -35,7 +35,7 @@ extension FetchPokemonPageUseCase: DependencyKey {
 }
 
 extension DependencyValues {
-    public var fetchPokemonPage: FetchPokemonPageUseCase {
+    package var fetchPokemonPage: FetchPokemonPageUseCase {
         get { self[FetchPokemonPageUseCase.self] }
         set { self[FetchPokemonPageUseCase.self] = newValue }
     }

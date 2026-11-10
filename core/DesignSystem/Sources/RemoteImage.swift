@@ -3,14 +3,14 @@ import SwiftUI
 
 /// URL の画像を表示する。画像のキャッシュは Nuke が担当する。
 /// 画像ライブラリはここだけが知っていて、他のモジュールはこの View を使う。
-public struct RemoteImage: View {
+package struct RemoteImage: View {
     private let url: URL?
 
-    public init(url: URL?) {
+    package init(url: URL?) {
         self.url = url
     }
 
-    public var body: some View {
+    package var body: some View {
         LazyImage(url: url) { state in
             if let image = state.image {
                 image.resizable().interpolation(.none).scaledToFit()
