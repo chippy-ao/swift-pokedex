@@ -109,7 +109,7 @@ struct PokemonListStoreTests {
         #expect(store.state.items.count == 20)
     }
 
-    @Test("CancellationError は無視し、failed にしない") func cancellationIsNotFailure() async {
+    @Test("初回の読み込みがキャンセルされたら、idle に戻る") func firstLoadCancellationReturnsToIdle() async {
         let recorder = Recorder()
         let store = makeStore { offset in
             await recorder.record(offset)
@@ -119,11 +119,26 @@ struct PokemonListStoreTests {
         await store.send(.onAppear)?.value
 
         #expect(await recorder.offsets == [0])
-        #expect(store.state.phase != .loading)
-        if case .failed = store.state.phase {
-            Issue.record("CancellationError で failed になった")
-        }
+        #expect(store.state.phase == .idle)
         #expect(store.state.items.isEmpty)
+    }
+
+    @Test("次ページの読み込みがキャンセルされたら、loaded に戻り items は維持する")
+    func nextPageCancellationReturnsToLoaded() async {
+        let recorder = Recorder()
+        let store = makeStore { offset in
+            await recorder.record(offset)
+            if offset == 0 { return Self.page(ids: 1..<21, hasNext: true) }
+            throw CancellationError()
+        }
+        await store.send(.onAppear)?.value
+
+        await store.send(.reachedBottom)?.value
+
+        #expect(await recorder.offsets == [0, 20])
+        #expect(store.state.phase == .loaded)
+        #expect(store.state.items.map(\.id) == Array(1..<21))
+        #expect(store.state.hasNext == true)
     }
 
     @Test(
