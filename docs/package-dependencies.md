@@ -255,7 +255,7 @@ SwiftPM では、直接の依存に書いていないモジュールでも推移
 | --- | --- | --- | --- |
 | [swift-http-types](https://github.com/apple/swift-http-types) | `HTTPRequest` / `HTTPResponse` / `HTTPFields` の共通型。HTTPTypesFoundation が URLSession の拡張を提供する | NetworkClientURLSession | |
 | [swift-dependencies](https://github.com/pointfreeco/swift-dependencies) | 依存性の注入（`@Dependency`、`@DependencyClient`） | NetworkClient、NetworkClientURLSession、Database、Datastore、Repository、Domain、PokedexFeature、SettingsFeature | |
-| [Nuke](https://github.com/kean/Nuke)（NukeUI の `LazyImage`） | 画像のメモリ・ディスクキャッシュ | DesignSystem | 14 系はベータが出ているので、導入時に最新の安定版を確認する |
+| [Nuke](https://github.com/kean/Nuke)（NukeUI の `LazyImage`） | 画像のメモリ・ディスクキャッシュ | DesignSystem | 13.2.3 以上（`from: "13.2.3"`）。14 系は rc / beta だけなので、安定版が出るまで上げない |
 | [LicenseList](https://github.com/cybozu/LicenseList) | SPM 依存のライセンス一覧を生成し、`LicenseListView` で表示 | SettingsFeature | Swift 6.2 で書かれ Xcode 26.2 以上が必要。プラグインの適用先など導入手順は README に従い、導入時に確認する |
 | [SwiftLint](https://github.com/realm/SwiftLint) | Lint | （開発ツール） | |
 | [swift-format](https://github.com/swiftlang/swift-format) | 整形 | （開発ツール） | Swift ツールチェーンに同梱されている |

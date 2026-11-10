@@ -18,17 +18,24 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/pointfreeco/swift-dependencies", from: "1.17.2"),
         .package(url: "https://github.com/apple/swift-http-types", from: "1.8.0"),
+        .package(url: "https://github.com/kean/Nuke", from: "13.2.3"),
     ],
     targets: [
         // feature
         .target(
             name: "PokedexFeature",
-            dependencies: ["Domain", "SharedUI", "DesignSystem", "Model", "Common"],
+            dependencies: [
+                "Domain", "SharedUI", "DesignSystem", "Model", "Common",
+                .product(name: "Dependencies", package: "swift-dependencies"),
+            ],
             path: "feature/PokedexFeature/Sources"
         ),
         .testTarget(
             name: "PokedexFeatureTests",
-            dependencies: ["PokedexFeature", "TestSupport"],
+            dependencies: [
+                "PokedexFeature", "Domain", "Model", "TestSupport",
+                .product(name: "Dependencies", package: "swift-dependencies"),
+            ],
             path: "feature/PokedexFeature/Tests"
         ),
         .target(
@@ -64,12 +71,19 @@ let package = Package(
         ),
         .target(
             name: "Domain",
-            dependencies: ["Repository", "Model", "Common"],
+            dependencies: [
+                "Repository", "Model", "Common",
+                .product(name: "Dependencies", package: "swift-dependencies"),
+                .product(name: "DependenciesMacros", package: "swift-dependencies"),
+            ],
             path: "core/Domain/Sources"
         ),
         .testTarget(
             name: "DomainTests",
-            dependencies: ["Domain", "TestSupport"],
+            dependencies: [
+                "Domain", "Repository", "Model", "TestSupport",
+                .product(name: "Dependencies", package: "swift-dependencies"),
+            ],
             path: "core/Domain/Tests"
         ),
         .target(
@@ -91,7 +105,10 @@ let package = Package(
         ),
         .target(
             name: "DesignSystem",
-            dependencies: ["Common"],
+            dependencies: [
+                "Common",
+                .product(name: "NukeUI", package: "Nuke"),
+            ],
             path: "core/DesignSystem/Sources"
         ),
         .testTarget(
