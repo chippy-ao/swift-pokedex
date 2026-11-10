@@ -16,6 +16,7 @@ swift-pokedex の設計の全体像をまとめます。変わりにくい設計
 - [ナビゲーション](#ナビゲーション)
 - [テーマ色の伝搬](#テーマ色の伝搬)
 - [Concurrency の方針](#concurrency-の方針)
+- [アクセス修飾子](#アクセス修飾子)
 - [関連 ADR](#関連-adr)
 
 ## 設計方針
@@ -446,6 +447,27 @@ flowchart LR
 
 - Swift 6 言語モードでデータ競合を設計段階で避けます。具体的なビルド設定は [package-dependencies.md](./package-dependencies.md#packageswift-の書き方の方針) を参照してください。
 - Flutter の Isolate と違い、同じアクターに隔離された値は共有できます。アクターの境界を越える値だけが Sendable である必要があります。
+
+## アクセス修飾子
+
+宣言ごとに「どこから使わせたいか」を修飾子で書き分けます。広く見せるほど、あとで変えにくくなるので、必要な範囲で止めます。
+
+| 修飾子 | 見える範囲 | 使いどころ |
+| --- | --- | --- |
+| `private` | その型（と同じファイルの extension）の中 | 補助のメソッド、プロパティ。迷ったらここから始める |
+| `fileprivate` | 同じファイル | 同じファイルの他の型からも使うときだけ |
+| `internal`（既定） | 同じモジュール | モジュールの中の部品（Store、State、Action など） |
+| `package` | 同じ Swift パッケージの他モジュール | モジュール間で使うが、App ターゲットには見せない宣言 |
+| `public` | パッケージの外 | App ターゲットから使う入口だけ |
+
+継承させない `class` は `final` を付けます。
+
+このリポジトリでは、パッケージの外にあるのは App ターゲット（`app/App.xcodeproj`）だけです。そのため境目は次の 2 つになります。
+
+- App から呼ぶ入口は `public`（例: `PokemonListView` と引数なしの `init()`）。
+- パッケージ内のモジュール間で使うものは `package`（例: `PokemonRow`、`RemoteImage`、`FetchPokemonPageUseCase`）。
+
+出典: [The Swift Programming Language: Access Control](https://docs.swift.org/swift-book/documentation/the-swift-programming-language/accesscontrol/)、[SE-0386 New access modifier: package](https://github.com/swiftlang/swift-evolution/blob/main/proposals/0386-package-access-modifier.md)
 
 ## 関連 ADR
 

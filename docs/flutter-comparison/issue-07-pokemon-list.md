@@ -147,6 +147,68 @@ Future<void>? send(Action action) { ... } // 呼び出し側が await しなく�
 
 **出典:** [Attributes（discardableResult）](https://docs.swift.org/swift-book/documentation/the-swift-programming-language/attributes/)
 
+### アクセス修飾子（private / package / public と final class）
+
+**何の話か:** 宣言を「どこから使わせるか」で段階的に隠す仕組みです。
+
+**意味:** Swift は `private`、`fileprivate`、`internal`、`package`、`public` の 5 段階です。このアプリでは、App から呼ぶ入口だけを `public`、パッケージ内のモジュール間は `package` にしています。使い分けは [architecture.md](../architecture.md#アクセス修飾子) を見てください。
+
+```swift
+// PokedexFeature: App が使うのは PokemonListView と init() だけ
+public struct PokemonListView: View {
+    public init() { self.init(store: PokemonListStore()) }
+    init(store: PokemonListStore) { ... } // internal。Preview とテスト用
+}
+
+// SharedUI: 兄弟モジュール（PokedexFeature）には見せ、App には見せない
+package struct PokemonRow: View { ... }
+```
+
+```dart
+// Dart の隠し方は「_ を付ける（ライブラリ = ファイル単位で private）」しかない
+class _Helper {}
+
+// 兄弟パッケージには見せたいがアプリには見せたくないものは、
+// lib/src/ に置いて export しない、という約束事で守る
+// melos のモノレポでは pkg_a の src/ を pkg_b が import すると
+// lint（implementation_imports）に怒られるだけで、コンパイルは通る
+import 'package:pkg_a/src/row.dart';
+```
+
+**違いと間違えやすいところ:** Dart の `_` はライブラリ単位の private だけで、「同じパッケージの中だけ」「同じモジュールの中だけ」は書けません。melos のモノレポで共通パッケージの部品を、兄弟パッケージには使わせてアプリには見せない、という場面では `src/` と `export` の約束事で工夫するしかありませんでした。`package` はこれを言語の機能で書けます。App から `PokemonRow` を使うとコンパイルエラーになります。`final class` は Dart 3 の `final class`（外から継承できない）と似ていますが、Swift の `class` は既定で継承できるので、`final` を付けて閉じる点が逆です。
+
+**出典:** [Access Control](https://docs.swift.org/swift-book/documentation/the-swift-programming-language/accesscontrol/)、[SE-0386](https://github.com/swiftlang/swift-evolution/blob/main/proposals/0386-package-access-modifier.md)、[Dart の class modifiers](https://dart.dev/language/class-modifiers)
+
+### #Preview と prepareDependencies
+
+**何の話か:** 画面を実機なしで確かめる仕組みと、そのときだけ通信を偽物に差し替える方法です。
+
+**意味:** `#Preview` は View のソースファイルの中に書き、Xcode の Canvas にその場で描画されます。「読み込み済み」「読み込み中」「オフラインのエラー」のように、状態ごとに 1 つずつ置きます。swift-dependencies の `prepareDependencies` で `fetchPokemonPage` だけを差し替えるので、本物の通信は走りません。
+
+```swift
+#Preview("初回のエラー（オフライン）") {
+    let _ = prepareDependencies {
+        $0.fetchPokemonPage.execute = { _ in throw LoadError.offline }
+    }
+    NavigationStack { PokemonListView() }
+}
+```
+
+```dart
+// Widgetbook: 別のアプリ（catalog）に use case を登録する
+@UseCase(name: 'offline', type: PokemonListScreen)
+Widget offline(BuildContext context) => ProviderScope(
+  overrides: [
+    fetchPokemonPageProvider.overrideWith((ref) => throw const OfflineError()),
+  ],
+  child: const PokemonListScreen(),
+);
+```
+
+**違いと間違えやすいところ:** 役割は Widgetbook の use case と、Riverpod の `overrides` を足したものです。大きな違いは置き場所です。Widgetbook は別のカタログアプリを作って起動しますが、Swift の Preview は View と同じファイルにあり、Xcode の Canvas に描画されます。「読み込み中」を確かめるために 3600 秒待つ関数を渡す、といった作りは、ボタンを押して試す手間なく、その状態を固定して見るための工夫です。
+
+**出典:** [Previews in Xcode](https://developer.apple.com/documentation/swiftui/previews-in-xcode)、[prepareDependencies](https://swiftpackageindex.com/pointfreeco/swift-dependencies/main/documentation/dependencies/preparedependencies(isolation:_:))、[Widgetbook](https://docs.widgetbook.io/)
+
 ## 外部ライブラリ
 
 ### Nuke（NukeUI の LazyImage）
