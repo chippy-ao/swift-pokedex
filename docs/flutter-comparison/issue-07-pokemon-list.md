@@ -183,7 +183,7 @@ import 'package:pkg_a/src/row.dart';
 
 **何の話か:** 画面を実機なしで確かめる仕組みと、そのときだけ通信を偽物に差し替える方法です。
 
-**意味:** `#Preview` は View のソースファイルの中に書き、Xcode の Canvas にその場で描画されます。「読み込み済み」「読み込み中」「オフラインのエラー」のように、状態ごとに 1 つずつ置きます。swift-dependencies の `withDependencies` で `fetchPokemonPage` だけを差し替えた Store を Preview ごとに作り、View に渡すので、本物の通信は走りません。`prepareDependencies` は「A dependency key can be prepared at most a single time」とドキュメントコメントにあるとおり、アプリ全体で 1 回しか使えません。同じファイルの Preview は 1 つのプロセスで動くため、2 つ目以降の差し替えが効かず、全部同じ画面になります。
+**意味:** `#Preview` は View のソースファイルの中に書き、Xcode の Canvas にその場で描画されます。「読み込み済み」「読み込み中」「オフラインのエラー」のように、状態ごとに 1 つずつ置きます。swift-dependencies の `withDependencies` で `fetchPokemonPage` だけを差し替えた Store を Preview ごとに作り、View に渡すので、本物の通信は走りません。`prepareDependencies` は「A dependency key can be prepared at most a single time」とドキュメントコメントにあるとおり、アプリ全体で 1 回しか使えません。同じファイルの Preview は 1 つのプロセスで動くため、2 つ目以降の差し替えが効かず、全部同じ画面になります。差し替えが効くのは `operation` の中で作ったものだけで、Store は作られたときの依存を覚えます。なので `PokemonListStore()` は必ず `operation` の中で作ります（外で作ると差し替えが効きません）。
 
 ```swift
 #Preview("初回のエラー（オフライン）") {
