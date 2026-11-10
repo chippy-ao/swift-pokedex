@@ -179,18 +179,20 @@ import 'package:pkg_a/src/row.dart';
 
 **出典:** [Access Control](https://docs.swift.org/swift-book/documentation/the-swift-programming-language/accesscontrol/)、[SE-0386](https://github.com/swiftlang/swift-evolution/blob/main/proposals/0386-package-access-modifier.md)、[Dart の class modifiers](https://dart.dev/language/class-modifiers)
 
-### #Preview と prepareDependencies
+### #Preview と withDependencies
 
 **何の話か:** 画面を実機なしで確かめる仕組みと、そのときだけ通信を偽物に差し替える方法です。
 
-**意味:** `#Preview` は View のソースファイルの中に書き、Xcode の Canvas にその場で描画されます。「読み込み済み」「読み込み中」「オフラインのエラー」のように、状態ごとに 1 つずつ置きます。swift-dependencies の `prepareDependencies` で `fetchPokemonPage` だけを差し替えるので、本物の通信は走りません。
+**意味:** `#Preview` は View のソースファイルの中に書き、Xcode の Canvas にその場で描画されます。「読み込み済み」「読み込み中」「オフラインのエラー」のように、状態ごとに 1 つずつ置きます。swift-dependencies の `withDependencies` で `fetchPokemonPage` だけを差し替えた Store を Preview ごとに作り、View に渡すので、本物の通信は走りません。`prepareDependencies` は「A dependency key can be prepared at most a single time」とドキュメントコメントにあるとおり、アプリ全体で 1 回しか使えません。同じファイルの Preview は 1 つのプロセスで動くため、2 つ目以降の差し替えが効かず、全部同じ画面になります。
 
 ```swift
 #Preview("初回のエラー（オフライン）") {
-    let _ = prepareDependencies {
+    let store = withDependencies {
         $0.fetchPokemonPage.execute = { _ in throw LoadError.offline }
+    } operation: {
+        PokemonListStore()
     }
-    NavigationStack { PokemonListView() }
+    NavigationStack { PokemonListView(store: store) }
 }
 ```
 
@@ -205,9 +207,9 @@ Widget offline(BuildContext context) => ProviderScope(
 );
 ```
 
-**違いと間違えやすいところ:** 役割は Widgetbook の use case と、Riverpod の `overrides` を足したものです。大きな違いは置き場所です。Widgetbook は別のカタログアプリを作って起動しますが、Swift の Preview は View と同じファイルにあり、Xcode の Canvas に描画されます。「読み込み中」を確かめるために 3600 秒待つ関数を渡す、といった作りは、ボタンを押して試す手間なく、その状態を固定して見るための工夫です。
+**違いと間違えやすいところ:** `prepareDependencies` は、アプリの一番外側に `ProviderScope(overrides:)` を 1 つ置くようなものです。`withDependencies` は、Widgetbook の use case ごとに `ProviderScope` で包むのに当たります。Preview を状態ごとに分けたいときは後者を使います。Widgetbook は別のカタログアプリを作って起動しますが、Swift の Preview は View と同じファイルにあり、Xcode の Canvas に描画されます。「読み込み中」を確かめるために 3600 秒待つ関数を渡す、といった作りは、ボタンを押して試す手間なく、その状態を固定して見るための工夫です。
 
-**出典:** [Previews in Xcode](https://developer.apple.com/documentation/swiftui/previews-in-xcode)、[prepareDependencies](https://swiftpackageindex.com/pointfreeco/swift-dependencies/main/documentation/dependencies/preparedependencies(isolation:_:))、[Widgetbook](https://docs.widgetbook.io/)
+**出典:** [Previews in Xcode](https://developer.apple.com/documentation/swiftui/previews-in-xcode)、[prepareDependencies](https://swiftpackageindex.com/pointfreeco/swift-dependencies/main/documentation/dependencies/preparedependencies(isolation:_:))、[withDependencies](https://swiftpackageindex.com/pointfreeco/swift-dependencies/main/documentation/dependencies/withdependencies(_:operation:))、[Widgetbook](https://docs.widgetbook.io/)
 
 ## 外部ライブラリ
 
