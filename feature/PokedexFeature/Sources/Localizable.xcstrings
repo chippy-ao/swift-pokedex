@@ -1,11 +1,32 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "listErrorOffline" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "You're offline. Check your connection." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ネットワークに接続できません。接続を確認してください。" } }
+      }
+    },
+    "listErrorUnavailable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Couldn't load. Please try again later." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "読み込めませんでした。時間をおいて再試行してください。" } }
+      }
+    },
     "listNavigationTitle" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Pokédex" } },
         "ja" : { "stringUnit" : { "state" : "translated", "value" : "ポケモン図鑑" } }
+      }
+    },
+    "listRetryButton" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Retry" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "再試行" } }
       }
     }
   },

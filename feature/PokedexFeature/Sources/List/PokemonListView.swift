@@ -19,7 +19,7 @@ public struct PokemonListView: View {
 
     public var body: some View {
         content
-            .navigationTitle("ポケモン図鑑")
+            .navigationTitle(Text(.listNavigationTitle))
             .task { store.send(.onAppear) }
     }
 
@@ -32,7 +32,7 @@ public struct PokemonListView: View {
                 VStack(spacing: 16) {
                     Text(Self.message(for: error))
                         .multilineTextAlignment(.center)
-                    Button("再試行") { store.send(.retryTapped) }
+                    Button(.listRetryButton) { store.send(.retryTapped) }
                 }
                 .padding()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -65,7 +65,7 @@ public struct PokemonListView: View {
                 Text(Self.message(for: error))
                     .font(.footnote)
                     .multilineTextAlignment(.center)
-                Button("再試行") { store.send(.retryTapped) }
+                Button(.listRetryButton) { store.send(.retryTapped) }
             }
             .frame(maxWidth: .infinity)
         case .idle, .loaded:
@@ -73,10 +73,10 @@ public struct PokemonListView: View {
         }
     }
 
-    private static func message(for error: LoadError) -> LocalizedStringKey {
+    private static func message(for error: LoadError) -> LocalizedStringResource {
         switch error {
-        case .offline: "ネットワークに接続できません。接続を確認してください。"
-        case .unavailable: "読み込めませんでした。時間をおいて再試行してください。"
+        case .offline: .listErrorOffline
+        case .unavailable: .listErrorUnavailable
         }
     }
 }
