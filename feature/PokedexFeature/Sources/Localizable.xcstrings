@@ -1,0 +1,13 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "listNavigationTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Pokédex" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ポケモン図鑑" } }
+      }
+    }
+  },
+  "version" : "1.0"
+}
