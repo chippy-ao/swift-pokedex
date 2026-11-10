@@ -92,9 +92,7 @@ private func previewSummary(id: Int, name: String) -> PokemonSummary {
 }
 
 #Preview("読み込み済み") {
-    // ViewBuilder の中では `_ =` と書けないので `let _` を使う
-    // swiftlint:disable:next redundant_discardable_let
-    let _ = prepareDependencies {
+    let store = withDependencies {
         $0.fetchPokemonPage.execute = { _ in
             PokemonPage(
                 items: [
@@ -105,27 +103,29 @@ private func previewSummary(id: Int, name: String) -> PokemonSummary {
                 ],
                 hasNext: false)
         }
+    } operation: {
+        PokemonListStore()
     }
-    NavigationStack { PokemonListView() }
+    NavigationStack { PokemonListView(store: store) }
 }
 
 #Preview("初回の読み込み中") {
-    // ViewBuilder の中では `_ =` と書けないので `let _` を使う
-    // swiftlint:disable:next redundant_discardable_let
-    let _ = prepareDependencies {
+    let store = withDependencies {
         $0.fetchPokemonPage.execute = { _ in
             try await Task.sleep(for: .seconds(3600))
             return PokemonPage(items: [], hasNext: false)
         }
+    } operation: {
+        PokemonListStore()
     }
-    NavigationStack { PokemonListView() }
+    NavigationStack { PokemonListView(store: store) }
 }
 
 #Preview("初回のエラー（オフライン）") {
-    // ViewBuilder の中では `_ =` と書けないので `let _` を使う
-    // swiftlint:disable:next redundant_discardable_let
-    let _ = prepareDependencies {
+    let store = withDependencies {
         $0.fetchPokemonPage.execute = { _ in throw LoadError.offline }
+    } operation: {
+        PokemonListStore()
     }
-    NavigationStack { PokemonListView() }
+    NavigationStack { PokemonListView(store: store) }
 }
