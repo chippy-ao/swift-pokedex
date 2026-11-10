@@ -1,4 +1,5 @@
 import DesignSystem
+import Foundation
 import Model
 import SwiftUI
 
@@ -24,4 +25,16 @@ package struct PokemonRow: View {
         }
         .accessibilityElement(children: .combine)
     }
+}
+
+#Preview {
+    PokemonRow(
+        pokemon: PokemonSummary(
+            id: 25, name: "pikachu",
+            spriteURL: URL(
+                string:
+                    "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png"
+            )!)
+    )
+    .padding()
 }

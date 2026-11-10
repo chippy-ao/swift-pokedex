@@ -1,4 +1,7 @@
+import Dependencies
 import DesignSystem
+import Domain
+import Foundation
 import Model
 import SharedUI
 import SwiftUI
@@ -76,4 +79,53 @@ public struct PokemonListView: View {
         case .unavailable: "読み込めませんでした。時間をおいて再試行してください。"
         }
     }
+}
+
+// Preview は fetchPokemonPage だけを差し替える。feature は Domain の UseCase しか知らない。
+private func previewSummary(id: Int, name: String) -> PokemonSummary {
+    PokemonSummary(
+        id: id, name: name,
+        spriteURL: URL(
+            string:
+                "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/\(id).png"
+        )!)
+}
+
+#Preview("読み込み済み") {
+    // ViewBuilder の中では `_ =` と書けないので `let _` を使う
+    // swiftlint:disable:next redundant_discardable_let
+    let _ = prepareDependencies {
+        $0.fetchPokemonPage.execute = { _ in
+            PokemonPage(
+                items: [
+                    previewSummary(id: 1, name: "bulbasaur"),
+                    previewSummary(id: 4, name: "charmander"),
+                    previewSummary(id: 7, name: "squirtle"),
+                    previewSummary(id: 25, name: "pikachu"),
+                ],
+                hasNext: false)
+        }
+    }
+    NavigationStack { PokemonListView() }
+}
+
+#Preview("初回の読み込み中") {
+    // ViewBuilder の中では `_ =` と書けないので `let _` を使う
+    // swiftlint:disable:next redundant_discardable_let
+    let _ = prepareDependencies {
+        $0.fetchPokemonPage.execute = { _ in
+            try await Task.sleep(for: .seconds(3600))
+            return PokemonPage(items: [], hasNext: false)
+        }
+    }
+    NavigationStack { PokemonListView() }
+}
+
+#Preview("初回のエラー（オフライン）") {
+    // ViewBuilder の中では `_ =` と書けないので `let _` を使う
+    // swiftlint:disable:next redundant_discardable_let
+    let _ = prepareDependencies {
+        $0.fetchPokemonPage.execute = { _ in throw LoadError.offline }
+    }
+    NavigationStack { PokemonListView() }
 }
