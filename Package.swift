@@ -4,6 +4,7 @@ import PackageDescription
 
 let package = Package(
     name: "swift-pokedex",
+    defaultLocalization: "en",
     platforms: [.iOS(.v26)],
     products: [
         // App ターゲット（app/App.xcodeproj）がリンクするものだけを公開する
