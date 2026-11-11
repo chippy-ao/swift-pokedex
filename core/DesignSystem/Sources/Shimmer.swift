@@ -35,6 +35,7 @@ private struct ShimmerModifier: ViewModifier {
 extension View {
     /// 斜めの光を横に流して「読み込み中」を表す。
     /// 「視差効果を減らす」がオンのときは動かさない。
+    /// 背景が透明な View にかける前提（content を mask に使うため）。
     package func shimmering() -> some View {
         modifier(ShimmerModifier())
     }

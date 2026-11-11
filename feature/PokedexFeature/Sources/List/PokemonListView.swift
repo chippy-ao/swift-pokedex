@@ -59,11 +59,12 @@ public struct PokemonListView: View {
     /// 初回の読み込み中。行と同じ形の仮の行に shimmer を重ねる。
     private var skeleton: some View {
         List(Self.placeholderItems) { pokemon in
+            // shimmer は背景が透明な行ごとにかける（List 全体だと光が行の全面を流れる）。
             PokemonRow(pokemon: pokemon)
+                .redacted(reason: .placeholder)
+                .shimmering()
         }
         .listStyle(.plain)
-        .redacted(reason: .placeholder)
-        .shimmering()
         .scrollDisabled(true)
         // 行ごとに読み上げさせず、1 つのラベルにまとめる。
         .accessibilityElement(children: .ignore)
