@@ -29,15 +29,16 @@ public struct PokemonListView: View {
         if state.items.isEmpty {
             switch state.phase {
             case .failed(let error):
-                VStack(spacing: 16) {
+                VStack(spacing: Spacing.large) {
                     Text(Self.message(for: error))
                         .multilineTextAlignment(.center)
                     Button(.listRetryButton) { store.send(.retryTapped) }
+                        .buttonStyle(.glassProminent)
                 }
                 .padding()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             default:
-                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+                skeleton
             }
         } else {
             List {
@@ -55,13 +56,32 @@ public struct PokemonListView: View {
         }
     }
 
+    /// 初回の読み込み中。行と同じ形の仮の行に shimmer を重ねる。
+    private var skeleton: some View {
+        List(Self.placeholderItems) { pokemon in
+            PokemonRow(pokemon: pokemon)
+        }
+        .listStyle(.plain)
+        .redacted(reason: .placeholder)
+        .shimmering()
+        .scrollDisabled(true)
+        // 行ごとに読み上げさせず、1 つのラベルにまとめる。
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(.listLoadingAccessibilityLabel))
+    }
+
+    private static let placeholderItems: [PokemonSummary] = (1...10).map {
+        // 画像は読みに行かない URL にする（スケルトンでは中身を見せないため）。
+        PokemonSummary(id: $0, name: "placeholder", spriteURL: URL(string: "about:blank")!)
+    }
+
     @ViewBuilder
     private func footer(_ state: PokemonListStore.State) -> some View {
         switch state.phase {
         case .loading:
             ProgressView().frame(maxWidth: .infinity)
         case .failed(let error):
-            VStack(spacing: 8) {
+            VStack(spacing: Spacing.small) {
                 Text(Self.message(for: error))
                     .font(.footnote)
                     .multilineTextAlignment(.center)

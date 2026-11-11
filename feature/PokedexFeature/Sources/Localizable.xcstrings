@@ -15,6 +15,13 @@
         "ja" : { "stringUnit" : { "state" : "translated", "value" : "読み込めませんでした。時間をおいて再試行してください。" } }
       }
     },
+    "listLoadingAccessibilityLabel" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Loading" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "読み込み中" } }
+      }
+    },
     "listNavigationTitle" : {
       "extractionState" : "manual",
       "localizations" : {
