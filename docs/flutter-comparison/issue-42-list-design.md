@@ -41,10 +41,10 @@ Skeletonizer(
 
 ```dart
 final reduce = MediaQuery.of(context).disableAnimations;
-if (reduce) return child; // 動かさない
+if (reduce) return child; // 動かさない（Android の「アニメーションを削除」で立つ）
 ```
 
-**違いと間違えやすいところ:** Flutter の `disableAnimations` は、Android の「アニメーションを削除」に対応すると公式に書かれています。iOS の「視差効果を減らす」では立たないと書かれているので、iOS で同じ配慮をするには別の手段が要ります。skeletonizer が動きを減らす設定に従うかは、公式のページからは確かめられませんでした。
+**違いと間違えやすいところ:** Flutter の `disableAnimations` は、Android の「アニメーションを削除」に対応すると公式に書かれています。iOS の「視差効果を減らす」は `dart:ui` の `AccessibilityFeatures.reduceMotion` で別に公開されていて、`disableAnimations` は立たない、と同じページに書かれています。iOS で同じ配慮をするには、`reduceMotion` のほうも見る必要があります。skeletonizer が動きを減らす設定に従うかは、公式のページからは確かめられませんでした。
 
 **出典:** [accessibilityReduceMotion](https://developer.apple.com/documentation/swiftui/environmentvalues/accessibilityreducemotion)、[MediaQueryData.disableAnimations](https://api.flutter.dev/flutter/widgets/MediaQueryData/disableAnimations.html)、[skeletonizer（pub.dev）](https://pub.dev/packages/skeletonizer)
 
@@ -69,9 +69,9 @@ Container(
 Text(number, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant));
 ```
 
-**違いと間違えやすいところ:** Flutter の `ColorScheme` は `brightness` を持つ 1 組の色なので、ダーク用は `MaterialApp.darkTheme` に別の `ThemeData` を渡します。UIKit 由来の `UIColor` の名前は OS が持っていて、アプリは何も渡しません。ただし 2 つの役割は 1 対 1 ではありません。`ColorScheme` が OS のダークモードに自動で従うかは、公式のページからは確かめられませんでした。
+**違いと間違えやすいところ:** Flutter の `ColorScheme` は `brightness` を持つ 1 組の色なので、ダーク用は `MaterialApp.darkTheme` に別の `ThemeData` を渡します。UIKit 由来の `UIColor` の名前は OS が持っていて、アプリは何も渡しません。ただし 2 つの役割は 1 対 1 ではありません。`MaterialApp.themeMode` の初期値は `ThemeMode.system` で、`theme` と `darkTheme` の両方を渡せば端末の設定で切り替わります。
 
-**出典:** [ColorScheme（Flutter）](https://api.flutter.dev/flutter/material/ColorScheme-class.html)、[Color（HIG）](https://developer.apple.com/design/human-interface-guidelines/color)
+**出典:** [ColorScheme（Flutter）](https://api.flutter.dev/flutter/material/ColorScheme-class.html)、[MaterialApp.themeMode](https://api.flutter.dev/flutter/material/MaterialApp/themeMode.html)、[Color（HIG）](https://developer.apple.com/design/human-interface-guidelines/color)
 
 ### text style（.headline）と Dynamic Type
 
@@ -132,6 +132,6 @@ class Spacing {
 }
 ```
 
-**違いと間違えやすいところ:** Dart の class は誤って `Spacing()` と作れてしまうので、作れなくしたいときは private なコンストラクタを足します（その書き方は公式で確かめていないので、ここでは書きません）。Swift の `package` は同じパッケージ内だけに見せる修飾子で、Dart に同じ段階はありません（Dart は `_` で file 単位の private です）。Dart の定数は lowerCamelCase で書く、と公式にあります。
+**違いと間違えやすいところ:** Dart の class は誤って `Spacing()` と作れてしまうので、作れなくしたいときは private なコンストラクタを足します（その書き方は公式で確かめていないので、ここでは書きません）。Swift の `package` は同じパッケージ内だけに見せる修飾子で、Dart に同じ段階はありません（Dart は `_` で library 単位の private で、ふつうは 1 ファイルが 1 library です）。Dart の定数は lowerCamelCase で書く、と公式にあります。
 
 **出典:** [Classes（Dart）](https://dart.dev/language/classes)、[Access Control（Swift）](https://docs.swift.org/swift-book/documentation/the-swift-programming-language/accesscontrol/)
