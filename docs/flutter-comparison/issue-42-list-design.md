@@ -24,7 +24,7 @@ Skeletonizer(
 );
 ```
 
-**違いと間違えやすいところ:** どちらも、形を作るために仮のデータが要ります。skeletonizer は画像のように仮のデータで描けない部品に `Skeleton.replace` を使います。SwiftUI は、画像を読む部品が仮のデータでも通信しないよう、自分で気を付ける必要があります（このアプリでは読みに行かない URL を渡しています）。
+**違いと間違えやすいところ:** どちらも、形を作るために仮のデータが要ります。skeletonizer は画像のように仮のデータで描けない部品に `Skeleton.replace` を使います。SwiftUI は、画像を読む部品が仮のデータでも通信しないよう、自分で気を付ける必要があります（このアプリでは通信しない file URL を渡しています）。
 
 **出典:** [redacted(reason:)](https://developer.apple.com/documentation/swiftui/view/redacted(reason:))、[skeletonizer（pub.dev）](https://pub.dev/packages/skeletonizer)
 
@@ -69,7 +69,7 @@ Container(
 Text(number, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant));
 ```
 
-**違いと間違えやすいところ:** Flutter の `ColorScheme` は `brightness` を持つ 1 組の色なので、ダーク用は `ThemeData.darkTheme` などで別の組を渡します。UIKit 由来の `UIColor` の名前は OS が持っていて、アプリは何も渡しません。ただし 2 つの役割は 1 対 1 ではありません。`ColorScheme` が OS のダークモードに自動で従うかは、公式のページからは確かめられませんでした。
+**違いと間違えやすいところ:** Flutter の `ColorScheme` は `brightness` を持つ 1 組の色なので、ダーク用は `MaterialApp.darkTheme` に別の `ThemeData` を渡します。UIKit 由来の `UIColor` の名前は OS が持っていて、アプリは何も渡しません。ただし 2 つの役割は 1 対 1 ではありません。`ColorScheme` が OS のダークモードに自動で従うかは、公式のページからは確かめられませんでした。
 
 **出典:** [ColorScheme（Flutter）](https://api.flutter.dev/flutter/material/ColorScheme-class.html)、[Color（HIG）](https://developer.apple.com/design/human-interface-guidelines/color)
 

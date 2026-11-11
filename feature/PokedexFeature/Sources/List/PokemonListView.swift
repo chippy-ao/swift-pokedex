@@ -71,8 +71,10 @@ public struct PokemonListView: View {
     }
 
     private static let placeholderItems: [PokemonSummary] = (1...10).map {
-        // 画像は読みに行かない URL にする（スケルトンでは中身を見せないため）。
-        PokemonSummary(id: $0, name: "placeholder", spriteURL: URL(string: "about:blank")!)
+        // 通信させないため、file URL を渡す（強制アンラップも避けられる）。
+        // 読み込みは画像として失敗し、RemoteImage の失敗時の表示になる（redacted で隠れる）。
+        // 実機の見え方は未確認。
+        PokemonSummary(id: $0, name: "placeholder", spriteURL: URL(filePath: "/"))
     }
 
     @ViewBuilder
