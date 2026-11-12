@@ -33,6 +33,7 @@ fastlane や CocoaPods を使わないので、Ruby と Bundler は入れませ�
 | `mise run format` | swift-format による整形 |
 | `mise run lint` | swift-format、SwiftLint、actionlint による検査と、[依存チェック](package-dependencies.md#依存チェック) |
 | `mise run test` | `xcodebuild test`（scheme `Pokedex`、テストプラン `AllTests`）によるビルドとテスト |
+| `mise run check-warnings` | `mise run test` の結果（`build/AllTests.xcresult`）のビルドの警告を数え、1 件でもあれば失敗する |
 
 `mise run test` は iOS Simulator で実行します。既定では、利用できる iPhone のシミュレーターのうち最後のものを使います。別のものを使うときは、環境変数 `POKEDEX_TEST_DESTINATION` に `xcodebuild` の `-destination` の値（例: `platform=iOS Simulator,name=iPhone 17`）を指定します。
 
@@ -186,6 +187,7 @@ SwiftLint で無効にしたルールと理由は `.swiftlint.yml` のコメン�
 - 走らせなかったジョブは skipped になり、成功として扱われます。`ci-status` は `changes` が success で、`lint` と `build-test` が success か skipped のときに成功します。`on.pull_request.paths` を使わない理由は [ci.yml](../.github/workflows/ci.yml) 冒頭のコメントを参照してください。
 - `xcode-27` は Xcode 27 を入れた GitHub のプレビューのランナーイメージです。ジョブの環境変数 `DEVELOPER_DIR=/Applications/Xcode_27.2.app` で Xcode のバージョンを選び、README の「動作環境」と揃えます。正式なラベルになったら、`.github/actionlint.yaml` の登録を外します。
 - CI から呼ぶコマンドは mise のタスクに揃えます。
+- `build-test` はテストのあとに `mise run check-warnings` を走らせ、ビルドの警告が 1 件でもあれば落ちます。手元のビルドは止めません。手で走らせることもできますが、増分ビルドなので 0 件でも当てにならず、CI の結果が正です。deprecated の警告も数えるので、Xcode を上げて増えたら相談します。理由と細部は [scripts/check-build-warnings.swift](../scripts/check-build-warnings.swift) の冒頭のコメントを参照してください。
 
 ### PR ラベル
 
