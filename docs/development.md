@@ -116,8 +116,9 @@ SwiftLint で無効にしたルールと理由は `.swiftlint.yml` のコメン�
 組み上げたアプリ（`Pokedex.app`）を起動して確かめるテストです。`app/PokedexUITests`（XCTest の XCUITest）にあり、`app/AllTests.xctestplan` に入っているので `mise run test` で一緒に走ります。単体テストは各層を DI で差し替えるため、アプリ本体が言語を持っているかや、同梱の名前の表と言語の読み取りが実際につながっているかを見られません。そこを見るために置いています。
 
 - 今あるのは [LocalizedNameUITests](../app/PokedexUITests/LocalizedNameUITests.swift) です。起動引数 `-AppleLanguages (ja)` / `(en)` で言語を指定して起動し、一覧の 1 行目に「フシギダネ」/「Bulbasaur」が出るかを見ます。
-- 差し替えるのは一覧の通信（`fetchPokemonList`）だけです。CI で PokeAPI を叩かず、結果を決まった値にするためです。環境変数 `POKEDEX_UI_TEST_FIXTURE=1` をテストが渡したときだけ、[PokedexApp.swift](../app/Pokedex/PokedexApp.swift) が差し替えます。
+- 差し替えるのは一覧の通信（`fetchPokemonList`）だけです。CI で PokeAPI を叩かず、結果を決まった値にするためです。環境変数 `POKEDEX_UI_TEST_FIXTURE=1` をテストが渡したときだけ、[PokeAPIClient+Live.swift](../core/NetworkClientURLSession/Sources/PokeAPIClient+Live.swift) の `liveValue` が差し替えます。`#if DEBUG` の中だけなので Release には入りません（UI テストは scheme の Test が Debug なので Debug で走ります）。
 - 名前の表（同梱の JSON）と言語の読み取り（`PreferredLocalization`）は本物を通します。ここを差し替えると、見たいもの（組み上げたアプリでの言語の効き方）を見なくなるためです。
+- `app/PokedexUITests` は `Package.swift` の外にあるため、`scripts/check-dependencies.swift` はテストプランに `PokedexUITests` が登録されているかだけを見ます。テストの中身や、UI テストを足したときの登録は人が見ます。
 - 走らせ方は単体テストと同じ `mise run test` です（シミュレーターの選び方も同じ）。XCUITest なので、Swift Testing ではなく XCTest で書きます。
 
 ## Issue

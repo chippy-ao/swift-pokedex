@@ -5,7 +5,38 @@ import HTTPTypesFoundation
 import NetworkClient
 
 extension PokeAPIClient: DependencyKey {
-    public static let liveValue = PokeAPIClient.live(session: .pokeAPI)
+    public static let liveValue: PokeAPIClient = {
+        #if DEBUG
+            // UI テスト（app/PokedexUITests）が環境変数 POKEDEX_UI_TEST_FIXTURE=1 を渡したときだけ、
+            // 一覧の通信を固定のデータに差し替える。CI で PokeAPI を叩かないため。
+            // Release に入れない（利用者が環境変数で差し替えられないように）。UI テストは Debug で走る
+            // （scheme の Test が Debug。docs/development.md の「UI テスト」）。
+            if ProcessInfo.processInfo.environment["POKEDEX_UI_TEST_FIXTURE"] == "1" {
+                return .uiTestFixture
+            }
+        #endif
+        return PokeAPIClient.live(session: .pokeAPI)
+    }()
+
+    #if DEBUG
+        /// 一覧だけ固定のデータにして、名前の表（fetchAllPokemonSpeciesNames）は本物（同梱の JSON）を通す。
+        /// 言語の読み取りも本物のまま通るので、組み上げたアプリで言語が効いているかを UI テストで見られる。
+        private static var uiTestFixture: PokeAPIClient {
+            var client = PokeAPIClient.live(session: .pokeAPI)
+            client.fetchPokemonList = { _, _ in
+                // 通信させないため、画像は file URL にする（読み込みは失敗して代わりの表示になる）。
+                let sprite = URL(filePath: "/")
+                return PokemonListDTO(
+                    items: [
+                        .init(id: 1, name: "bulbasaur", spriteURL: sprite),
+                        .init(id: 4, name: "charmander", spriteURL: sprite),
+                        .init(id: 7, name: "squirtle", spriteURL: sprite),
+                    ],
+                    hasNext: false)
+            }
+            return client
+        }
+    #endif
 
     /// テストから URLProtocol のスタブ入りの session を差し込めるようにするファクトリ。
     static func live(session: URLSession) -> PokeAPIClient {
