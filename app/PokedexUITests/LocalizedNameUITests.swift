@@ -3,16 +3,19 @@ import XCTest
 /// 組み上げたアプリ（Pokedex.app）を起動し、一覧の名前がアプリの言語で出ることを確かめる。
 /// 単体テストは各層を DI で差し替えるため、アプリ本体が言語を持っているか（Bundle.main の
 /// preferredLocalizations）や、同梱の名前の表が実際につながっているかを見られない。そこを見る。
-/// 一覧の通信だけは PokedexApp が固定のデータに差し替える（POKEDEX_UI_TEST_FIXTURE。CI で PokeAPI を叩かない）。
+/// 一覧の通信だけは NetworkClientURLSession の PokeAPIClient.liveValue が固定のデータに差し替える
+/// （POKEDEX_UI_TEST_FIXTURE。CI で PokeAPI を叩かない）。
 final class LocalizedNameUITests: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
     }
 
+    @MainActor
     func testJapaneseShowsJapaneseNameInFirstRow() {
         assertFirstRowShows(language: "ja", name: "フシギダネ")
     }
 
+    @MainActor
     func testEnglishShowsEnglishNameInFirstRow() {
         assertFirstRowShows(language: "en", name: "Bulbasaur")
     }
@@ -20,6 +23,7 @@ final class LocalizedNameUITests: XCTestCase {
     /// 指定の言語で起動し、一覧の 1 行目（cell）の中に名前の文字が出るのを待つ。
     /// 読み込み中も 1 行目の cell はあるので、cell の有無ではなく中の文字を待つ。
     /// 行の読み上げは 1 つの文字（名前と番号をまとめたラベル）になるので、ラベルの部分一致で探す。
+    @MainActor
     private func assertFirstRowShows(
         language: String, name: String, file: StaticString = #filePath, line: UInt = #line
     ) {
