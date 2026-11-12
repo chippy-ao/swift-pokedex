@@ -31,6 +31,7 @@ struct PackageDescription: Decodable {
 
 struct TestPlanTarget: Decodable {
     let name: String
+    let containerPath: String?
 }
 
 struct TestPlanEntry: Decodable {
@@ -160,8 +161,10 @@ func checkTestPlan(in package: PackageDescription) -> [String] {
     }
 
     let packageTests = Set(package.targets.filter { $0.type == "test" }.map(\.name))
-    let enabledInPlan = Set(plan.testTargets.filter { $0.enabled != false }.map(\.target.name))
-    let allInPlan = Set(plan.testTargets.map(\.target.name))
+    // Package.swift の外にある target（app/App.xcodeproj の UI テストなど）は突き合わせの対象外。
+    let packageEntries = plan.testTargets.filter { $0.target.containerPath == "container:.." }
+    let enabledInPlan = Set(packageEntries.filter { $0.enabled != false }.map(\.target.name))
+    let allInPlan = Set(packageEntries.map(\.target.name))
 
     var errors: [String] = []
     for name in packageTests.subtracting(enabledInPlan).sorted() {
