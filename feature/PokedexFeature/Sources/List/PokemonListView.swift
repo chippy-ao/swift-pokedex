@@ -29,15 +29,16 @@ public struct PokemonListView: View {
         if state.items.isEmpty {
             switch state.phase {
             case .failed(let error):
-                VStack(spacing: 16) {
+                VStack(spacing: Spacing.large) {
                     Text(Self.message(for: error))
                         .multilineTextAlignment(.center)
                     Button(.listRetryButton) { store.send(.retryTapped) }
+                        .buttonStyle(.glassProminent)
                 }
                 .padding()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             default:
-                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+                skeleton
             }
         } else {
             List {
@@ -55,13 +56,35 @@ public struct PokemonListView: View {
         }
     }
 
+    /// 初回の読み込み中。行と同じ形の仮の行に shimmer を重ねる。
+    private var skeleton: some View {
+        List(Self.placeholderItems) { pokemon in
+            // shimmer は背景が透明な行ごとにかける（List 全体だと光が行の全面を流れる）。
+            PokemonRow(pokemon: pokemon)
+                .redacted(reason: .placeholder)
+                .shimmering()
+        }
+        .listStyle(.plain)
+        .scrollDisabled(true)
+        // 行ごとに読み上げさせず、1 つのラベルにまとめる。
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(.listLoadingAccessibilityLabel))
+    }
+
+    private static let placeholderItems: [PokemonSummary] = (1...10).map {
+        // 通信させないため、file URL を渡す（強制アンラップも避けられる）。
+        // 読み込みは画像として失敗し、RemoteImage の失敗時の表示になる（redacted で隠れる）。
+        // 実機の見え方は未確認。
+        PokemonSummary(id: $0, name: "placeholder", spriteURL: URL(filePath: "/"))
+    }
+
     @ViewBuilder
     private func footer(_ state: PokemonListStore.State) -> some View {
         switch state.phase {
         case .loading:
             ProgressView().frame(maxWidth: .infinity)
         case .failed(let error):
-            VStack(spacing: 8) {
+            VStack(spacing: Spacing.small) {
                 Text(Self.message(for: error))
                     .font(.footnote)
                     .multilineTextAlignment(.center)

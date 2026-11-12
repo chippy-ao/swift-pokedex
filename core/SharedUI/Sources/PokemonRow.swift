@@ -13,14 +13,19 @@ package struct PokemonRow: View {
     }
 
     package var body: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: Spacing.medium) {
             RemoteImage(url: pokemon.spriteURL)
-                .frame(width: 56, height: 56)
-            Text(String(format: "#%04d", pokemon.id))
-                .font(.subheadline.monospacedDigit())
-                .foregroundStyle(.secondary)
-            Text(pokemon.name.capitalized)
-                .font(.headline)
+                .frame(width: ImageSize.thumbnail, height: ImageSize.thumbnail)
+                .background(
+                    Color(.secondarySystemBackground),
+                    in: RoundedRectangle(cornerRadius: CornerRadius.thumbnail))
+            VStack(alignment: .leading, spacing: Spacing.xSmall) {
+                Text(pokemon.name.capitalized)
+                    .font(.headline)
+                Text(String(format: "#%04d", pokemon.id))
+                    .font(.footnote.monospacedDigit())
+                    .foregroundStyle(.secondary)
+            }
             Spacer(minLength: 0)
         }
         .accessibilityElement(children: .combine)
