@@ -2,7 +2,7 @@
 
 - Issue: https://github.com/chippy-ao/swift-pokedex/issues/44
 
-一覧の名前をアプリの言語で出すために初めて出てきたもの（`String` を包む struct、`Bundle.module`）を、Dart / Flutter の同じ層のものと比べる学習ノートです。前の Issue で説明した言葉は [issue-38-localization.md](issue-38-localization.md) を見てください。
+一覧の名前をアプリの言語で出すために初めて出てきたもの（`String` を包む struct、`Bundle.module`、アプリ本体の言語、XCUITest）を、Dart / Flutter の同じ層のものと比べる学習ノートです。前の Issue で説明した言葉は [issue-38-localization.md](issue-38-localization.md) を見てください。
 
 ## Swift の言語機能
 
@@ -60,4 +60,55 @@ final text = await rootBundle.loadString('assets/pokemon-species-names.json');
 
 **違いと間違えやすいところ:** Flutter でパッケージの asset を読むときは、パッケージ内のパスに `packages/<名前>/` を付けるなどの決まりがあります（画像では `package:` 引数を渡します）。Swift は、モジュールの中のコードは自分の `Bundle.module` を呼ぶだけで、パスの前置きは要りません。ただし、別のモジュールに入れた JSON を、今のモジュールの `Bundle.module` では読めません。リソースを置いたモジュールの中で読んで、結果だけを interface で返す形にしています（[ADR-0017](../adr/0017-network-client-interface-independent-of-transport.md)）。
 
-**出典:** [Bundling resources with a Swift package（Apple）](https://developer.apple.com/documentation/xcode/bundling-resources-with-a-swift-package)、[Assets and images（Flutter）](https://docs.flutter.dev/ui/assets/assets-and-images)の「Loading assets」と「Asset images in package dependencies」の節
+**出典:** [Bundling resources with a Swift package（Apple）](https://developer.apple.com/documentation/xcode/bundling-resources-with-a-swift-package)、[Assets and images（Flutter）](https://docs.flutter.dev/ui/assets/assets-and-images)の「Loading assets」の中の「Loading text assets」（`rootBundle`）と、「Asset images in package dependencies」（`package:` 引数、`packages/<名前>/`）の節
+
+### InfoPlist.xcstrings と、アプリ本体の言語（Flutter の iOS 側の設定）
+
+**何の話か:** パッケージに訳があっても、アプリ本体（`Pokedex.app`）に言語を持たせないと、アプリが「日本語に対応している」と見なされない話です。
+
+**意味:** Swift では、`Bundle.main.preferredLocalizations` が本体の bundle の言語から選ばれます。本体に言語が無いと常に開発言語（en）が返り、一覧のポケモン名が日本語になりませんでした。そこで本体に `InfoPlist.xcstrings`（アプリの表示名の en / ja）を置き、`en.lproj` と `ja.lproj` ができるようにしました（詳しくは [localization.md](../localization.md#アプリ本体にも言語を持たせる)）。
+
+Flutter では、公式に「訳は Flutter が扱う（localizations are handled by Flutter）」とあるので、本体の言語が実行時の表示を決めることはありません。それでも iOS 側には、対応言語を Xcode プロジェクトに足す手順があります。公式の「Localizing for iOS: Updating the iOS app bundle」には、`ios/Runner.xcodeproj` を Xcode で開き、Info タブの Localizations で言語を足す手順が書かれています。理由は、App Store の掲載が対応言語を正しく出すため、また、Xcode が作る空の `.strings` を App Store が対応言語の判定に使うためです。
+
+```swift
+// Swift: 本体に言語があれば、ユーザーの言語順に選ばれる。無ければ en だけ
+let language = Bundle.main.preferredLocalizations.first  // "ja" / "en"
+```
+
+```dart
+// Flutter: 実行時の言語は Dart 側が決める（iOS の本体の言語には頼らない）
+final language = Localizations.localeOf(context).languageCode; // 'ja' / 'en'
+```
+
+**違いと間違えやすいところ:** 手順は `Info.plist` に `CFBundleLocalizations` を書くやり方ではなく、Xcode の Localizations に言語を足すやり方で、公式のページに `Info.plist` や `CFBundleLocalizations` の記述はありません。
+
+**ダメな例:** パッケージの訳だけで「日本語対応した」と思い込むこと。UI の文字は日本語に見えても、本体の言語を読むコードは英語のままです。
+
+**出典:** [preferredLocalizations（Apple）](https://developer.apple.com/documentation/foundation/bundle/preferredlocalizations)、[WWDC19 セッション 403](https://developer.apple.com/wwdc19/403)、[Internationalizing Flutter apps の「Localizing for iOS: Updating the iOS app bundle」（Flutter）](https://docs.flutter.dev/ui/accessibility-and-internationalization/internationalization)
+
+### XCUITest の launchArguments / launchEnvironment と Flutter の integration_test
+
+**何の話か:** 組み上げたアプリを実際に起動して、画面を見て確かめるテストの書き方です。
+
+**意味:** XCUITest は、テストとは別のプロセスでアプリを起動して画面を操作します。起動前に `launchArguments`（起動引数）と `launchEnvironment`（環境変数）を設定でき、アプリはそれを読んで動きを変えられます。このアプリでは、`-AppleLanguages (ja)` で言語を指定し、環境変数 `POKEDEX_UI_TEST_FIXTURE=1` で一覧の通信だけを固定データにしています（[development.md](../development.md#ui-テスト)）。
+
+Flutter の `integration_test` は、`flutter test integration_test/app_test.dart` で実機やエミュレーターにアプリを起動し、`flutter_test` の API（`tester.tap` など）で操作します。公式の統合テストのページには、アプリに起動引数や環境変数を渡す方法の記載は見つかりませんでした。差し替えはテストコード側で Dart のオブジェクトを差し替えて行うのが基本で、このアプリのように「ビルド済みのアプリに外から値を渡す」形ではありません。
+
+```swift
+let app = XCUIApplication()
+app.launchArguments = ["-AppleLanguages", "(ja)"]
+app.launchEnvironment["POKEDEX_UI_TEST_FIXTURE"] = "1"
+app.launch()
+```
+
+```dart
+// integration_test: アプリは同じプロセスで動き、テストの中から直接差し替えられる
+testWidgets('日本語の名前が出る', (tester) async {
+  await tester.pumpWidget(const MyApp(repository: FakeRepository()));
+  expect(find.text('フシギダネ'), findsOneWidget);
+});
+```
+
+**違いと間違えやすいところ:** XCUITest は別プロセスなので、アプリのコードには触れず、画面の accessibility の情報だけを見ます。このアプリの行は読み上げを 1 つにまとめているため、cell の中の文字のラベル（`Bulbasaur, #0001` のような形）を部分一致で探します。
+
+**出典:** [launchArguments（Apple）](https://developer.apple.com/documentation/xcuiautomation/xcuiapplication/launcharguments)、[launchEnvironment（Apple）](https://developer.apple.com/documentation/xcuiautomation/xcuiapplication/launchenvironment)、[An introduction to integration testing（Flutter）](https://docs.flutter.dev/testing/integration-tests)

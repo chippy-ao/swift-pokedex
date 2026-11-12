@@ -111,6 +111,15 @@ SwiftLint で無効にしたルールと理由は `.swiftlint.yml` のコメン�
 - 失敗したテストの期待値を、実装に合わせて書き換えません。仕様が変わった場合だけ、合意のうえで変えます（[ドキュメントの運用ルール](README.md#機能の挙動を変えたら同じ-pr-で-readme-を更新する)）。
 - 失敗するテストを、合意なしに削除・無効化（`.disabled`）しません。
 
+### UI テスト
+
+組み上げたアプリ（`Pokedex.app`）を起動して確かめるテストです。`app/PokedexUITests`（XCTest の XCUITest）にあり、`app/AllTests.xctestplan` に入っているので `mise run test` で一緒に走ります。単体テストは各層を DI で差し替えるため、アプリ本体が言語を持っているかや、同梱の名前の表と言語の読み取りが実際につながっているかを見られません。そこを見るために置いています。
+
+- 今あるのは [LocalizedNameUITests](../app/PokedexUITests/LocalizedNameUITests.swift) です。起動引数 `-AppleLanguages (ja)` / `(en)` で言語を指定して起動し、一覧の 1 行目に「フシギダネ」/「Bulbasaur」が出るかを見ます。
+- 差し替えるのは一覧の通信（`fetchPokemonList`）だけです。CI で PokeAPI を叩かず、結果を決まった値にするためです。環境変数 `POKEDEX_UI_TEST_FIXTURE=1` をテストが渡したときだけ、[PokedexApp.swift](../app/Pokedex/PokedexApp.swift) が差し替えます。
+- 名前の表（同梱の JSON）と言語の読み取り（`PreferredLocalization`）は本物を通します。ここを差し替えると、見たいもの（組み上げたアプリでの言語の効き方）を見なくなるためです。
+- 走らせ方は単体テストと同じ `mise run test` です（シミュレーターの選び方も同じ）。XCUITest なので、Swift Testing ではなく XCTest で書きます。
+
 ## Issue
 
 `.github/ISSUE_TEMPLATE/` のテンプレートから作ります。空の Issue は作れません。
