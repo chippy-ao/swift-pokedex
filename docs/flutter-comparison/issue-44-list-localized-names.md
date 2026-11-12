@@ -112,3 +112,33 @@ testWidgets('日本語の名前が出る', (tester) async {
 **違いと間違えやすいところ:** XCUITest は別プロセスなので、アプリのコードには触れず、画面の accessibility の情報だけを見ます。このアプリの行は読み上げを 1 つにまとめているため、cell の中の文字のラベル（`Bulbasaur, #0001` のような形）を部分一致で探します。
 
 **出典:** [launchArguments（Apple）](https://developer.apple.com/documentation/xcuiautomation/xcuiapplication/launcharguments)、[launchEnvironment（Apple）](https://developer.apple.com/documentation/xcuiautomation/xcuiapplication/launchenvironment)、[An introduction to integration testing（Flutter）](https://docs.flutter.dev/testing/integration-tests)
+
+### ビルドの警告の出どころと数え方（Xcode と flutter analyze）
+
+**何の話か:** コードの警告が、いつ・どこから出て、どうやって「1 件でもあれば CI を落とす」ようにするかの話です。
+
+**意味:** Swift の警告は、コンパイラがビルドの途中で出します。Xcode のビルド結果（xcresult）に入り、`xcrun xcresulttool get build-results` で件数（`warningCount`）と本文を取れます。このリポジトリでは `mise run test` が `build/AllTests.xcresult` を出し、`mise run check-warnings` がその件数を数えて、1 件でもあれば失敗にします。CI の `build-test` でテストのあとに走ります。手元では止めません（運用の細部は [development.md](../development.md)）。
+
+Flutter の警告は analyzer が出します。`flutter analyze`（`dart analyze`）をビルドともテストとも別に走らせ、`flutter test` は analyzer の警告では落ちません。CI で警告を落とす形は、`flutter analyze --fatal-warnings` を走らせるのに近いです。
+
+手元の Xcode は増分ビルドです。変わっていないファイルは再コンパイルされないので、その警告は出ず、xcresult にも載らないことがあります。`flutter analyze` は毎回すべてのソースを読みます。CI はまっさらな状態からビルドするので、全部の警告が出ます。
+
+```swift
+// 警告の件数は、ビルドが残した xcresult から取る
+// $ xcrun xcresulttool get build-results --path build/AllTests.xcresult
+// → warningCount が 1 以上なら scripts/check-build-warnings.swift が exit 1
+```
+
+```yaml
+# Flutter: 警告で CI を落とす。ビルドやテストとは別のステップ
+- run: flutter analyze --fatal-warnings
+- run: flutter test
+```
+
+**違いと間違えやすいところ:** Swift は「ビルドが警告を出す」ので、増分ビルドだと 0 件でも当てになりません。手元の 0 件は「今回コンパイルし直した範囲では 0 件」という意味で、CI の結果が正です。Dart は analyzer がビルドと別なので、毎回同じ範囲を検査できます。
+
+コンパイラのフラグで済ませる道は試して駄目でした。`-warnings-as-errors`（[SE-0443](https://github.com/swiftlang/swift-evolution/blob/main/proposals/0443-warning-control-flags.md) の警告の制御フラグ）を付けても、このリポジトリで出た Swift 6 の並行性の警告（下の `@MainActor` の件）はエラーにならず、ビルドが通りました。また、Xcode は外部の SwiftPM 依存を `-suppress-warnings` で組むので、フラグと衝突して外部依存のビルドが失敗しました。理由は [scripts/check-build-warnings.swift](../../scripts/check-build-warnings.swift) の冒頭のコメントにあります。
+
+**例（@MainActor）:** UI テストで `XCUIApplication` を使うと、テスト関数に `@MainActor` を付けないと並行性の警告が 10 件出ました。`XCUIApplication` が `@MainActor` の型なので、触る関数もメインアクターに置きます。Swift は型でスレッド（アクター）を縛れますが、Dart / Flutter に型でスレッドを縛る仕組みはありません。Dart は isolate ごとにメモリが分かれていて、isolate 同士はメッセージで話します。`@MainActor` の基本は [issue-07-pokemon-list.md](issue-07-pokemon-list.md) の「@MainActor と @Observable の Store」 を見てください。
+
+**出典:** `xcrun xcresulttool get build-results --help`（Xcode 付属のヘルプ。手元で実行して確認）、[XCUIApplication（Apple）](https://developer.apple.com/documentation/xcuiautomation/xcuiapplication)、[SE-0443 Precise control flags over compiler warnings](https://github.com/swiftlang/swift-evolution/blob/main/proposals/0443-warning-control-flags.md)、[dart analyze（Dart）](https://dart.dev/tools/dart-analyze)、[Concurrency in Dart](https://dart.dev/language/concurrency)
