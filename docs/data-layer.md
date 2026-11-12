@@ -105,8 +105,8 @@ PokeAPI の `pokemon-species` の `names` に含まれる言語コードは次�
 アプリの言語に追従させます（別設定にはしません）。
 
 - `Bundle.main.preferredLocalizations.first` を PokeAPI の言語コードに変換します。`ja` は `ja-hrkt`、`en` は `en` です。
-- 該当言語の名前が無ければ `en` にフォールバックします。
-- この変換とフォールバックは Domain の UseCase で行います。名前が無ければ識別子（`capitalized`）で出します。
+- 該当言語の名前が無ければ `en`、`en` も無ければ識別子（`capitalized`）で出します。表に無い番号も同じです。
+- この変換とフォールバックは Domain の UseCase で行います。
 - Model では言語コードを `LanguageCode`（`String` を包む `RawRepresentable` の struct）で持ちます。DTO は `String` のままで、Repository で変えます。
 
 選んだ理由と検討した代替案は [ADR 0007](./adr/0007-localization.md) を参照してください。
@@ -219,18 +219,7 @@ Domain の UseCase は、単純な委譲でも置きます（feature から Repo
 | テーマ色の監視 | `SettingsRepository` の値を `AsyncStream` で返す |
 | ポケモン名の言語解決 | [言語コードと変換ルール](#言語コードと変換ルール)に従い、名前の表から名前を選ぶ（一覧取得 UseCase の中で行う） |
 
-言語解決の例です（実装は [FetchPokemonPageUseCase](../core/Domain/Sources/FetchPokemonPageUseCase.swift)。簡略にしてあります）。
-
-```swift
-func resolvePokemonName(
-  from names: [LocalizedName],
-  preferredLocalization: String?
-) -> String? {
-  let code: LanguageCode = preferredLocalization == "ja" ? .jaHrkt : .en
-  return names.first { $0.languageCode == code }?.name
-    ?? names.first { $0.languageCode == .en }?.name
-}
-```
+実装は [FetchPokemonPageUseCase](../core/Domain/Sources/FetchPokemonPageUseCase.swift) です。
 
 ## キャッシュ方針
 

@@ -2,7 +2,7 @@
 
 - Issue: https://github.com/chippy-ao/swift-pokedex/issues/44
 
-一覧の名前をアプリの言語で出すために初めて出てきたもの（`String` を包む struct、`Bundle.module`、Swift の単体スクリプト）を、Dart / Flutter の同じ層のものと比べる学習ノートです。前の Issue で説明した言葉は [issue-38-localization.md](issue-38-localization.md) を見てください。
+一覧の名前をアプリの言語で出すために初めて出てきたもの（`String` を包む struct、`Bundle.module`）を、Dart / Flutter の同じ層のものと比べる学習ノートです。前の Issue で説明した言葉は [issue-38-localization.md](issue-38-localization.md) を見てください。
 
 ## Swift の言語機能
 
@@ -60,24 +60,4 @@ final text = await rootBundle.loadString('assets/pokemon-species-names.json');
 
 **違いと間違えやすいところ:** Flutter でパッケージの asset を読むときは、パッケージ内のパスに `packages/<名前>/` を付けるなどの決まりがあります（画像では `package:` 引数を渡します）。Swift は、モジュールの中のコードは自分の `Bundle.module` を呼ぶだけで、パスの前置きは要りません。ただし、別のモジュールに入れた JSON を、今のモジュールの `Bundle.module` では読めません。リソースを置いたモジュールの中で読んで、結果だけを interface で返す形にしています（[ADR-0017](../adr/0017-network-client-interface-independent-of-transport.md)）。
 
-**出典:** [Bundling resources with a Swift package（Apple）](https://developer.apple.com/documentation/xcode/bundling-resources-with-a-swift-package)、[Assets and images（Flutter）](https://docs.flutter.dev/ui/assets/assets-and-images)
-
-## Swift のツール
-
-### Swift の単体スクリプトと dart run
-
-**何の話か:** 1 ファイルのスクリプトで、表を作り直す方法です。
-
-**意味:** `scripts/generate-pokemon-names.swift` は、`swift scripts/generate-pokemon-names.swift` で、パッケージや Xcode プロジェクトを作らずに 1 ファイルのまま実行できます（`mise run generate-pokemon-names` が中身でこれを呼びます）。Foundation だけを使い、PokeAPI の CSV を読んで JSON を書き出します。Dart では `dart run tool/debug.dart` のように、ファイルのパスを渡して実行します。
-
-```bash
-swift scripts/generate-pokemon-names.swift
-```
-
-```bash
-dart run tool/generate_pokemon_names.dart
-```
-
-**違いと間違えやすいところ:** Dart の公式ドキュメントは、パスを渡して Dart ファイルを実行できることを書いています。pubspec が要るかどうかは、確かめられなかったので書きません。Swift のスクリプトは外部パッケージを import しない前提で書いています。
-
-**出典:** [dart run](https://dart.dev/tools/dart-run)
+**出典:** [Bundling resources with a Swift package（Apple）](https://developer.apple.com/documentation/xcode/bundling-resources-with-a-swift-package)、[Assets and images（Flutter）](https://docs.flutter.dev/ui/assets/assets-and-images)の「Loading assets」と「Asset images in package dependencies」の節

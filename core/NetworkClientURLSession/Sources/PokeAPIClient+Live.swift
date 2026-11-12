@@ -37,15 +37,18 @@ private let bundledSpeciesNames: Result<[Int: [LocalizedNameDTO]], PokeAPIError>
     else {
         return .failure(.unavailable)
     }
-    return .success(
-        Dictionary(
-            uniqueKeysWithValues: rows.map { row in
-                (
-                    row.id,
-                    row.names.sorted { $0.key < $1.key }
-                        .map { LocalizedNameDTO(languageCode: $0.key, name: $0.value) }
-                )
-            }))
+    // id が重複しても落とさない（手で JSON を直したときにクラッシュさせない）。後ろの行を使う。
+    let table = Dictionary(
+        rows.map { row in
+            (
+                row.id,
+                row.names.sorted { $0.key < $1.key }
+                    .map { LocalizedNameDTO(languageCode: $0.key, name: $0.value) }
+            )
+        },
+        uniquingKeysWith: { _, last in last }
+    )
+    return .success(table)
 }()
 
 /// `pokemon-species-names.json` の 1 件。形は scripts/generate-pokemon-names.swift が決める。

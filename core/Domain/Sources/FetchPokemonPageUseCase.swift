@@ -42,8 +42,6 @@ extension FetchPokemonPageUseCase: DependencyKey {
 }
 
 /// 画面に出す名前を 1 つ選ぶ。規則は docs/data-layer.md の「言語コードと変換ルール」。
-/// アプリの言語が `ja` なら `ja-hrkt`、それ以外は `en`。その言語が無ければ `en`、
-/// `en` も無ければ識別子の頭を大文字にしたもの。
 private func displayName(of entry: PokemonListEntry, localization: String?) -> String {
     let preferred: LanguageCode = localization == "ja" ? .jaHrkt : .en
     func name(in code: LanguageCode) -> String? {

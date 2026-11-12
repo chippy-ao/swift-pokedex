@@ -34,7 +34,7 @@ PokeAPI の Fair Use Policy は、リクエストを抑えることを求めて�
 | PokeAPI の GraphQL | beta で、1 時間 100 回 / IP の制限があり、毎日 1 AM UTC ごろに約 2 分止まる。アプリの土台にするには不安定 |
 | 表を Repository に置く | 通信の層の答えが Repository に混ざる。interface の裏に置けば差し替えが実装だけで済む |
 | 一覧の 1 件ずつに名前をくっつけて返す | 名前の表と一覧を別々に取れなくなり、言語が増えると型が変わる。全部の言語で運び、UseCase で選ぶほうが型が変わらない |
-| 全 12 言語を入れる | 約 246KB。`en` と `ja-hrkt` だけなら約 52KB。使わない言語を同梱する理由が無い |
+| 全 12 言語を入れる | 使わない言語の分だけ表が大きくなる。`en` と `ja-hrkt` だけの今の JSON で約 109KB(整形済み)。使わない言語を同梱する理由が無い |
 
 ## 影響
 
@@ -45,7 +45,7 @@ PokeAPI の Fair Use Policy は、リクエストを抑えることを求めて�
 
 ### 悪い点・注意点
 
-- 新しいポケモンが出たら、表を作り直す(`mise run generate-pokemon-names`)。表に無い番号は、英語、それも無ければ識別子で出る。
+- 新しいポケモンが出たら、表を作り直す(`mise run generate-pokemon-names`)。表に無い番号の出し方は [data-layer.md](../data-layer.md#言語コードと変換ルール) のとおり。
 - `NetworkClientURLSession` が、通信しない答えを返す。名前に「URLSession の箱」と合わない。interface の裏のことなので、使う側からは見えない。
 - 表と LICENSE を同梱するので、権利の表示を欠かさない。
 
