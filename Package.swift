@@ -178,7 +178,14 @@ let package = Package(
                 .product(name: "HTTPTypesFoundation", package: "swift-http-types"),
                 .product(name: "Dependencies", package: "swift-dependencies"),
             ],
-            path: "core/NetworkClientURLSession/Sources"
+            path: "core/NetworkClientURLSession/Sources",
+            resources: [
+                // .copy: 生成した JSON と LICENSE の写しを加工せずそのまま同梱する。
+                // .process は Xcode が種類ごとに変換することがあるので、中身がそのままアプリに入る .copy にする。
+                // JSON は Bundle.module から名前で読む。
+                .copy("../Resources/pokemon-species-names.json"),
+                .copy("../Resources/POKEAPI-LICENSE.md"),
+            ]
         ),
         .testTarget(
             name: "NetworkClientURLSessionTests",

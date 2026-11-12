@@ -18,6 +18,10 @@ run = [
 description = "swift format で Swift ファイルを整形する"
 run = "swift format format --in-place --recursive app core feature scripts Package.swift"
 
+[tasks.generate-pokemon-names]
+description = "PokeAPI の CSV からポケモン名の表（en / ja-hrkt）を作り直す"
+run = "swift scripts/generate-pokemon-names.swift"
+
 [tasks.lint]
 description = "swift format lint、SwiftLint、actionlint、依存チェックを実行する"
 run = [
