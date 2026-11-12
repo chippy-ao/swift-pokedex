@@ -37,10 +37,23 @@ extension PokemonRepository: DependencyKey {
         fetchList: { limit, offset in
             @Dependency(\.pokeAPIClient) var client
             do {
-                let dto = try await client.fetchPokemonList(limit, offset)
-                let items = dto.items.map {
+                // @Dependency のラッパーを async let に渡すとデータ競合の警告になるので、
+                // Sendable なクロージャだけを取り出して使う
+                let fetchPokemonList = client.fetchPokemonList
+                let fetchSpeciesNames = client.fetchAllPokemonSpeciesNames
+                async let list = fetchPokemonList(limit, offset)
+                async let namesByID = fetchSpeciesNames()
+                let (dto, names) = try await (list, namesByID)
+                let items = dto.items.map { item in
                     PokemonListEntry(
-                        id: $0.id, identifier: $0.name, names: [], spriteURL: $0.spriteURL)
+                        id: item.id, identifier: item.name,
+                        // 表に無い ID は名前が空（どの名前を出すかは UseCase が決める）
+                        names: (names[item.id] ?? []).map {
+                            LocalizedName(
+                                languageCode: LanguageCode(rawValue: $0.languageCode), name: $0.name
+                            )
+                        },
+                        spriteURL: item.spriteURL)
                 }
                 return PokemonListPage(items: items, hasNext: dto.hasNext)
             } catch {

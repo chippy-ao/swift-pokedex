@@ -18,11 +18,40 @@ extension PokeAPIClient: DependencyKey {
                 )
                 return try response.toDTO()
             },
+            // session は使わない。URLSession の箱だが、PokeAPI のデータを返す本物の実装として
+            // 同梱の表から答える。API を叩きすぎないため（ADR-0018）。
             fetchAllPokemonSpeciesNames: {
-                [:]
+                try bundledSpeciesNames.get()
             }
         )
     }
+}
+
+/// 同梱の `pokemon-species-names.json`。読むのは 1 回だけ（グローバルの定数は最初に使われた
+/// ときに 1 度だけ作られる）。読めなければ以後も同じ失敗を返す（同梱物の不具合なので再試行しても直らない）。
+private let bundledSpeciesNames: Result<[Int: [LocalizedNameDTO]], PokeAPIError> = {
+    guard
+        let url = Bundle.module.url(forResource: "pokemon-species-names", withExtension: "json"),
+        let data = try? Data(contentsOf: url),
+        let rows = try? JSONDecoder().decode([BundledSpeciesNames].self, from: data)
+    else {
+        return .failure(.unavailable)
+    }
+    return .success(
+        Dictionary(
+            uniqueKeysWithValues: rows.map { row in
+                (
+                    row.id,
+                    row.names.sorted { $0.key < $1.key }
+                        .map { LocalizedNameDTO(languageCode: $0.key, name: $0.value) }
+                )
+            }))
+}()
+
+/// `pokemon-species-names.json` の 1 件。形は scripts/generate-pokemon-names.swift が決める。
+private struct BundledSpeciesNames: Decodable {
+    var id: Int
+    var names: [String: String]
 }
 
 /// REST の `GET /api/v2/pokemon` のレスポンス。REST の形はこのモジュールの中に閉じ込める。
