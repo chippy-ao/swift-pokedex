@@ -6,6 +6,9 @@ import Foundation
 public struct PokeAPIClient: Sendable {
     public var fetchPokemonList:
         @Sendable (_ limit: Int, _ offset: Int) async throws -> PokemonListDTO
+    /// 全 species の名前（species の ID をキーに、言語ごとの名前）。
+    /// 呼ぶ側からは API の 1 エンドポイントと見分けがつかない（実装が何から答えるかは知らない）。
+    public var fetchAllPokemonSpeciesNames: @Sendable () async throws -> [Int: [LocalizedNameDTO]]
 }
 
 extension PokeAPIClient: TestDependencyKey {
@@ -25,6 +28,14 @@ extension PokeAPIClient: TestDependencyKey {
                 ],
                 hasNext: false
             )
+        },
+        fetchAllPokemonSpeciesNames: {
+            [
+                1: [
+                    LocalizedNameDTO(languageCode: "en", name: "Bulbasaur"),
+                    LocalizedNameDTO(languageCode: "ja-hrkt", name: "フシギダネ"),
+                ]
+            ]
         }
     )
 }

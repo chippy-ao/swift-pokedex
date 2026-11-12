@@ -250,4 +250,27 @@ struct NetworkClientURLSessionTests {
 
         #expect(largestDetailResponseBytes <= cacheableLimit)
     }
+
+    // 同梱の表（Resources/pokemon-species-names.json）は通信しない。
+    @Test("同梱の表は 1025 件で、1 番の ja-hrkt は フシギダネ")
+    func bundledNamesHaveAllSpeciesAndKana() async throws {
+        let client = makeClient { _ in throw URLError(.unknown) }
+
+        let names = try await client.fetchAllPokemonSpeciesNames()
+
+        #expect(names.count == 1025)
+        let bulbasaur = try #require(names[1])
+        #expect(
+            bulbasaur.first { $0.languageCode == "ja-hrkt" }?.name == "フシギダネ")
+    }
+
+    @Test("同梱の表の 122 番の en は Mr. Mime")
+    func bundledNamesHaveMrMime() async throws {
+        let client = makeClient { _ in throw URLError(.unknown) }
+
+        let names = try await client.fetchAllPokemonSpeciesNames()
+
+        let mrMime = try #require(names[122])
+        #expect(mrMime.first { $0.languageCode == "en" }?.name == "Mr. Mime")
+    }
 }

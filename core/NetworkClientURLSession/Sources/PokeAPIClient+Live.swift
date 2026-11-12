@@ -17,6 +17,9 @@ extension PokeAPIClient: DependencyKey {
                     session: session
                 )
                 return try response.toDTO()
+            },
+            fetchAllPokemonSpeciesNames: {
+                [:]
             }
         )
     }

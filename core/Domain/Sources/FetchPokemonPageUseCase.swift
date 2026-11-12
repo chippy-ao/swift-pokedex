@@ -27,8 +27,11 @@ extension FetchPokemonPageUseCase: DependencyKey {
         execute: { offset in
             @Dependency(\.pokemonRepository) var repository
             let page = try await repository.fetchList(pageSize, offset)
-            let items = page.items.filter { $0.id <= lastListedID }
-            let reachedEnd = items.count < page.items.count
+            let entries = page.items.filter { $0.id <= lastListedID }
+            let reachedEnd = entries.count < page.items.count
+            let items = entries.map {
+                PokemonSummary(id: $0.id, name: $0.identifier, spriteURL: $0.spriteURL)
+            }
             return PokemonPage(items: items, hasNext: reachedEnd ? false : page.hasNext)
         }
     )

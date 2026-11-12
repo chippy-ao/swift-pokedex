@@ -6,7 +6,7 @@ import NetworkClient
 
 @DependencyClient
 public struct PokemonRepository: Sendable {
-    public var fetchList: @Sendable (_ limit: Int, _ offset: Int) async throws -> PokemonPage
+    public var fetchList: @Sendable (_ limit: Int, _ offset: Int) async throws -> PokemonListPage
 }
 
 extension PokemonRepository: TestDependencyKey {
@@ -14,10 +14,14 @@ extension PokemonRepository: TestDependencyKey {
 
     public static let previewValue = PokemonRepository(
         fetchList: { _, _ in
-            PokemonPage(
+            PokemonListPage(
                 items: [
-                    PokemonSummary(
-                        id: 1, name: "bulbasaur",
+                    PokemonListEntry(
+                        id: 1, identifier: "bulbasaur",
+                        names: [
+                            LocalizedName(languageCode: .en, name: "Bulbasaur"),
+                            LocalizedName(languageCode: .jaHrkt, name: "フシギダネ"),
+                        ],
                         spriteURL: URL(
                             string:
                                 "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png"
@@ -35,9 +39,10 @@ extension PokemonRepository: DependencyKey {
             do {
                 let dto = try await client.fetchPokemonList(limit, offset)
                 let items = dto.items.map {
-                    PokemonSummary(id: $0.id, name: $0.name, spriteURL: $0.spriteURL)
+                    PokemonListEntry(
+                        id: $0.id, identifier: $0.name, names: [], spriteURL: $0.spriteURL)
                 }
-                return PokemonPage(items: items, hasNext: dto.hasNext)
+                return PokemonListPage(items: items, hasNext: dto.hasNext)
             } catch {
                 throw loadError(from: error)
             }
