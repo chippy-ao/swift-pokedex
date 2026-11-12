@@ -33,6 +33,7 @@ Swift の言語機能と Apple 標準の部品を、Dart / Flutter の同じ層�
 | #7 | [ポケモン一覧](issue-07-pokemon-list.md) |
 | #38 | [文字列の多言語対応（String Catalog）](issue-38-localization.md) |
 | #42 | [一覧画面のデザインと DesignSystem](issue-42-list-design.md) |
+| #44 | [一覧のポケモン名を言語で出す](issue-44-list-localized-names.md) |
 
 ## 外部ライブラリの対応表
 

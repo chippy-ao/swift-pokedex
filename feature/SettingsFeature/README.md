@@ -31,6 +31,8 @@
 
 言語をアプリ内で切り替える方式は採用していません(理由は [ADR 0007](../../docs/adr/0007-localization.md) を参照)。アプリ別言語設定で選べるのは、アプリ自体がローカライズしている言語(最初は ja と en)だけです。
 
+ライセンス画面には、PokeAPI のデータ(同梱のポケモン名の表)の表示も出します。LicenseList は SPM の依存しか拾わないので、手で足します(実装は #14)。表示する内容は `core/NetworkClientURLSession/Resources/POKEAPI-LICENSE.md` です。理由は [ADR 0018](../../docs/adr/0018-bundled-pokemon-names-table.md) を参照してください。
+
 ライセンス一覧は LicenseList が SPM 依存から生成します。プラグインの適用先など導入手順は LicenseList の README に従い、導入時に確認します。
 
 ## テーマ色の保存と伝搬

@@ -57,4 +57,6 @@ PokeAPI を使ったポケモン図鑑アプリです。久しぶりの Swift �
 
 このリポジトリのコードは [MIT License](LICENSE) で公開しています。
 
-ポケモンの名前、画像などの権利は任天堂、クリーチャーズ、ゲームフリーク、株式会社ポケモンに帰属し、MIT License の対象外です。このプロジェクトは個人の学習用の非公式アプリで、これらの権利者とは関係ありません。
+ポケモンの名前、画像などの権利は任天堂、クリーチャーズ、ゲームフリーク、株式会社ポケモンに帰属し、MIT License の対象外です。
+
+同梱のポケモン名の表（`core/NetworkClientURLSession/Resources/pokemon-species-names.json`）も MIT License の対象外です。PokeAPI の BSD-3-Clause の対象で（[POKEAPI-LICENSE.md](core/NetworkClientURLSession/Resources/POKEAPI-LICENSE.md)）、名前は Nintendo の商標です。理由は [ADR-0018](docs/adr/0018-bundled-pokemon-names-table.md) を参照してください。このプロジェクトは個人の学習用の非公式アプリで、これらの権利者とは関係ありません。
