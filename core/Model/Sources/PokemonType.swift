@@ -2,7 +2,7 @@
 ///
 /// PokeAPI の `stellar` と `unknown` は入れない（図鑑の通常のポケモンが持たない）。
 /// 知らない識別子は Repository がそのタイプだけ落とす（取得の失敗にはしない）。
-public enum PokemonType: String, CaseIterable, Hashable, Sendable {
+package enum PokemonType: String, CaseIterable, Hashable, Sendable {
     case normal
     case fire
     case water
