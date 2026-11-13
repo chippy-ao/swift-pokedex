@@ -5,7 +5,7 @@ import HTTPTypesFoundation
 import NetworkClient
 
 extension PokeAPIClient: DependencyKey {
-    public static let liveValue: PokeAPIClient = {
+    package static let liveValue: PokeAPIClient = {
         #if DEBUG
             // UI テスト（app/PokedexUITests）が環境変数 POKEDEX_UI_TEST_FIXTURE=1 を渡したときだけ、
             // 一覧の通信を固定のデータに差し替える。CI で PokeAPI を叩かないため。
