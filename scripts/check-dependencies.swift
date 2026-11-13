@@ -31,6 +31,7 @@ struct PackageDescription: Decodable {
 
 struct TestPlanTarget: Decodable {
     let name: String
+    let containerPath: String?
 }
 
 struct TestPlanEntry: Decodable {
@@ -160,10 +161,22 @@ func checkTestPlan(in package: PackageDescription) -> [String] {
     }
 
     let packageTests = Set(package.targets.filter { $0.type == "test" }.map(\.name))
-    let enabledInPlan = Set(plan.testTargets.filter { $0.enabled != false }.map(\.target.name))
-    let allInPlan = Set(plan.testTargets.map(\.target.name))
+    // Package.swift の外にある target（app/App.xcodeproj の UI テスト）は、Package.swift と突き合わせない。
+    // 代わりに、UI テストの target が有効な状態で登録されているかだけを別枠で見る（下）。
+    let packageEntries = plan.testTargets.filter { $0.target.containerPath == "container:.." }
+    let enabledInPlan = Set(packageEntries.filter { $0.enabled != false }.map(\.target.name))
+    let allInPlan = Set(packageEntries.map(\.target.name))
 
     var errors: [String] = []
+    let uiTestName = "PokedexUITests"
+    let uiTestRegistered = plan.testTargets.contains {
+        $0.target.containerPath == "container:App.xcodeproj" && $0.target.name == uiTestName
+            && $0.enabled != false
+    }
+    if !uiTestRegistered {
+        errors.append(
+            "\(testPlanPath): UI テスト target \(uiTestName) が有効な状態で登録されていません。テストプランに登録してください。")
+    }
     for name in packageTests.subtracting(enabledInPlan).sorted() {
         let reason = allInPlan.contains(name) ? "無効になっています" : "登録されていません"
         errors.append("\(testPlanPath): テスト target \(name) が\(reason)。テストプランに有効な状態で登録してください。")

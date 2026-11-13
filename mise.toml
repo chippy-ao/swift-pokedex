@@ -18,6 +18,10 @@ run = [
 description = "swift format で Swift ファイルを整形する"
 run = "swift format format --in-place --recursive app core feature scripts Package.swift"
 
+[tasks.generate-pokemon-names]
+description = "PokeAPI の CSV からポケモン名の表（en / ja-hrkt）を作り直す"
+run = "swift scripts/generate-pokemon-names.swift"
+
 [tasks.lint]
 description = "swift format lint、SwiftLint、actionlint、依存チェックを実行する"
 run = [
@@ -32,6 +36,8 @@ description = "xcodebuild test（scheme Pokedex、テストプラン AllTests）
 # 既定のシミュレーターは、利用可能な iPhone のうち最後のもの。
 # -skipMacroValidation: Swift のマクロはサンドボックスで動き（WWDC23 Expand on Swift macros）、
 # 承認ボタンは中身を見せないので守りとして薄い。守りは Package.resolved の固定と Renovate の PR の確認。
+# -resultBundlePath: 結果を毎回 build/AllTests.xcresult に出す。check-warnings がここを読む。
+# xcodebuild は結果バンドルが既にあると失敗するので、走らせる前に消す。
 # 別のものを使うときは POKEDEX_TEST_DESTINATION を指定する（例: "platform=iOS Simulator,name=iPhone 17"）。
 run = """
 #!/usr/bin/env bash
@@ -41,11 +47,17 @@ if [ -z "${POKEDEX_TEST_DESTINATION:-}" ]; then
   POKEDEX_TEST_DESTINATION="platform=iOS Simulator,name=${sim_name}"
 fi
 echo "destination: ${POKEDEX_TEST_DESTINATION}"
+rm -rf build/AllTests.xcresult
 xcodebuild test \\
   -project app/App.xcodeproj \\
   -scheme Pokedex \\
   -testPlan AllTests \\
   -destination "${POKEDEX_TEST_DESTINATION}" \\
   -skipMacroValidation \\
+  -resultBundlePath build/AllTests.xcresult \\
   | xcbeautify
 """
+
+[tasks.check-warnings]
+description = "mise run test が出した xcresult のビルドの警告を数え、1 件でもあれば失敗する"
+run = "swift scripts/check-build-warnings.swift build/AllTests.xcresult"

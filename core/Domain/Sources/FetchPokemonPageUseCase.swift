@@ -1,5 +1,6 @@
 import Dependencies
 import DependenciesMacros
+import Foundation
 import Model
 import Repository
 
@@ -26,12 +27,27 @@ extension FetchPokemonPageUseCase: DependencyKey {
     package static let liveValue = FetchPokemonPageUseCase(
         execute: { offset in
             @Dependency(\.pokemonRepository) var repository
+            @Dependency(\.preferredLocalization) var preferredLocalization
             let page = try await repository.fetchList(pageSize, offset)
-            let items = page.items.filter { $0.id <= lastListedID }
-            let reachedEnd = items.count < page.items.count
+            let entries = page.items.filter { $0.id <= lastListedID }
+            let reachedEnd = entries.count < page.items.count
+            let items = entries.map {
+                PokemonSummary(
+                    id: $0.id, name: displayName(of: $0, localization: preferredLocalization),
+                    spriteURL: $0.spriteURL)
+            }
             return PokemonPage(items: items, hasNext: reachedEnd ? false : page.hasNext)
         }
     )
+}
+
+/// 画面に出す名前を 1 つ選ぶ。規則は docs/data-layer.md の「言語コードと変換ルール」。
+private func displayName(of entry: PokemonListEntry, localization: String?) -> String {
+    let preferred: LanguageCode = localization == "ja" ? .jaHrkt : .en
+    func name(in code: LanguageCode) -> String? {
+        entry.names.first { $0.languageCode == code }?.name
+    }
+    return name(in: preferred) ?? name(in: .en) ?? entry.identifier.capitalized
 }
 
 extension DependencyValues {

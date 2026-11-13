@@ -5,7 +5,38 @@ import HTTPTypesFoundation
 import NetworkClient
 
 extension PokeAPIClient: DependencyKey {
-    public static let liveValue = PokeAPIClient.live(session: .pokeAPI)
+    public static let liveValue: PokeAPIClient = {
+        #if DEBUG
+            // UI テスト（app/PokedexUITests）が環境変数 POKEDEX_UI_TEST_FIXTURE=1 を渡したときだけ、
+            // 一覧の通信を固定のデータに差し替える。CI で PokeAPI を叩かないため。
+            // Release に入れない（利用者が環境変数で差し替えられないように）。UI テストは Debug で走る
+            // （scheme の Test が Debug。docs/development.md の「UI テスト」）。
+            if ProcessInfo.processInfo.environment["POKEDEX_UI_TEST_FIXTURE"] == "1" {
+                return .uiTestFixture
+            }
+        #endif
+        return PokeAPIClient.live(session: .pokeAPI)
+    }()
+
+    #if DEBUG
+        /// 一覧だけ固定のデータにして、名前の表（fetchAllPokemonSpeciesNames）は本物（同梱の JSON）を通す。
+        /// 言語の読み取りも本物のまま通るので、組み上げたアプリで言語が効いているかを UI テストで見られる。
+        private static var uiTestFixture: PokeAPIClient {
+            var client = PokeAPIClient.live(session: .pokeAPI)
+            client.fetchPokemonList = { _, _ in
+                // 通信させないため、画像は file URL にする（読み込みは失敗して代わりの表示になる）。
+                let sprite = URL(filePath: "/")
+                return PokemonListDTO(
+                    items: [
+                        .init(id: 1, name: "bulbasaur", spriteURL: sprite),
+                        .init(id: 4, name: "charmander", spriteURL: sprite),
+                        .init(id: 7, name: "squirtle", spriteURL: sprite),
+                    ],
+                    hasNext: false)
+            }
+            return client
+        }
+    #endif
 
     /// テストから URLProtocol のスタブ入りの session を差し込めるようにするファクトリ。
     static func live(session: URLSession) -> PokeAPIClient {
@@ -17,9 +48,44 @@ extension PokeAPIClient: DependencyKey {
                     session: session
                 )
                 return try response.toDTO()
+            },
+            // session は使わない。URLSession の箱だが、PokeAPI のデータを返す本物の実装として
+            // 同梱の表から答える。API を叩きすぎないため（ADR-0018）。
+            fetchAllPokemonSpeciesNames: {
+                try bundledSpeciesNames.get()
             }
         )
     }
+}
+
+/// 同梱の `pokemon-species-names.json`。読むのは 1 回だけ（グローバルの定数は最初に使われた
+/// ときに 1 度だけ作られる）。読めなければ以後も同じ失敗を返す（同梱物の不具合なので再試行しても直らない）。
+private let bundledSpeciesNames: Result<[Int: [LocalizedNameDTO]], PokeAPIError> = {
+    guard
+        let url = Bundle.module.url(forResource: "pokemon-species-names", withExtension: "json"),
+        let data = try? Data(contentsOf: url),
+        let rows = try? JSONDecoder().decode([BundledSpeciesNames].self, from: data)
+    else {
+        return .failure(.unavailable)
+    }
+    // id が重複しても落とさない（手で JSON を直したときにクラッシュさせない）。後ろの行を使う。
+    let table = Dictionary(
+        rows.map { row in
+            (
+                row.id,
+                row.names.sorted { $0.key < $1.key }
+                    .map { LocalizedNameDTO(languageCode: $0.key, name: $0.value) }
+            )
+        },
+        uniquingKeysWith: { _, last in last }
+    )
+    return .success(table)
+}()
+
+/// `pokemon-species-names.json` の 1 件。形は scripts/generate-pokemon-names.swift が決める。
+private struct BundledSpeciesNames: Decodable {
+    var id: Int
+    var names: [String: String]
 }
 
 /// REST の `GET /api/v2/pokemon` のレスポンス。REST の形はこのモジュールの中に閉じ込める。

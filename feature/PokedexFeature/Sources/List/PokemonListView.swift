@@ -119,10 +119,10 @@ private func previewSummary(id: Int, name: String) -> PokemonSummary {
         $0.fetchPokemonPage.execute = { _ in
             PokemonPage(
                 items: [
-                    previewSummary(id: 1, name: "bulbasaur"),
-                    previewSummary(id: 4, name: "charmander"),
-                    previewSummary(id: 7, name: "squirtle"),
-                    previewSummary(id: 25, name: "pikachu"),
+                    previewSummary(id: 1, name: "Bulbasaur"),
+                    previewSummary(id: 4, name: "Charmander"),
+                    previewSummary(id: 7, name: "Squirtle"),
+                    previewSummary(id: 25, name: "Pikachu"),
                 ],
                 hasNext: false)
         }

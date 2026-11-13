@@ -7,22 +7,31 @@ import Testing
 @testable import Domain
 
 struct FetchPokemonPageUseCaseTests {
-    private static func summary(id: Int) -> PokemonSummary {
-        PokemonSummary(
-            id: id, name: "pokemon-\(id)",
+    private static func entry(id: Int, names: [LocalizedName] = []) -> PokemonListEntry {
+        PokemonListEntry(
+            id: id, identifier: "pokemon-\(id)", names: names,
             spriteURL: URL(string: "https://example.com/sprites/\(id).png")!)
     }
 
-    private static func page(ids: [Int], hasNext: Bool) -> PokemonPage {
-        PokemonPage(items: ids.map(summary(id:)), hasNext: hasNext)
+    private static func page(ids: [Int], hasNext: Bool) -> PokemonListPage {
+        PokemonListPage(items: ids.map { entry(id: $0) }, hasNext: hasNext)
     }
+
+    private static let mrMimeNames = [
+        LocalizedName(languageCode: .en, name: "Mr. Mime"),
+        LocalizedName(languageCode: .jaHrkt, name: "バリヤード"),
+    ]
 
     private func execute(
         offset: Int = 0,
-        repository: @escaping @Sendable (_ limit: Int, _ offset: Int) async throws -> PokemonPage
+        localization: String? = "en",
+        repository:
+            @escaping @Sendable (_ limit: Int, _ offset: Int) async throws ->
+            PokemonListPage
     ) async throws -> PokemonPage {
         try await withDependencies {
             $0.pokemonRepository.fetchList = repository
+            $0.preferredLocalization = localization
         } operation: {
             try await FetchPokemonPageUseCase.liveValue.execute(offset)
         }
@@ -76,5 +85,45 @@ struct FetchPokemonPageUseCaseTests {
         await #expect(throws: CancellationError.self) {
             try await execute { _, _ in throw CancellationError() }
         }
+    }
+
+    private func displayedName(
+        localization: String?, names: [LocalizedName]
+    ) async throws -> String {
+        let result = try await execute(localization: localization) { _, _ in
+            PokemonListPage(items: [Self.entry(id: 122, names: names)], hasNext: false)
+        }
+        return try #require(result.items.first).name
+    }
+
+    @Test("アプリの言語が ja なら ja-hrkt の名前を出す")
+    func japaneseUsesKana() async throws {
+        let name = try await displayedName(localization: "ja", names: Self.mrMimeNames)
+        #expect(name == "バリヤード")
+    }
+
+    @Test("アプリの言語が en なら英語の名前を出す")
+    func englishUsesEnglish() async throws {
+        let name = try await displayedName(localization: "en", names: Self.mrMimeNames)
+        #expect(name == "Mr. Mime")
+    }
+
+    @Test("ja と en 以外の言語や言語が分からないときは英語の名前を出す", arguments: ["fr", nil])
+    func otherLanguageUsesEnglish(localization: String?) async throws {
+        let name = try await displayedName(localization: localization, names: Self.mrMimeNames)
+        #expect(name == "Mr. Mime")
+    }
+
+    @Test("ja で ja-hrkt の名前が無ければ英語の名前にフォールバックする")
+    func missingJapaneseFallsBackToEnglish() async throws {
+        let name = try await displayedName(
+            localization: "ja", names: [LocalizedName(languageCode: .en, name: "Mr. Mime")])
+        #expect(name == "Mr. Mime")
+    }
+
+    @Test("名前が 1 つも無ければ識別子の頭を大文字にしたものを出す", arguments: ["ja", "en"])
+    func noNamesFallsBackToIdentifier(localization: String) async throws {
+        let name = try await displayedName(localization: localization, names: [])
+        #expect(name == "Pokemon-122")
     }
 }

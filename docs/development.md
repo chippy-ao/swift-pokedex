@@ -33,6 +33,7 @@ fastlane や CocoaPods を使わないので、Ruby と Bundler は入れませ�
 | `mise run format` | swift-format による整形 |
 | `mise run lint` | swift-format、SwiftLint、actionlint による検査と、[依存チェック](package-dependencies.md#依存チェック) |
 | `mise run test` | `xcodebuild test`（scheme `Pokedex`、テストプラン `AllTests`）によるビルドとテスト |
+| `mise run check-warnings` | `mise run test` の結果（`build/AllTests.xcresult`）のビルドの警告を数え、1 件でもあれば失敗する |
 
 `mise run test` は iOS Simulator で実行します。既定では、利用できる iPhone のシミュレーターのうち最後のものを使います。別のものを使うときは、環境変数 `POKEDEX_TEST_DESTINATION` に `xcodebuild` の `-destination` の値（例: `platform=iOS Simulator,name=iPhone 17`）を指定します。
 
@@ -111,6 +112,16 @@ SwiftLint で無効にしたルールと理由は `.swiftlint.yml` のコメン�
 - 失敗したテストの期待値を、実装に合わせて書き換えません。仕様が変わった場合だけ、合意のうえで変えます（[ドキュメントの運用ルール](README.md#機能の挙動を変えたら同じ-pr-で-readme-を更新する)）。
 - 失敗するテストを、合意なしに削除・無効化（`.disabled`）しません。
 
+### UI テスト
+
+組み上げたアプリ（`Pokedex.app`）を起動して確かめるテストです。`app/PokedexUITests`（XCTest の XCUITest）にあり、`app/AllTests.xctestplan` に入っているので `mise run test` で一緒に走ります。単体テストは各層を DI で差し替えるため、アプリ本体が言語を持っているかや、同梱の名前の表と言語の読み取りが実際につながっているかを見られません。そこを見るために置いています。
+
+- 今あるのは [LocalizedNameUITests](../app/PokedexUITests/LocalizedNameUITests.swift) です。起動引数 `-AppleLanguages (ja)` / `(en)` で言語を指定して起動し、一覧の 1 行目に「フシギダネ」/「Bulbasaur」が出るかを見ます。
+- 差し替えるのは一覧の通信（`fetchPokemonList`）だけです。CI で PokeAPI を叩かず、結果を決まった値にするためです。環境変数 `POKEDEX_UI_TEST_FIXTURE=1` をテストが渡したときだけ、[PokeAPIClient+Live.swift](../core/NetworkClientURLSession/Sources/PokeAPIClient+Live.swift) の `liveValue` が差し替えます。`#if DEBUG` の中だけなので Release には入りません（UI テストは scheme の Test が Debug なので Debug で走ります）。
+- 名前の表（同梱の JSON）と言語の読み取り（`PreferredLocalization`）は本物を通します。ここを差し替えると、見たいもの（組み上げたアプリでの言語の効き方）を見なくなるためです。
+- `app/PokedexUITests` は `Package.swift` の外にあるため、`scripts/check-dependencies.swift` はテストプランに `PokedexUITests` が登録されているかだけを見ます。テストの中身や、UI テストを足したときの登録は人が見ます。
+- 走らせ方は単体テストと同じ `mise run test` です（シミュレーターの選び方も同じ）。XCUITest なので、Swift Testing ではなく XCTest で書きます。
+
 ## Issue
 
 `.github/ISSUE_TEMPLATE/` のテンプレートから作ります。空の Issue は作れません。
@@ -176,6 +187,7 @@ SwiftLint で無効にしたルールと理由は `.swiftlint.yml` のコメン�
 - 走らせなかったジョブは skipped になり、成功として扱われます。`ci-status` は `changes` が success で、`lint` と `build-test` が success か skipped のときに成功します。`on.pull_request.paths` を使わない理由は [ci.yml](../.github/workflows/ci.yml) 冒頭のコメントを参照してください。
 - `xcode-27` は Xcode 27 を入れた GitHub のプレビューのランナーイメージです。ジョブの環境変数 `DEVELOPER_DIR=/Applications/Xcode_27.2.app` で Xcode のバージョンを選び、README の「動作環境」と揃えます。正式なラベルになったら、`.github/actionlint.yaml` の登録を外します。
 - CI から呼ぶコマンドは mise のタスクに揃えます。
+- `build-test` はテストのあとに `mise run check-warnings` を走らせ、ビルドの警告が 1 件でもあれば落ちます。手元のビルドは止めません。手で走らせることもできますが、増分ビルドなので 0 件でも当てにならず、CI の結果が正です。deprecated の警告も数えるので、Xcode を上げて増えたら相談します。理由と細部は [scripts/check-build-warnings.swift](../scripts/check-build-warnings.swift) の冒頭のコメントを参照してください。
 
 ### PR ラベル
 

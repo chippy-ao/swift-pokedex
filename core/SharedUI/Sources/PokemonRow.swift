@@ -20,7 +20,7 @@ package struct PokemonRow: View {
                     Color(.secondarySystemBackground),
                     in: RoundedRectangle(cornerRadius: CornerRadius.thumbnail))
             VStack(alignment: .leading, spacing: Spacing.xSmall) {
-                Text(pokemon.name.capitalized)
+                Text(pokemon.name)
                     .font(.headline)
                 Text(String(format: "#%04d", pokemon.id))
                     .font(.footnote.monospacedDigit())
@@ -35,7 +35,7 @@ package struct PokemonRow: View {
 #Preview {
     PokemonRow(
         pokemon: PokemonSummary(
-            id: 25, name: "pikachu",
+            id: 25, name: "Pikachu",
             spriteURL: URL(
                 string:
                     "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png"

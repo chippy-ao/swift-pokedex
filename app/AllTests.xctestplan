@@ -10,6 +10,13 @@
   "testTargets": [
     {
       "target": {
+        "containerPath": "container:App.xcodeproj",
+        "identifier": "A10000000000000000000060",
+        "name": "PokedexUITests"
+      }
+    },
+    {
+      "target": {
         "containerPath": "container:..",
         "identifier": "PokedexFeatureTests",
         "name": "PokedexFeatureTests"

@@ -50,7 +50,7 @@ swift-pokedex/
     └─ TestSupport/             … フィクスチャ、テスト用ヘルパー
 ```
 
-feature と core の各モジュールは `<ディレクトリ>/Sources` と `<ディレクトリ>/Tests` を持ちます。`app/` の下は `App.xcodeproj`、`AllTests.xctestplan`、`Pokedex/`（App ターゲットの buildable folder）です。`App.xcodeproj` は、ルートの `Package.swift` をローカルパッケージとして参照します（[Xcode との連携](#xcode-との連携)）。構成と名前の理由は [ADR 0015](./adr/0015-xcode-project-structure.md) を参照してください。
+feature と core の各モジュールは `<ディレクトリ>/Sources` と `<ディレクトリ>/Tests` を持ちます。`app/` の下は `App.xcodeproj`、`AllTests.xctestplan`、`Pokedex/`（App ターゲットの buildable folder）、`PokedexUITests/`（XCUITest ターゲットの buildable folder。[UI テスト](./development.md#ui-テスト)）です。`App.xcodeproj` は、ルートの `Package.swift` をローカルパッケージとして参照します（[Xcode との連携](#xcode-との連携)）。構成と名前の理由は [ADR 0015](./adr/0015-xcode-project-structure.md) を参照してください。
 
 app だけは `Sources` ではなくターゲット名のフォルダにします。エントリーポイント（例：デザインシステムのカタログアプリ）が増えたとき、`app/Catalog/` のようにターゲット名のフォルダとターゲットを足すだけで済むからです。各ターゲットは `project.pbxproj` で必要な product だけをリンクし、注入する実装もそれぞれの `@main` で決めます（実装モジュールをリンクしないターゲットは、プレビュー用の値やモックを入れます）。
 

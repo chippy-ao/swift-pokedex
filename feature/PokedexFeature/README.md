@@ -70,7 +70,7 @@ feature をまたぐ遷移は現時点ではありません。必要になった
 
 | 項目 | 内容 |
 | --- | --- |
-| 表示項目 | 画像(小さいドット絵 `spriteURL`)、ID、名前。タイプは出さない(下の「一覧の決めごと」) |
+| 表示項目 | 画像(小さいドット絵 `spriteURL`)、ID、名前(アプリの言語)。タイプは出さない(下の「一覧の決めごと」) |
 | 操作 | 最後の行が画面に出たら次ページ取得、行タップで Detail へ、検索欄への入力、タイプフィルタの選択 |
 | PokeAPI | `GET /pokemon?limit=&offset=`(ページング)、`GET /type/{name}`(タイプフィルタ) |
 | UseCase 案 | `FetchPokemonPageUseCase`、`FetchAllPokemonNamesUseCase`、`FetchPokemonByTypeUseCase` |
@@ -81,6 +81,7 @@ feature をまたぐ遷移は現時点ではありません。必要になった
 
 - 続きを読むタイミングは、最後の行の `onAppear` で `reachedBottom` を送ります。`onAppear` は何度も呼ばれるので、Store は読み込み中と `hasNext == false` のときの `reachedBottom` を無視します。
 - ID が 10000 を超えるフォーム違いは一覧に入れず、詳細で扱います。PokeAPI の `/pokemon` は 1..1025 のあとに 10001.. が続くので、読んだページに ID > 10000 があれば捨てて `hasNext = false` にします。これは図鑑のきまりなので Domain の `FetchPokemonPageUseCase` で行います。
+- 名前はアプリの言語で出します。日本語ならカナ(`ja-hrkt`)、それ以外は英語です（無いときの規則は [docs/data-layer.md](../../docs/data-layer.md#言語コードと変換ルール)）。名前は API を叩かず、同梱の表から出します（選び方は Domain の `FetchPokemonPageUseCase`、理由は [ADR 0018](../../docs/adr/0018-bundled-pokemon-names-table.md)、仕組みは [docs/data-layer.md](../../docs/data-layer.md#名前の表)）。名前での検索は #10 で足します。詳細画面の名前は #16 で足します。
 - 行にタイプは出しません。出すには 1 行ごとに詳細 API を呼ぶことになり、PokeAPI の Fair Use Policy に反しやすいためです。出したくなったら、この理由を見直してから決めます。
 
 State / Action です。一覧の実装に合わせてあり、検索とタイプフィルタは #10、#11 で足します。

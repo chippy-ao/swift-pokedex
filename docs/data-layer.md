@@ -47,7 +47,7 @@ flowchart LR
 | `GET /pokemon?limit=20&offset=0` | 一覧のページング取得 | `count`、`next`、`previous`、`results`（`name` と `url` の配列） | 一覧 |
 | `GET /pokemon?limit={count 以上}` | 全件の名前リスト取得（ローカル検索用） | 同上 | 検索 |
 | `GET /pokemon/{id または name}` | 詳細 | `types`、`stats`、`sprites`（公式アートワークは `sprites.other["official-artwork"].front_default`） | 詳細、お気に入り一覧 |
-| `GET /pokemon-species/{id}` | 名前のローカライズ、説明文、進化チェーンへの入口 | `names`（`name` と `language.name` の配列）、`flavor_text_entries`、`evolution_chain.url` | 一覧・詳細 |
+| `GET /pokemon-species/{id}` | 説明文、進化チェーンへの入口。名前のローカライズ(`names`)は API で取らず、同梱の表から出す([名前の表](#名前の表)) | `flavor_text_entries`、`evolution_chain.url` | 詳細 |
 | `GET /evolution-chain/{id}` | 進化チェーン | `chain`（`species` と `evolves_to` の配列を持つ再帰構造） | 詳細 |
 | `GET /type/{name}` | タイプフィルタ | `pokemon`（`pokemon.name` と `pokemon.url` を持つ要素の配列） | 一覧 |
 
@@ -76,11 +76,20 @@ ID が 10000 を超えるものはフォーム違いなどの pokemon です。
 
 - 名前検索の API はありません。
 - 全件の名前リスト（`limit` を `count` 以上にして 1回取得）をキャッシュし、ローカルで絞り込みます。
-- 日本語名での検索は全 species の名前が必要になります。
+- 日本語名での検索には全 species の名前が要りますが、API では取らず、同梱の表を使います（[名前の表](#名前の表)）。
+
+### 名前の表
+
+一覧の名前は、PokeAPI の CSV から作った表（`en` と `ja-hrkt`）を `NetworkClientURLSession` に同梱して返します。API で取れるものをあえて取らない理由と、検討した代替案は [ADR 0018](./adr/0018-bundled-pokemon-names-table.md) を参照してください。
+
+- 置き場所: `core/NetworkClientURLSession/Resources/pokemon-species-names.json`（ライセンスは同じ場所の `POKEAPI-LICENSE.md`）。
+- 作り方: `mise run generate-pokemon-names`。手順と固定した SHA はスクリプト（`scripts/generate-pokemon-names.swift`）の先頭のコメントにあります。
+- 読み方: `PokeAPIClient.fetchAllPokemonSpeciesNames` がspecies の番号ごとに、名前を全部の言語で返します（`[Int: [LocalizedNameDTO]]`）。読めなければ `PokeAPIError.unavailable` です。
+- Repository は一覧とこの表を id でくっつけます。表に無い番号は名前が空になります。
 
 ### 言語コードと変換ルール
 
-`pokemon-species` の `names` に含まれる言語コードは次のとおりです。
+PokeAPI の `pokemon-species` の `names` に含まれる言語コードは次のとおりです（同梱の表に入っているのは `en` と `ja-hrkt` だけです）。
 
 | コード | 内容 |
 | --- | --- |
@@ -96,8 +105,9 @@ ID が 10000 を超えるものはフォーム違いなどの pokemon です。
 アプリの言語に追従させます（別設定にはしません）。
 
 - `Bundle.main.preferredLocalizations.first` を PokeAPI の言語コードに変換します。`ja` は `ja-hrkt`、`en` は `en` です。
-- 該当言語の名前が無ければ `en` にフォールバックします。
+- 該当言語の名前が無ければ `en`、`en` も無ければ識別子（`capitalized`）で出します。表に無い番号も同じです。
 - この変換とフォールバックは Domain の UseCase で行います。
+- Model では言語コードを `LanguageCode`（`String` を包む `RawRepresentable` の struct）で持ちます。DTO は `String` のままで、Repository で変えます。
 
 選んだ理由と検討した代替案は [ADR 0007](./adr/0007-localization.md) を参照してください。
 
@@ -124,6 +134,7 @@ import DependenciesMacros
 public struct PokeAPIClient: Sendable {
   public var fetchPokemonList: @Sendable (_ limit: Int, _ offset: Int) async throws -> PokemonListDTO
   public var fetchPokemon: @Sendable (_ idOrName: String) async throws -> PokemonDTO
+  public var fetchAllPokemonSpeciesNames: @Sendable () async throws -> [Int: [LocalizedNameDTO]]
   public var fetchPokemonSpecies: @Sendable (_ id: Int) async throws -> PokemonSpeciesDTO
   public var fetchEvolutionChain: @Sendable (_ id: Int) async throws -> EvolutionChainDTO
   public var fetchType: @Sendable (_ name: String) async throws -> TypeDTO
@@ -193,7 +204,7 @@ Repository は `NetworkClient` / `Database` / `Datastore` を組み合わせ、D
 
 | Repository | 役割 | 使う interface |
 | --- | --- | --- |
-| `PokemonRepository` | 一覧、詳細、species、進化チェーン、タイプ別一覧、全件名前リストの取得と Model 変換 | NetworkClient |
+| `PokemonRepository` | 一覧（名前の表をくっつける）、詳細、species、進化チェーン、タイプ別一覧、全件名前リストの取得と Model 変換 | NetworkClient |
 | `FavoriteRepository` | お気に入りの追加・削除・一覧監視 | Database（必要に応じて NetworkClient） |
 | `SettingsRepository` | テーマ色の保存と監視 | Datastore |
 
@@ -203,42 +214,22 @@ Domain の UseCase は、単純な委譲でも置きます（feature から Repo
 
 | UseCase（案） | 内容 |
 | --- | --- |
-| 一覧取得 | `PokemonRepository` に委譲してページを返す |
+| 一覧取得 | `PokemonRepository` のページを受け取り、ID の上限で切り、名前をアプリの言語で 1 つ選ぶ |
 | お気に入りの切り替え | `FavoriteRepository` に委譲する |
 | テーマ色の監視 | `SettingsRepository` の値を `AsyncStream` で返す |
-| ポケモン名の言語解決 | [言語コードと変換ルール](#言語コードと変換ルール)に従い、species の `names` から名前を選ぶ |
+| ポケモン名の言語解決 | [言語コードと変換ルール](#言語コードと変換ルール)に従い、名前の表から名前を選ぶ（一覧取得 UseCase の中で行う） |
 
-言語解決の例です（型名は仮で、あくまで例です）。
-
-```swift
-import Foundation
-
-struct LocalizedName: Sendable {
-  var languageCode: String
-  var name: String
-}
-
-func resolvePokemonName(
-  from names: [LocalizedName],
-  preferredLocalization: String? = Bundle.main.preferredLocalizations.first
-) -> String? {
-  let code = switch preferredLocalization {
-  case "ja": "ja-hrkt"
-  default: "en"
-  }
-  return names.first { $0.languageCode == code }?.name
-    ?? names.first { $0.languageCode == "en" }?.name
-}
-```
+実装は [FetchPokemonPageUseCase](../core/Domain/Sources/FetchPokemonPageUseCase.swift) です。
 
 ## キャッシュ方針
 
 | 段階 | 方式 | 対象 |
 | --- | --- | --- |
 | 段階1 | API 専用の `URLSession` の `URLCache` による HTTP キャッシュ。PokeAPI の `max-age=86400` に従う | 全 GET レスポンス |
-| 段階2 | SwiftData に保存する | 全件の名前リスト、species など、オフラインでも使いたいもの |
+| 段階2 | SwiftData に保存する | 全件の名前リスト（`GET /pokemon`）、species の説明文など、オフラインでも使いたいもの |
 
 - 段階1で Fair Use Policy の「ローカルにキャッシュする」を満たします。
+- ポケモンの名前は API を叩かないので、この表の対象外です（[名前の表](#名前の表)）。
 
 ### 段階1の設定
 
@@ -288,6 +279,7 @@ Repository は `PokeAPIError` を `LoadError` に移すだけです（`offline` 
 - [ADR 0006: 永続化](./adr/0006-local-persistence.md)
 - [ADR 0007: 言語](./adr/0007-localization.md)
 - [ADR 0017: NetworkClient の interface を通信方式に依らない形にする](./adr/0017-network-client-interface-independent-of-transport.md)
+- [ADR 0018: ポケモン名を同梱の表から返す](./adr/0018-bundled-pokemon-names-table.md)
 
 ## 参考リンク
 

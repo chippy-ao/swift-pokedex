@@ -1,0 +1,14 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "CFBundleDisplayName" : {
+      "comment" : "ホーム画面に出るアプリの表示名",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Pokedex" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ポケモン図鑑" } }
+      }
+    }
+  },
+  "version" : "1.0"
+}

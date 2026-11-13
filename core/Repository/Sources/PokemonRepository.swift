@@ -6,7 +6,7 @@ import NetworkClient
 
 @DependencyClient
 public struct PokemonRepository: Sendable {
-    public var fetchList: @Sendable (_ limit: Int, _ offset: Int) async throws -> PokemonPage
+    public var fetchList: @Sendable (_ limit: Int, _ offset: Int) async throws -> PokemonListPage
 }
 
 extension PokemonRepository: TestDependencyKey {
@@ -14,10 +14,14 @@ extension PokemonRepository: TestDependencyKey {
 
     public static let previewValue = PokemonRepository(
         fetchList: { _, _ in
-            PokemonPage(
+            PokemonListPage(
                 items: [
-                    PokemonSummary(
-                        id: 1, name: "bulbasaur",
+                    PokemonListEntry(
+                        id: 1, identifier: "bulbasaur",
+                        names: [
+                            LocalizedName(languageCode: .en, name: "Bulbasaur"),
+                            LocalizedName(languageCode: .jaHrkt, name: "フシギダネ"),
+                        ],
                         spriteURL: URL(
                             string:
                                 "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png"
@@ -33,11 +37,25 @@ extension PokemonRepository: DependencyKey {
         fetchList: { limit, offset in
             @Dependency(\.pokeAPIClient) var client
             do {
-                let dto = try await client.fetchPokemonList(limit, offset)
-                let items = dto.items.map {
-                    PokemonSummary(id: $0.id, name: $0.name, spriteURL: $0.spriteURL)
+                // @Dependency のラッパーを async let に渡すとデータ競合の警告になるので、
+                // Sendable なクロージャだけを取り出して使う
+                let fetchPokemonList = client.fetchPokemonList
+                let fetchSpeciesNames = client.fetchAllPokemonSpeciesNames
+                async let list = fetchPokemonList(limit, offset)
+                async let namesByID = fetchSpeciesNames()
+                let (dto, names) = try await (list, namesByID)
+                let items = dto.items.map { item in
+                    PokemonListEntry(
+                        id: item.id, identifier: item.name,
+                        // 表に無い ID は名前が空（どの名前を出すかは UseCase が決める）
+                        names: (names[item.id] ?? []).map {
+                            LocalizedName(
+                                languageCode: LanguageCode(rawValue: $0.languageCode), name: $0.name
+                            )
+                        },
+                        spriteURL: item.spriteURL)
                 }
-                return PokemonPage(items: items, hasNext: dto.hasNext)
+                return PokemonListPage(items: items, hasNext: dto.hasNext)
             } catch {
                 throw loadError(from: error)
             }

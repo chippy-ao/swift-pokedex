@@ -7,6 +7,9 @@ DerivedData/
 xcuserdata/
 *.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/configuration/
 
+# mise run test の結果バンドル
+build/
+
 # macOS
 .DS_Store
 
