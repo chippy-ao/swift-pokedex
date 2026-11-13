@@ -1,23 +1,23 @@
 import Foundation
 
 /// ポケモン一覧の 1 ページぶん。通信方式（REST など）の仕組みを知らなくても使える値だけを持つ。
-public struct PokemonListDTO: Equatable, Sendable {
-    public struct Entry: Equatable, Sendable {
-        public var id: Int
-        public var name: String
-        public var spriteURL: URL
+package struct PokemonListDTO: Equatable, Sendable {
+    package struct Entry: Equatable, Sendable {
+        package var id: Int
+        package var name: String
+        package var spriteURL: URL
 
-        public init(id: Int, name: String, spriteURL: URL) {
+        package init(id: Int, name: String, spriteURL: URL) {
             self.id = id
             self.name = name
             self.spriteURL = spriteURL
         }
     }
 
-    public var items: [Entry]
-    public var hasNext: Bool
+    package var items: [Entry]
+    package var hasNext: Bool
 
-    public init(items: [Entry], hasNext: Bool) {
+    package init(items: [Entry], hasNext: Bool) {
         self.items = items
         self.hasNext = hasNext
     }

@@ -5,16 +5,16 @@ import Model
 import NetworkClient
 
 @DependencyClient
-public struct PokemonRepository: Sendable {
-    public var fetchList: @Sendable (_ limit: Int, _ offset: Int) async throws -> PokemonListPage
+package struct PokemonRepository: Sendable {
+    package var fetchList: @Sendable (_ limit: Int, _ offset: Int) async throws -> PokemonListPage
     /// 詳細 1 件ぶん。pokemon と species を取ってくっつける。
-    public var fetchDetail: @Sendable (_ id: Int) async throws -> PokemonDetailEntry
+    package var fetchDetail: @Sendable (_ id: Int) async throws -> PokemonDetailEntry
 }
 
 extension PokemonRepository: TestDependencyKey {
-    public static let testValue = PokemonRepository()
+    package static let testValue = PokemonRepository()
 
-    public static let previewValue = PokemonRepository(
+    package static let previewValue = PokemonRepository(
         fetchList: { _, _ in
             PokemonListPage(
                 items: [
@@ -61,7 +61,7 @@ extension PokemonRepository: TestDependencyKey {
 }
 
 extension PokemonRepository: DependencyKey {
-    public static let liveValue = PokemonRepository(
+    package static let liveValue = PokemonRepository(
         fetchList: { limit, offset in
             @Dependency(\.pokeAPIClient) var client
             do {
@@ -134,7 +134,7 @@ private func loadError(from error: any Error) -> any Error {
 }
 
 extension DependencyValues {
-    public var pokemonRepository: PokemonRepository {
+    package var pokemonRepository: PokemonRepository {
         get { self[PokemonRepository.self] }
         set { self[PokemonRepository.self] = newValue }
     }

@@ -3,21 +3,21 @@ import DependenciesMacros
 import Foundation
 
 @DependencyClient
-public struct PokeAPIClient: Sendable {
-    public var fetchPokemonList:
+package struct PokeAPIClient: Sendable {
+    package var fetchPokemonList:
         @Sendable (_ limit: Int, _ offset: Int) async throws -> PokemonListDTO
     /// 全 species の名前（species の ID をキーに、言語ごとの名前）。
     /// 呼ぶ側からは API の 1 エンドポイントと見分けがつかない（実装が何から答えるかは知らない）。
-    public var fetchAllPokemonSpeciesNames: @Sendable () async throws -> [Int: [LocalizedNameDTO]]
-    public var fetchPokemonDetail: @Sendable (_ id: Int) async throws -> PokemonDetailDTO
-    public var fetchPokemonSpecies: @Sendable (_ speciesID: Int) async throws -> PokemonSpeciesDTO
+    package var fetchAllPokemonSpeciesNames: @Sendable () async throws -> [Int: [LocalizedNameDTO]]
+    package var fetchPokemonDetail: @Sendable (_ id: Int) async throws -> PokemonDetailDTO
+    package var fetchPokemonSpecies: @Sendable (_ speciesID: Int) async throws -> PokemonSpeciesDTO
 }
 
 extension PokeAPIClient: TestDependencyKey {
     // 呼ばれたらテストが失敗する（@DependencyClient が未実装のクロージャを作る）
-    public static let testValue = PokeAPIClient()
+    package static let testValue = PokeAPIClient()
 
-    public static let previewValue = PokeAPIClient(
+    package static let previewValue = PokeAPIClient(
         fetchPokemonList: { _, _ in
             PokemonListDTO(
                 items: [
@@ -71,7 +71,7 @@ extension PokeAPIClient: TestDependencyKey {
 }
 
 extension DependencyValues {
-    public var pokeAPIClient: PokeAPIClient {
+    package var pokeAPIClient: PokeAPIClient {
         get { self[PokeAPIClient.self] }
         set { self[PokeAPIClient.self] = newValue }
     }
