@@ -154,8 +154,9 @@ private struct DetailContent: View {
 }
 
 // Preview は fetchPokemonDetail だけを差し替える。feature は Domain の UseCase しか知らない。
+// UseCase ごと差し替えるので名前の言語は選ばれない。Preview の既定の言語（英語）の文言とそろえて英語にする。
 private let previewDetail = PokemonDetail(
-    id: 1, name: "フシギダネ", genus: "たねポケモン", types: [.grass, .poison],
+    id: 1, name: "Bulbasaur", genus: "Seed Pokémon", types: [.grass, .poison],
     stats: [
         PokemonStat(kind: .hp, value: 45), PokemonStat(kind: .attack, value: 49),
         PokemonStat(kind: .defense, value: 49), PokemonStat(kind: .specialAttack, value: 65),
