@@ -7,6 +7,8 @@ import NetworkClient
 @DependencyClient
 public struct PokemonRepository: Sendable {
     public var fetchList: @Sendable (_ limit: Int, _ offset: Int) async throws -> PokemonListPage
+    /// 詳細 1 件ぶん。pokemon と species を取ってくっつける。
+    public var fetchDetail: @Sendable (_ id: Int) async throws -> PokemonDetailEntry
 }
 
 extension PokemonRepository: TestDependencyKey {
@@ -28,6 +30,32 @@ extension PokemonRepository: TestDependencyKey {
                         )!)
                 ],
                 hasNext: false)
+        },
+        fetchDetail: { id in
+            PokemonDetailEntry(
+                id: id, identifier: "bulbasaur",
+                names: [
+                    LocalizedName(languageCode: .en, name: "Bulbasaur"),
+                    LocalizedName(languageCode: .jaHrkt, name: "フシギダネ"),
+                ],
+                genera: [
+                    LocalizedName(languageCode: .en, name: "Seed Pokémon"),
+                    LocalizedName(languageCode: .jaHrkt, name: "たねポケモン"),
+                ],
+                types: [.grass, .poison],
+                stats: [
+                    PokemonStat(kind: .hp, value: 45), PokemonStat(kind: .attack, value: 49),
+                    PokemonStat(kind: .defense, value: 49),
+                    PokemonStat(kind: .specialAttack, value: 65),
+                    PokemonStat(kind: .specialDefense, value: 65),
+                    PokemonStat(kind: .speed, value: 45),
+                ],
+                heightInMeters: 0.7, weightInKilograms: 6.9,
+                artworkURL: URL(
+                    string:
+                        "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/"
+                        + "official-artwork/1.png"
+                ))
         }
     )
 }
@@ -59,7 +87,9 @@ extension PokemonRepository: DependencyKey {
             } catch {
                 throw loadError(from: error)
             }
-        }
+        },
+        // 仮の中身（テスト先行の段階。実装で置き換える）
+        fetchDetail: { _ in throw LoadError.unavailable }
     )
 }
 

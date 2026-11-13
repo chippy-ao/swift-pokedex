@@ -51,7 +51,7 @@ private let listJSON = """
 
 @Suite(.serialized)
 struct NetworkClientURLSessionTests {
-    private func makeClient(
+    func makeClient(
         handler: @escaping StubURLProtocol.Handler
     ) -> PokeAPIClient {
         StubURLProtocol.setHandler(handler)
@@ -67,7 +67,7 @@ struct NetworkClientURLSessionTests {
         )!
     }
 
-    private static func response(for request: URLRequest, status: Int) -> HTTPURLResponse {
+    static func response(for request: URLRequest, status: Int) -> HTTPURLResponse {
         HTTPURLResponse(
             url: request.url!, statusCode: status, httpVersion: "HTTP/1.1", headerFields: nil)!
     }

@@ -53,7 +53,10 @@ extension PokeAPIClient: DependencyKey {
             // 同梱の表から答える。API を叩きすぎないため（ADR-0018）。
             fetchAllPokemonSpeciesNames: {
                 try bundledSpeciesNames.get()
-            }
+            },
+            // 仮の中身（テスト先行の段階。実装で置き換える）
+            fetchPokemonDetail: { _ in throw PokeAPIError.unavailable },
+            fetchPokemonSpecies: { _ in throw PokeAPIError.unavailable }
         )
     }
 }
