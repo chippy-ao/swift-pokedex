@@ -88,9 +88,36 @@ extension PokemonRepository: DependencyKey {
                 throw loadError(from: error)
             }
         },
-        // 仮の中身（テスト先行の段階。実装で置き換える）
-        fetchDetail: { _ in throw LoadError.unavailable }
+        fetchDetail: { id in
+            @Dependency(\.pokeAPIClient) var client
+            do {
+                // species の番号は pokemon の返事に入っている（フォーム違いでは pokemon の番号と
+                // 違う）ので、同時には取れない。pokemon を取ってから species を取る。
+                let pokemon = try await client.fetchPokemonDetail(id)
+                let species = try await client.fetchPokemonSpecies(pokemon.speciesID)
+                // 知らない識別子はその 1 つだけ落とす（compactMap）。取得の失敗にはしない。
+                return PokemonDetailEntry(
+                    id: pokemon.id, identifier: pokemon.name,
+                    names: species.names.map(localizedName),
+                    genera: species.genera.map(localizedName),
+                    types: pokemon.types.compactMap { PokemonType(rawValue: $0) },
+                    stats: pokemon.stats.compactMap { stat in
+                        PokemonStatKind(rawValue: stat.name).map {
+                            PokemonStat(kind: $0, value: stat.baseValue)
+                        }
+                    },
+                    heightInMeters: Double(pokemon.height) / 10,
+                    weightInKilograms: Double(pokemon.weight) / 10,
+                    artworkURL: pokemon.artworkURL)
+            } catch {
+                throw loadError(from: error)
+            }
+        }
     )
+}
+
+private func localizedName(from dto: LocalizedNameDTO) -> LocalizedName {
+    LocalizedName(languageCode: LanguageCode(rawValue: dto.languageCode), name: dto.name)
 }
 
 /// NetworkClient のエラーを画面に見せる `LoadError` に変える。
