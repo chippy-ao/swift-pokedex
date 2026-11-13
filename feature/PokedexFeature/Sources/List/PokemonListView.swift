@@ -43,12 +43,15 @@ public struct PokemonListView: View {
         } else {
             List {
                 ForEach(state.items) { pokemon in
-                    PokemonRow(pokemon: pokemon)
-                        .onAppear {
-                            if pokemon.id == state.items.last?.id {
-                                store.send(.reachedBottom)
-                            }
+                    // 行タップは Store を通さず、Route を path に積む（README の「画面遷移」）。
+                    NavigationLink(value: PokedexRoute.detail(id: pokemon.id)) {
+                        PokemonRow(pokemon: pokemon)
+                    }
+                    .onAppear {
+                        if pokemon.id == state.items.last?.id {
+                            store.send(.reachedBottom)
                         }
+                    }
                 }
                 footer(state)
             }
