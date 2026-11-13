@@ -53,6 +53,17 @@ extension PokeAPIClient: DependencyKey {
             // 同梱の表から答える。API を叩きすぎないため（ADR-0018）。
             fetchAllPokemonSpeciesNames: {
                 try bundledSpeciesNames.get()
+            },
+            fetchPokemonDetail: { id in
+                let response = try await get(
+                    PokemonResponse.self, path: "/api/v2/pokemon/\(id)", session: session)
+                return try response.toDTO()
+            },
+            fetchPokemonSpecies: { speciesID in
+                let response = try await get(
+                    PokemonSpeciesResponse.self, path: "/api/v2/pokemon-species/\(speciesID)",
+                    session: session)
+                return response.toDTO()
             }
         )
     }
@@ -107,6 +118,91 @@ private struct PokemonListResponse: Decodable {
             return PokemonListDTO.Entry(id: id, name: entry.name, spriteURL: spriteURL(id: id))
         }
         return PokemonListDTO(items: items, hasNext: next != nil)
+    }
+}
+
+/// REST の `GET /api/v2/pokemon/{id}` のレスポンス。使うキーだけ読む。
+private struct PokemonResponse: Decodable {
+    struct NamedResource: Decodable {
+        var name: String
+        var url: String
+    }
+
+    struct TypeSlot: Decodable {
+        var slot: Int
+        var type: NamedResource
+    }
+
+    struct StatEntry: Decodable {
+        var baseStat: Int
+        var stat: NamedResource
+    }
+
+    struct Sprites: Decodable {
+        var other: OtherSprites?
+    }
+
+    var id: Int
+    var name: String
+    var height: Int
+    var weight: Int
+    var species: NamedResource
+    var sprites: Sprites
+    var stats: [StatEntry]
+    var types: [TypeSlot]
+
+    func toDTO() throws -> PokemonDetailDTO {
+        guard let speciesID = pokemonID(fromURL: species.url) else {
+            throw PokeAPIError.unavailable
+        }
+        return PokemonDetailDTO(
+            id: id, name: name, speciesID: speciesID,
+            types: types.sorted { $0.slot < $1.slot }.map(\.type.name),
+            stats: stats.map { .init(name: $0.stat.name, baseValue: $0.baseStat) },
+            height: height, weight: weight,
+            artworkURL: sprites.other?.officialArtwork?.frontDefault)
+    }
+}
+
+/// `sprites.other`。ネストが深くなりすぎないよう、`PokemonResponse` の外に出している。
+private struct OtherSprites: Decodable {
+    struct Artwork: Decodable {
+        var frontDefault: URL?
+    }
+
+    var officialArtwork: Artwork?
+
+    // ハイフン入りのキーは convertFromSnakeCase が変えないので、ここに書く。
+    enum CodingKeys: String, CodingKey {
+        case officialArtwork = "official-artwork"
+    }
+}
+
+/// REST の `GET /api/v2/pokemon-species/{id}` のレスポンス。使うキーだけ読む。
+private struct PokemonSpeciesResponse: Decodable {
+    struct Language: Decodable {
+        var name: String
+    }
+
+    struct Name: Decodable {
+        var language: Language
+        var name: String
+    }
+
+    struct Genus: Decodable {
+        var language: Language
+        var genus: String
+    }
+
+    var names: [Name]
+    var genera: [Genus]
+
+    func toDTO() -> PokemonSpeciesDTO {
+        PokemonSpeciesDTO(
+            names: names.map { LocalizedNameDTO(languageCode: $0.language.name, name: $0.name) },
+            genera: genera.map {
+                LocalizedNameDTO(languageCode: $0.language.name, name: $0.genus)
+            })
     }
 }
 

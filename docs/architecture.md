@@ -401,20 +401,16 @@ flowchart TD
 
 - List から Detail、Favorites から Detail の遷移は、同じ feature の中で完結します。
 - feature をまたぐ遷移が必要になったら、delegate Action を App ターゲットの Router が受け取って処理します。現時点ではまたぐ遷移はありません。
-- 例（Route と Router の形）。あくまで一例です。
+- Router の形です。Route と対応表の形は [PokedexFeature の README](../feature/PokedexFeature/README.md#画面遷移) を参照してください。
 
 ```swift
 import Observation
 import SwiftUI
 
-enum PokedexRoute: Hashable {
-    case detail(id: Int)
-}
-
 @MainActor
 @Observable
-final class PokedexRouter {
-    var path: [PokedexRoute] = []
+final class Router {
+    var path: [PokedexRoute] = []   // PokedexRoute は PokedexFeature が提供する
 }
 ```
 

@@ -5,15 +5,19 @@ import SwiftUI
 /// 画像ライブラリはここだけが知っていて、他のモジュールはこの View を使う。
 package struct RemoteImage: View {
     private let url: URL?
+    private let interpolation: Image.Interpolation
 
-    package init(url: URL?) {
+    /// - Parameter interpolation: 拡大縮小のなめらかさ。既定の `.none` はドット絵向け
+    ///   （ぼかさずに縮める）。写真やイラストは `.high` にする。
+    package init(url: URL?, interpolation: Image.Interpolation = .none) {
         self.url = url
+        self.interpolation = interpolation
     }
 
     package var body: some View {
         LazyImage(url: url) { state in
             if let image = state.image {
-                image.resizable().interpolation(.none).scaledToFit()
+                image.resizable().interpolation(interpolation).scaledToFit()
             } else if state.error != nil {
                 Image(systemName: "photo").foregroundStyle(.secondary)
             } else {

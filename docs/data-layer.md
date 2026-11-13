@@ -46,8 +46,8 @@ flowchart LR
 | --- | --- | --- | --- |
 | `GET /pokemon?limit=20&offset=0` | 一覧のページング取得 | `count`、`next`、`previous`、`results`（`name` と `url` の配列） | 一覧 |
 | `GET /pokemon?limit={count 以上}` | 全件の名前リスト取得（ローカル検索用） | 同上 | 検索 |
-| `GET /pokemon/{id または name}` | 詳細 | `types`、`stats`、`sprites`（公式アートワークは `sprites.other["official-artwork"].front_default`） | 詳細、お気に入り一覧 |
-| `GET /pokemon-species/{id}` | 説明文、進化チェーンへの入口。名前のローカライズ(`names`)は API で取らず、同梱の表から出す([名前の表](#名前の表)) | `flavor_text_entries`、`evolution_chain.url` | 詳細 |
+| `GET /pokemon/{id または name}` | 詳細 | `types`、`stats`、`height`、`weight`、`species.url`、`sprites`（公式アートワークは `sprites.other["official-artwork"].front_default`） | 詳細、お気に入り一覧 |
+| `GET /pokemon-species/{id}` | 詳細の名前と分類、説明文、進化チェーンへの入口。一覧の名前のローカライズは API で取らず、同梱の表から出す([名前の表](#名前の表))。詳細は species を取るので、`names` をそのまま使う | `names`、`genera`、`flavor_text_entries`、`evolution_chain.url` | 詳細 |
 | `GET /evolution-chain/{id}` | 進化チェーン | `chain`（`species` と `evolves_to` の配列を持つ再帰構造） | 詳細 |
 | `GET /type/{name}` | タイプフィルタ | `pokemon`（`pokemon.name` と `pokemon.url` を持つ要素の配列） | 一覧 |
 
@@ -106,8 +106,9 @@ PokeAPI の `pokemon-species` の `names` に含まれる言語コードは次�
 
 - `Bundle.main.preferredLocalizations.first` を PokeAPI の言語コードに変換します。`ja` は `ja-hrkt`、`en` は `en` です。
 - 該当言語の名前が無ければ `en`、`en` も無ければ識別子（`capitalized`）で出します。表に無い番号も同じです。
-- この変換とフォールバックは Domain の UseCase で行います。
+- この変換とフォールバックは Domain の UseCase で行います。一覧の名前と詳細の名前、詳細の分類（`genera`、`ja-hrkt`、`en` の順で、無ければ出さない）は、同じ選び方（`DisplayName.swift`）を使います。
 - Model では言語コードを `LanguageCode`（`String` を包む `RawRepresentable` の struct）で持ちます。DTO は `String` のままで、Repository で変えます。
+- タイプと種族値は、`LanguageCode` のような struct ではなく enum で持ちます。知らない識別子は Repository でその 1 つだけ落とします（[ADR 0019](./adr/0019-type-and-stat-names-and-colors-in-app.md)）。
 
 選んだ理由と検討した代替案は [ADR 0007](./adr/0007-localization.md) を参照してください。
 
