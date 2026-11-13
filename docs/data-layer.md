@@ -132,21 +132,21 @@ import Dependencies
 import DependenciesMacros
 
 @DependencyClient
-public struct PokeAPIClient: Sendable {
-  public var fetchPokemonList: @Sendable (_ limit: Int, _ offset: Int) async throws -> PokemonListDTO
-  public var fetchPokemon: @Sendable (_ idOrName: String) async throws -> PokemonDTO
-  public var fetchAllPokemonSpeciesNames: @Sendable () async throws -> [Int: [LocalizedNameDTO]]
-  public var fetchPokemonSpecies: @Sendable (_ id: Int) async throws -> PokemonSpeciesDTO
-  public var fetchEvolutionChain: @Sendable (_ id: Int) async throws -> EvolutionChainDTO
-  public var fetchType: @Sendable (_ name: String) async throws -> TypeDTO
+package struct PokeAPIClient: Sendable {
+  package var fetchPokemonList: @Sendable (_ limit: Int, _ offset: Int) async throws -> PokemonListDTO
+  package var fetchPokemon: @Sendable (_ idOrName: String) async throws -> PokemonDTO
+  package var fetchAllPokemonSpeciesNames: @Sendable () async throws -> [Int: [LocalizedNameDTO]]
+  package var fetchPokemonSpecies: @Sendable (_ id: Int) async throws -> PokemonSpeciesDTO
+  package var fetchEvolutionChain: @Sendable (_ id: Int) async throws -> EvolutionChainDTO
+  package var fetchType: @Sendable (_ name: String) async throws -> TypeDTO
 }
 
 extension PokeAPIClient: TestDependencyKey {
-  public static let testValue = PokeAPIClient()
+  package static let testValue = PokeAPIClient()
 }
 
 extension DependencyValues {
-  public var pokeAPIClient: PokeAPIClient {
+  package var pokeAPIClient: PokeAPIClient {
     get { self[PokeAPIClient.self] }
     set { self[PokeAPIClient.self] = newValue }
   }

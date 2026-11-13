@@ -40,17 +40,17 @@ import Dependencies
 import DependenciesMacros
 
 @DependencyClient
-public struct PokeAPIClient: Sendable {
-  public var fetchPokemonList: @Sendable (_ limit: Int, _ offset: Int) async throws -> PokemonListDTO
-  public var fetchPokemon: @Sendable (_ id: Int) async throws -> PokemonDTO
+package struct PokeAPIClient: Sendable {
+  package var fetchPokemonList: @Sendable (_ limit: Int, _ offset: Int) async throws -> PokemonListDTO
+  package var fetchPokemon: @Sendable (_ id: Int) async throws -> PokemonDTO
 }
 
 extension PokeAPIClient: TestDependencyKey {
   // 呼ばれたらテストが失敗する(@DependencyClient が未実装のクロージャを自動生成)
-  public static let testValue = PokeAPIClient()
+  package static let testValue = PokeAPIClient()
 
   // Preview 用の固定データ
-  public static let previewValue = PokeAPIClient(
+  package static let previewValue = PokeAPIClient(
     fetchPokemonList: { _, _ in
       PokemonListDTO(
         items: [.init(id: 1, name: "bulbasaur", spriteURL: URL(string: "https://example.com/1.png")!)],
@@ -62,7 +62,7 @@ extension PokeAPIClient: TestDependencyKey {
 }
 
 extension DependencyValues {
-  public var pokeAPIClient: PokeAPIClient {
+  package var pokeAPIClient: PokeAPIClient {
     get { self[PokeAPIClient.self] }
     set { self[PokeAPIClient.self] = newValue }
   }
@@ -86,7 +86,7 @@ import HTTPTypesFoundation
 import NetworkClient
 
 extension PokeAPIClient: DependencyKey {
-  public static let liveValue = PokeAPIClient(
+  package static let liveValue = PokeAPIClient(
     fetchPokemonList: { limit, offset in
       try await get("/api/v2/pokemon?limit=\(limit)&offset=\(offset)")
     },
@@ -141,17 +141,17 @@ import DependenciesMacros
 import Model
 
 @DependencyClient
-public struct FetchPokemonListUseCase: Sendable {
-  public var execute: @Sendable (_ offset: Int) async throws -> [Pokemon]
+package struct FetchPokemonListUseCase: Sendable {
+  package var execute: @Sendable (_ offset: Int) async throws -> [Pokemon]
 }
 
 extension FetchPokemonListUseCase: TestDependencyKey {
-  public static let testValue = FetchPokemonListUseCase()
-  public static let previewValue = FetchPokemonListUseCase(execute: { _ in [.preview] })
+  package static let testValue = FetchPokemonListUseCase()
+  package static let previewValue = FetchPokemonListUseCase(execute: { _ in [.preview] })
 }
 
 extension FetchPokemonListUseCase: DependencyKey {
-  public static let liveValue = FetchPokemonListUseCase(execute: { offset in
+  package static let liveValue = FetchPokemonListUseCase(execute: { offset in
     // 呼び出し時に Repository を解決する（テストやプレビューでの差し替えが効く）
     @Dependency(\.pokemonRepository) var repository
     return try await repository.fetchList(limit: 20, offset: offset)
@@ -159,7 +159,7 @@ extension FetchPokemonListUseCase: DependencyKey {
 }
 
 extension DependencyValues {
-  public var fetchPokemonList: FetchPokemonListUseCase {
+  package var fetchPokemonList: FetchPokemonListUseCase {
     get { self[FetchPokemonListUseCase.self] }
     set { self[FetchPokemonListUseCase.self] = newValue }
   }
