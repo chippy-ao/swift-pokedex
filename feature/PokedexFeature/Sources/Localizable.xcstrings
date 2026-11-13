@@ -1,6 +1,69 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "detailArtworkAccessibilityLabel" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Official artwork" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "公式アートワーク" } }
+      }
+    },
+    "detailErrorOffline" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "You're offline. Check your connection." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ネットワークに接続できません。接続を確認してください。" } }
+      }
+    },
+    "detailErrorUnavailable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Couldn't load. Please try again later." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "読み込めませんでした。時間をおいて再試行してください。" } }
+      }
+    },
+    "detailHeightLabel" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Height" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "高さ" } }
+      }
+    },
+    "detailLoadingAccessibilityLabel" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Loading" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "読み込み中" } }
+      }
+    },
+    "detailRetryButton" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Retry" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "再試行" } }
+      }
+    },
+    "detailStatTotal" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Total" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "合計" } }
+      }
+    },
+    "detailStatsHeading" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Base Stats" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "種族値" } }
+      }
+    },
+    "detailWeightLabel" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Weight" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "重さ" } }
+      }
+    },
     "listErrorOffline" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -34,6 +97,174 @@
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Retry" } },
         "ja" : { "stringUnit" : { "state" : "translated", "value" : "再試行" } }
+      }
+    },
+    "pokemonStat.attack" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Attack" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "こうげき" } }
+      }
+    },
+    "pokemonStat.defense" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Defense" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ぼうぎょ" } }
+      }
+    },
+    "pokemonStat.hp" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "HP" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "HP" } }
+      }
+    },
+    "pokemonStat.special-attack" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Sp. Atk" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "とくこう" } }
+      }
+    },
+    "pokemonStat.special-defense" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Sp. Def" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "とくぼう" } }
+      }
+    },
+    "pokemonStat.speed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Speed" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "すばやさ" } }
+      }
+    },
+    "pokemonType.bug" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Bug" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "むし" } }
+      }
+    },
+    "pokemonType.dark" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Dark" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "あく" } }
+      }
+    },
+    "pokemonType.dragon" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Dragon" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ドラゴン" } }
+      }
+    },
+    "pokemonType.electric" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Electric" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "でんき" } }
+      }
+    },
+    "pokemonType.fairy" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Fairy" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "フェアリー" } }
+      }
+    },
+    "pokemonType.fighting" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Fighting" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "かくとう" } }
+      }
+    },
+    "pokemonType.fire" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Fire" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ほのお" } }
+      }
+    },
+    "pokemonType.flying" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Flying" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ひこう" } }
+      }
+    },
+    "pokemonType.ghost" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Ghost" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ゴースト" } }
+      }
+    },
+    "pokemonType.grass" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Grass" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "くさ" } }
+      }
+    },
+    "pokemonType.ground" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Ground" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "じめん" } }
+      }
+    },
+    "pokemonType.ice" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Ice" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "こおり" } }
+      }
+    },
+    "pokemonType.normal" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Normal" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ノーマル" } }
+      }
+    },
+    "pokemonType.poison" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Poison" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "どく" } }
+      }
+    },
+    "pokemonType.psychic" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Psychic" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "エスパー" } }
+      }
+    },
+    "pokemonType.rock" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Rock" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "いわ" } }
+      }
+    },
+    "pokemonType.steel" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Steel" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "はがね" } }
+      }
+    },
+    "pokemonType.water" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Water" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "みず" } }
       }
     }
   },
