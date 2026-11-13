@@ -127,7 +127,7 @@ private struct DetailContent: View {
                     Text(stat.kind.displayName)
                         .foregroundStyle(.secondary)
                         .frame(width: ColumnWidth.statLabel, alignment: .leading)
-                    Text("\(stat.value)")
+                    Text(stat.value, format: .number)
                         .font(.subheadline.weight(.semibold).monospacedDigit())
                         .frame(width: ColumnWidth.statValue, alignment: .trailing)
                     // 棒は tint（テーマ色）。文字でもボタンでもなく、押せると誤解されにくいので、
@@ -143,7 +143,7 @@ private struct DetailContent: View {
                 Text(.detailStatTotal)
                     .foregroundStyle(.secondary)
                     .frame(width: ColumnWidth.statLabel, alignment: .leading)
-                Text("\(detail.statTotal)")
+                Text(detail.statTotal, format: .number)
                     .font(.subheadline.weight(.semibold).monospacedDigit())
                     .frame(width: ColumnWidth.statValue, alignment: .trailing)
             }
