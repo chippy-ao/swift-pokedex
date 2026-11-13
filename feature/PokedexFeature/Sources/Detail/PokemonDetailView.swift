@@ -118,7 +118,8 @@ private struct DetailContent: View {
     }
 
     private var stats: some View {
-        VStack(alignment: .leading, spacing: Spacing.xSmall) {
+        // 行の間隔は 12。subheadline の高さ（約 20）と足して、デザインの 1 行ぶん（32）にそろえる。
+        VStack(alignment: .leading, spacing: Spacing.medium) {
             Text(.detailStatsHeading)
                 .font(.title3.weight(.semibold))
                 .padding(.bottom, Spacing.xSmall)
