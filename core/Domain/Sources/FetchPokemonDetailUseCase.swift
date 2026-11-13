@@ -15,12 +15,20 @@ extension FetchPokemonDetailUseCase: TestDependencyKey {
 }
 
 extension FetchPokemonDetailUseCase: DependencyKey {
-    // 仮の中身（テスト先行の段階。実装で置き換える）
     package static let liveValue = FetchPokemonDetailUseCase(
         execute: { id in
-            PokemonDetail(
-                id: id, name: "", genus: nil, types: [], stats: [], heightInMeters: 0,
-                weightInKilograms: 0, artworkURL: nil)
+            @Dependency(\.pokemonRepository) var repository
+            @Dependency(\.preferredLocalization) var preferredLocalization
+            let entry = try await repository.fetchDetail(id)
+            return PokemonDetail(
+                id: entry.id,
+                name: displayName(
+                    from: entry.names, identifier: entry.identifier,
+                    localization: preferredLocalization),
+                genus: localizedText(in: entry.genera, localization: preferredLocalization),
+                types: entry.types, stats: entry.stats,
+                heightInMeters: entry.heightInMeters, weightInKilograms: entry.weightInKilograms,
+                artworkURL: entry.artworkURL)
         }
     )
 }
