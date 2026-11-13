@@ -64,6 +64,6 @@ public struct PokemonDetail: Equatable, Sendable, Identifiable {
 
     /// 種族値の合計。
     public var statTotal: Int {
-        0
+        stats.reduce(0) { $0 + $1.value }
     }
 }
