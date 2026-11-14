@@ -19,6 +19,6 @@ allowed_scopes = [
   "NetworkClient", "NetworkClientURLSession",
   "Database", "DatabaseSwiftData",
   "Datastore", "DatastoreUserDefaults",
-  "DesignSystem", "SharedUI", "TestSupport",
+  "DesignSystem", "SharedUI", "TestSupport", "SnapshotTestSupport",
   "Pokedex",
 ]

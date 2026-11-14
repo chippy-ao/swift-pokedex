@@ -112,6 +112,19 @@ SwiftLint で無効にしたルールと理由は `.swiftlint.yml` のコメン�
 - 失敗したテストの期待値を、実装に合わせて書き換えません。仕様が変わった場合だけ、合意のうえで変えます（[ドキュメントの運用ルール](README.md#機能の挙動を変えたら同じ-pr-で-readme-を更新する)）。
 - 失敗するテストを、合意なしに削除・無効化（`.disabled`）しません。
 
+### スナップショットテスト
+
+画面を、場面ごとにライトとダークで撮り、参照画像と比べます。今撮るのは詳細画面（`app/PokedexSnapshotTests`）の `loaded` と `errorOffline` です。`loading` は ProgressView が回り続けて毎回違う画像になるので撮りません（Preview には残っています）。
+
+- 撮る場面の定義は PokedexFeature の `PokemonDetailScenario` にあり、Preview と共有します。場面を足すと、スナップショットも自動で増えます。
+- 撮り方（ホストアプリ付き、`drawHierarchyInKeyWindow`）と、そうする理由は [ADR 0020](adr/0020-snapshot-tests-with-host-app.md) を参照してください。
+- 撮る環境（端末、OS、言語）は固定します。値は `core/SnapshotTestSupport` の `SnapshotEnvironment` と `mise.toml` にあり、違う環境で走らせるとテストが失敗します。
+- 参照画像は `app/PokedexSnapshotTests/__Snapshots__/` にコミットします。
+- 撮り直しは `mise run snapshot-record` です。スナップショットのテストだけを記録のモードで走らせます。記録したテストは失敗で終わりますが、想定どおりなので終了コードは 0 です。
+- 参照画像を変えるのは「テストの期待値の変更」です。画面を意図して変えたときだけ撮り直し、PR に理由を書きます。画像を見て、意図した差だけかを確かめます。
+- CI では撮り直しません（`TEST_RUNNER_SNAPSHOT_TESTING_RECORD=never`）。差があれば失敗します。
+- コマンドで「xctest が見つからない（Failed to create a bundle instance）」と出たら、古いビルドの成果物が残っています。Xcode の Clean Build Folder（⇧⌘K）か、DerivedData の削除で消します。
+
 ### UI テスト
 
 組み上げたアプリ（`Pokedex.app`）を起動して確かめるテストです。`app/PokedexUITests`（XCTest の XCUITest）にあり、`app/AllTests.xctestplan` に入っているので `mise run test` で一緒に走ります。単体テストは各層を DI で差し替えるため、アプリ本体が言語を持っているかや、同梱の名前の表と言語の読み取りが実際につながっているかを見られません。そこを見るために置いています。

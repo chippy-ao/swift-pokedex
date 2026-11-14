@@ -83,6 +83,9 @@
 - name: package:SharedUI
   color: "#0e8a16"
   description: SharedUI の変更を含む
+- name: package:SnapshotTestSupport
+  color: "#0e8a16"
+  description: SnapshotTestSupport の変更を含む
 - name: package:TestSupport
   color: "#0e8a16"
   description: TestSupport の変更を含む

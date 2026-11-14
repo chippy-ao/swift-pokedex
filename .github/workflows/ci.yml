@@ -57,7 +57,7 @@ jobs:
 
           # lint / build-test の対象。.swift には Package.swift と scripts/ 内の Swift も含まれる。
           # ci.yml 自身の変更でも走らせて、この判定の変更を PR で確かめられるようにする。
-          swift_re='\.swift$|(^|/)Package\.resolved$|^app/|^mise\.toml$|^\.swiftlint\.yml$|^\.swift-format$|^\.github/workflows/ci\.yml$'
+          swift_re='\.swift$|(^|/)Package\.resolved$|^app/|__Snapshots__/|^mise\.toml$|^\.swiftlint\.yml$|^\.swift-format$|^\.github/workflows/ci\.yml$'
           # lint だけ走らせる対象（actionlint のため）
           workflows_re='^\.github/workflows/|^\.github/actionlint\.yaml$'
 
@@ -111,7 +111,10 @@ jobs:
         with:
           persist-credentials: false
       - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
+      # 参照画像は CI で撮り直さない。差があれば失敗にする（ADR-0020）。
       - run: mise run test
+        env:
+          TEST_RUNNER_SNAPSHOT_TESTING_RECORD: never
       - run: mise run check-warnings
 
   ci-status:
