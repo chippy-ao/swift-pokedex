@@ -7,6 +7,11 @@ pinact = "5.0.2"
 actionlint = "1.7.12"
 xcbeautify = "3.2.1"
 
+# test と snapshot-record が使うシミュレーター。スナップショットの参照画像を撮った環境で、
+# core/SnapshotTestSupport の SnapshotEnvironment と同じ値にする（ADR-0020）。
+[vars]
+pokedex_destination = "platform=iOS Simulator,name=iPhone 17,OS=27.2"
+
 [tasks.bootstrap]
 description = "ツールと Git フック（pre-commit、commit-msg）をインストールする"
 run = [
@@ -33,19 +38,16 @@ run = [
 
 [tasks.test]
 description = "xcodebuild test（scheme Pokedex、テストプラン AllTests）を iOS Simulator で実行する"
-# 既定のシミュレーターは、利用可能な iPhone のうち最後のもの。
+# 既定のシミュレーターは [vars] の pokedex_destination（固定の環境。違う環境ではスナップショットが失敗する）。
 # -skipMacroValidation: Swift のマクロはサンドボックスで動き（WWDC23 Expand on Swift macros）、
 # 承認ボタンは中身を見せないので守りとして薄い。守りは Package.resolved の固定と Renovate の PR の確認。
 # -resultBundlePath: 結果を毎回 build/AllTests.xcresult に出す。check-warnings がここを読む。
 # xcodebuild は結果バンドルが既にあると失敗するので、走らせる前に消す。
-# 別のものを使うときは POKEDEX_TEST_DESTINATION を指定する（例: "platform=iOS Simulator,name=iPhone 17"）。
+# 別のものを使うときは POKEDEX_TEST_DESTINATION を指定する。
 run = """
 #!/usr/bin/env bash
 set -euo pipefail
-if [ -z "${POKEDEX_TEST_DESTINATION:-}" ]; then
-  sim_name="$(xcrun simctl list devices available | grep -E '^ +iPhone' | sed -E 's/^ +//; s/ \\([0-9A-F-]{36}\\).*//' | tail -n 1)"
-  POKEDEX_TEST_DESTINATION="platform=iOS Simulator,name=${sim_name}"
-fi
+POKEDEX_TEST_DESTINATION="${POKEDEX_TEST_DESTINATION:-{{vars.pokedex_destination}}}"
 echo "destination: ${POKEDEX_TEST_DESTINATION}"
 rm -rf build/AllTests.xcresult
 xcodebuild test \\
@@ -56,6 +58,48 @@ xcodebuild test \\
   -skipMacroValidation \\
   -resultBundlePath build/AllTests.xcresult \\
   | xcbeautify
+"""
+
+[tasks.snapshot-record]
+description = "スナップショットのテストだけを記録のモードで走らせ、参照画像を撮り直す"
+# 記録のモードでは、画像を書いたテストは「記録した」という失敗で終わる（swift-snapshot-testing の仕様）。
+# それは想定どおりなので終了コード 0 にする。ビルドの失敗など、記録と関係ない失敗は非 0 で終える。
+# TEST_RUNNER_ を付けた環境変数は、xcodebuild がテストのプロセスに渡す。
+# 撮り直しは「テストの期待値の変更」。PR に理由を書く（docs/development.md）。
+#
+# set -e を付けない理由: xcodebuild は、記録したテストが失敗で終わるので非 0 で終わる。
+# それを想定どおりとして扱うため、終了コードを自分で調べる。
+# 判定はログの文字列に頼っている。"Automatically recorded snapshot" は swift-snapshot-testing の
+# AssertSnapshot.swift の失敗メッセージ。ライブラリを上げて文言が変わると、記録に成功しても非 0 で終わる
+# （安全側に倒れる）ので、そのときはここを直す。
+run = """
+#!/usr/bin/env bash
+set -uo pipefail
+destination="${POKEDEX_TEST_DESTINATION:-{{vars.pokedex_destination}}}"
+echo "destination: ${destination}"
+log="$(mktemp)"
+rm -rf build/SnapshotRecord.xcresult
+TEST_RUNNER_SNAPSHOT_TESTING_RECORD=all xcodebuild test \\
+  -project app/App.xcodeproj \\
+  -scheme Pokedex \\
+  -testPlan AllTests \\
+  -only-testing:PokedexSnapshotTests \\
+  -destination "${destination}" \\
+  -skipMacroValidation \\
+  -resultBundlePath build/SnapshotRecord.xcresult \\
+  2>&1 | tee "${log}" | xcbeautify
+status="${PIPESTATUS[0]}"
+if [ "${status}" -eq 0 ]; then
+  echo "参照画像を撮った。git status で画像の差分を確かめる。"
+  exit 0
+fi
+# 記録した旨のメッセージがあり、ビルドの失敗でなければ、想定どおりの失敗として扱う
+if grep -q "Automatically recorded snapshot" "${log}" && ! grep -q "BUILD FAILED" "${log}"; then
+  echo "参照画像を撮った（記録による失敗は想定どおり）。git status で画像の差分を確かめる。"
+  exit 0
+fi
+echo "記録と関係ない失敗。終了コード ${status}" >&2
+exit "${status}"
 """
 
 [tasks.check-warnings]
