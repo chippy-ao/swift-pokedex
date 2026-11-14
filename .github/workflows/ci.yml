@@ -111,11 +111,37 @@ jobs:
         with:
           persist-credentials: false
       - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
+      # シミュレーターの起動を、xcodebuild のビルド（約 2 分）と並行して始める。
+      # 起動を待たずにテストへ進むと、「Testing started」から最初のテストまでログの出ない約 4 分があり、
+      # シミュレーターの起動待ちと見ている（PR #52 の実行で測定）。先に起動しておけば、その待ちをビルドと重ねられる。
+      # 端末と OS は mise.toml の [vars] pokedex_destination と同じにする。変えるときは両方を揃える。
+      - name: シミュレーターをバックグラウンドで起動する
+        run: |
+          set -euo pipefail
+          udid=$(xcrun simctl list devices available -j \
+            | jq -r '.devices["com.apple.CoreSimulator.SimRuntime.iOS-27-2"][]? | select(.name == "iPhone 17") | .udid' \
+            | head -n 1)
+          if [ -z "$udid" ]; then
+            echo "iOS 27.2 の iPhone 17 が見つからない" >&2
+            exit 1
+          fi
+          echo "udid=$udid"
+          log="$RUNNER_TEMP/simulator-boot.log"
+          # bootstatus -b は、未起動なら起動して、起動しきるまで待つ
+          nohup bash -c '
+            echo "start $(date -u +%FT%TZ)" > "$1"
+            xcrun simctl bootstatus "$2" -b >> "$1" 2>&1
+            echo "end $(date -u +%FT%TZ)" >> "$1"
+          ' _ "$log" "$udid" > /dev/null 2>&1 &
       # 参照画像は CI で撮り直さない。差があれば失敗にする（ADR-0020）。
       - run: mise run test
         env:
           TEST_RUNNER_SNAPSHOT_TESTING_RECORD: never
       - run: mise run check-warnings
+      # 並行起動の効果を測るため、起動の開始と終了の時刻を出す。テストの開始時刻と見比べる。
+      - name: シミュレーターの起動ログを表示する
+        if: always()
+        run: cat "$RUNNER_TEMP/simulator-boot.log" || true
 
   ci-status:
     name: ci-status
