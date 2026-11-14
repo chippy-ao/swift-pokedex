@@ -462,6 +462,7 @@ flowchart LR
 
 - App から呼ぶ入口は `public`（例: `PokemonListView` と引数なしの `init()`）。
 - パッケージ内のモジュール間で使うものは `package`（例: `PokemonRow`、`RemoteImage`、`FetchPokemonPageUseCase`）。
+- 例外: `#if DEBUG` のときだけの `public`（Preview とスナップショットが共有する場面。例: `PokemonDetailScenario`）。スナップショットのテストが `Package.swift` の外にあるため。Release には入らない（[ADR-0020](./adr/0020-snapshot-tests-with-host-app.md)）。
 
 出典: [The Swift Programming Language: Access Control](https://docs.swift.org/swift-book/documentation/the-swift-programming-language/accesscontrol/)、[SE-0386 New access modifier: package](https://github.com/swiftlang/swift-evolution/blob/main/proposals/0386-package-access-modifier.md)
 

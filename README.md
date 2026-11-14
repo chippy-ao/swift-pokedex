@@ -29,7 +29,7 @@ PokeAPI を使ったポケモン図鑑アプリです。久しぶりの Swift �
 | 永続化 | SwiftData（お気に入り）、UserDefaults（設定値） |
 | ライセンス表示 | LicenseList |
 | Lint / 整形 | SwiftLint、swift-format |
-| テスト | Swift Testing（swift-snapshot-testing は余裕が出たら） |
+| テスト | Swift Testing、swift-snapshot-testing（画面の回帰確認。[ADR-0020](docs/adr/0020-snapshot-tests-with-host-app.md)） |
 
 採用ライブラリと使う target は [docs/package-dependencies.md](docs/package-dependencies.md)、選定の理由や不採用にしたものは [ADR-0005](docs/adr/0005-external-libraries.md) にまとめています。
 

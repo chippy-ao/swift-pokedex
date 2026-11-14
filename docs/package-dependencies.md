@@ -263,7 +263,7 @@ SwiftPM では、直接の依存に書いていないモジュールでも推移
 | [SwiftLint](https://github.com/realm/SwiftLint) | Lint | （開発ツール） | |
 | [swift-format](https://github.com/swiftlang/swift-format) | 整形 | （開発ツール） | Swift ツールチェーンに同梱されている |
 | [Swift Testing](https://developer.apple.com/documentation/testing) | テストフレームワーク | 各モジュールの Tests | |
-| [swift-snapshot-testing](https://github.com/pointfreeco/swift-snapshot-testing) | スナップショットテスト | （余裕が出たら導入） | UI の回帰確認に有用。導入するかは後で検討する |
+| [swift-snapshot-testing](https://github.com/pointfreeco/swift-snapshot-testing) | スナップショットテスト（画面の回帰確認） | SnapshotTestSupport だけ | 他の target は SnapshotTestSupport 経由で使う。撮り方は [ADR 0020](./adr/0020-snapshot-tests-with-host-app.md) |
 
 ### 不採用
 

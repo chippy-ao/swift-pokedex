@@ -35,6 +35,7 @@ ADR を残す基準、書き換えない原則、置き場所の考え方は [do
 | [0017](0017-network-client-interface-independent-of-transport.md) | NetworkClient の interface を通信方式に依らない形にする | 承認済み | 2026-11-09 |
 | [0018](0018-bundled-pokemon-names-table.md) | ポケモン名を同梱の表から返す | 承認済み | 2026-11-12 |
 | [0019](0019-type-and-stat-names-and-colors-in-app.md) | タイプと種族値の名前と色をアプリに持つ | 承認済み | 2026-11-13 |
+| [0020](0020-snapshot-tests-with-host-app.md) | スナップショットテストはホストアプリ付きで撮る | 承認済み | 2026-11-14 |
 
 ## テンプレート
 
