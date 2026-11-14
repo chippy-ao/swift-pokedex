@@ -19,10 +19,27 @@ struct PokedexApp: App {
 
     var body: some Scene {
         WindowGroup {
-            NavigationStack(path: $router.path) {
-                PokemonListView()
-                    .pokedexDestinations()
-            }
+            #if DEBUG
+                // ホストアプリ付きのテスト（app/PokedexSnapshotTests）はこのアプリを起動してテストを読み込む。
+                // 起動時に一覧が読み込みを始めると、テストの依存（testValue）が未実装として失敗を報告し、
+                // 本物の通信も走りうる。単体テストの中では画面を作らない。
+                // この環境変数は単体テストのプロセスだけに入る（UI テストで起動したアプリには入らない）。
+                // Release には入れない。
+                if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil {
+                    Color.clear
+                } else {
+                    root
+                }
+            #else
+                root
+            #endif
+        }
+    }
+
+    private var root: some View {
+        NavigationStack(path: $router.path) {
+            PokemonListView()
+                .pokedexDestinations()
         }
     }
 }
