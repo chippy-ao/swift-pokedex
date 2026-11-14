@@ -22,8 +22,12 @@ package enum SnapshotEnvironment {
         deviceName: String? = ProcessInfo.processInfo.environment["SIMULATOR_DEVICE_NAME"],
         osVersion version: String = UIDevice.current.systemVersion
     ) -> String? {
-        // 仮実装（テストを先に固めるため、まだ判定しない）
-        nil
+        guard deviceName != simulatorName || version != osVersion else { return nil }
+        return """
+            スナップショットは \(simulatorName)・iOS \(osVersion) で走らせてください \
+            （今は \(deviceName ?? "シミュレーター以外")・iOS \(version)）。\
+            mise run test なら、この環境が既定です。
+            """
     }
 }
 
