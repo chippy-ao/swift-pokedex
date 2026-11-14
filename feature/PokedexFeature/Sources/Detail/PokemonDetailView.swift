@@ -1,7 +1,5 @@
-import Dependencies
 import DesignSystem
 import Domain
-import Foundation
 import Model
 import SwiftUI
 
@@ -154,47 +152,9 @@ private struct DetailContent: View {
     }
 }
 
-// Preview は fetchPokemonDetail だけを差し替える。feature は Domain の UseCase しか知らない。
-// UseCase ごと差し替えるので名前の言語は選ばれない。Preview の既定の言語（英語）の文言とそろえて英語にする。
-private let previewDetail = PokemonDetail(
-    id: 1, name: "Bulbasaur", genus: "Seed Pokémon", types: [.grass, .poison],
-    stats: [
-        PokemonStat(kind: .hp, value: 45), PokemonStat(kind: .attack, value: 49),
-        PokemonStat(kind: .defense, value: 49), PokemonStat(kind: .specialAttack, value: 65),
-        PokemonStat(kind: .specialDefense, value: 65), PokemonStat(kind: .speed, value: 45),
-    ],
-    heightInMeters: 0.7, weightInKilograms: 6.9,
-    artworkURL: URL(
-        string:
-            "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/1.png"
-    ))
-
-#Preview("読み込み済み") {
-    let store = withDependencies {
-        $0.fetchPokemonDetail.execute = { _ in previewDetail }
-    } operation: {
-        PokemonDetailStore(id: 1)
-    }
-    NavigationStack { PokemonDetailView(store: store) }
-}
-
-#Preview("読み込み中") {
-    let store = withDependencies {
-        $0.fetchPokemonDetail.execute = { _ in
-            try await Task.sleep(for: .seconds(3600))
-            return previewDetail
-        }
-    } operation: {
-        PokemonDetailStore(id: 1)
-    }
-    NavigationStack { PokemonDetailView(store: store) }
-}
-
-#Preview("エラー（オフライン）") {
-    let store = withDependencies {
-        $0.fetchPokemonDetail.execute = { _ in throw LoadError.offline }
-    } operation: {
-        PokemonDetailStore(id: 1)
-    }
-    NavigationStack { PokemonDetailView(store: store) }
-}
+// Preview の場面とデータは PokemonDetailScenario にある（スナップショットのテストと共有）。
+#if DEBUG
+    #Preview("読み込み済み") { PokemonDetailScenario.loaded.makeView() }
+    #Preview("読み込み中") { PokemonDetailScenario.loading.makeView() }
+    #Preview("エラー（オフライン）") { PokemonDetailScenario.errorOffline.makeView() }
+#endif
