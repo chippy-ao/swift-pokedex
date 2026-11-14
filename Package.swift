@@ -7,7 +7,8 @@ let package = Package(
     defaultLocalization: "en",
     platforms: [.iOS(.v26)],
     products: [
-        // App ターゲット（app/App.xcodeproj）がリンクするものだけを公開する
+        // App ターゲット（app/App.xcodeproj）がリンクするものだけを公開する。
+        // SnapshotTestSupport は、ホストアプリ付きのテスト target（PokedexSnapshotTests）がリンクする
         .library(name: "PokedexFeature", targets: ["PokedexFeature"]),
         .library(name: "SettingsFeature", targets: ["SettingsFeature"]),
         .library(name: "Domain", targets: ["Domain"]),
@@ -15,11 +16,13 @@ let package = Package(
         .library(name: "NetworkClientURLSession", targets: ["NetworkClientURLSession"]),
         .library(name: "DatabaseSwiftData", targets: ["DatabaseSwiftData"]),
         .library(name: "DatastoreUserDefaults", targets: ["DatastoreUserDefaults"]),
+        .library(name: "SnapshotTestSupport", targets: ["SnapshotTestSupport"]),
     ],
     dependencies: [
         .package(url: "https://github.com/pointfreeco/swift-dependencies", from: "1.17.2"),
         .package(url: "https://github.com/apple/swift-http-types", from: "1.8.0"),
         .package(url: "https://github.com/kean/Nuke", from: "13.2.3"),
+        .package(url: "https://github.com/pointfreeco/swift-snapshot-testing", from: "1.19.7"),
     ],
     targets: [
         // feature
@@ -131,6 +134,14 @@ let package = Package(
             name: "TestSupport",
             dependencies: ["Model", "Common"],
             path: "core/TestSupport/Sources"
+        ),
+        // swift-snapshot-testing に依存してよいのは、この target だけ（ADR-0020）。
+        .target(
+            name: "SnapshotTestSupport",
+            dependencies: [
+                .product(name: "SnapshotTesting", package: "swift-snapshot-testing")
+            ],
+            path: "core/SnapshotTestSupport/Sources"
         ),
 
         // core: interface

@@ -107,6 +107,7 @@ flowchart TD
     SettingsFeature
   end
   subgraph CORE["core"]
+    SnapshotTestSupport
     Common
     Model
     Domain
@@ -129,6 +130,7 @@ flowchart TD
     Dependencies["swift-dependencies<br/>(Dependencies / DependenciesMacros)"]
     HTTPTypes["swift-http-types<br/>(HTTPTypes / HTTPTypesFoundation)"]
     NukeUI
+    SnapshotTesting["swift-snapshot-testing<br/>(SnapshotTesting)"]
     LicenseList
     SwiftData["SwiftData (Apple)"]
   end
@@ -196,10 +198,11 @@ flowchart TD
   Model --> Common
   TestSupport --> Model
   TestSupport --> Common
+  SnapshotTestSupport --> SnapshotTesting
 
   classDef ext fill:#fff3d6,stroke:#c98a00,color:#000;
   classDef impl fill:#e1f0ff,stroke:#2d78c8,color:#000;
-  class Dependencies,HTTPTypes,NukeUI,LicenseList,SwiftData ext;
+  class Dependencies,HTTPTypes,NukeUI,SnapshotTesting,LicenseList,SwiftData ext;
   class NetworkClientURLSession,DatabaseSwiftData,DatastoreUserDefaults impl;
 ```
 
