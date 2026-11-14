@@ -15,17 +15,15 @@ package enum SnapshotEnvironment {
     }
 
     /// 走っている端末と OS が、参照画像を撮った環境と同じなら nil。違えば、人に向けたメッセージを返す。
+    /// 引数の既定値は、今のシミュレーターの機種名（環境変数 SIMULATOR_DEVICE_NAME）と OS の版。
+    /// テストでは、ここに値を渡して判定を確かめる。
     @MainActor
-    package static func mismatchMessage() -> String? {
-        // シミュレーターのプロセスには、環境変数 SIMULATOR_DEVICE_NAME で機種名が入る
-        let name = ProcessInfo.processInfo.environment["SIMULATOR_DEVICE_NAME"]
-        let version = UIDevice.current.systemVersion
-        guard name != simulatorName || version != osVersion else { return nil }
-        return """
-            スナップショットは \(simulatorName)・iOS \(osVersion) で走らせてください \
-            （今は \(name ?? "シミュレーター以外")・iOS \(version)）。\
-            mise run test なら、この環境が既定です。
-            """
+    package static func mismatchMessage(
+        deviceName: String? = ProcessInfo.processInfo.environment["SIMULATOR_DEVICE_NAME"],
+        osVersion version: String = UIDevice.current.systemVersion
+    ) -> String? {
+        // 仮実装（テストを先に固めるため、まだ判定しない）
+        nil
     }
 }
 

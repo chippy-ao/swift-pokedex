@@ -119,6 +119,13 @@
         "identifier": "DatastoreUserDefaultsTests",
         "name": "DatastoreUserDefaultsTests"
       }
+    },
+    {
+      "target": {
+        "containerPath": "container:..",
+        "identifier": "SnapshotTestSupportTests",
+        "name": "SnapshotTestSupportTests"
+      }
     }
   ],
   "version": 1

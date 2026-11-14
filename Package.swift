@@ -143,6 +143,11 @@ let package = Package(
             ],
             path: "core/SnapshotTestSupport/Sources"
         ),
+        .testTarget(
+            name: "SnapshotTestSupportTests",
+            dependencies: ["SnapshotTestSupport"],
+            path: "core/SnapshotTestSupport/Tests"
+        ),
 
         // core: interface
         .target(
