@@ -224,13 +224,13 @@ SwiftLint で無効にしたルールと理由は `.swiftlint.yml` のコメン�
 - `ci.yml` は PR でだけ走り、main への push では走りません。理由は [ci.yml](../.github/workflows/ci.yml) 冒頭のコメントを参照してください。
 - `lint`、`logic-test`、`ios-build`、`ui-test` は、`changes` ジョブが PR の変更ファイルを調べた結果で走らせるかを決めます。対象ファイルの一覧は [ci.yml](../.github/workflows/ci.yml) の `changes` ジョブを参照してください。
   - ロジックのモジュールだけを変えた PR: `lint`、`logic-test`、`ios-build`。ロジックの変更で画面側のコンパイルが壊れるのを、シミュレーターなしで見つけるため
-  - 画面（feature、DesignSystem、SharedUI、SnapshotTestSupport、app、参照画像）やビルドの設定を触った PR: `lint`、`logic-test`、`ui-test`（`ui-test` がビルドも含むので `ios-build` は飛ばす）
+  - 画面（feature、DesignSystem、SharedUI、SnapshotTestSupport、app、参照画像）、UI テストが通る NetworkClientURLSession、ビルドの設定（`LogicTests.xcscheme` を含む）を触った PR（Swift に関わる変更に限る）: `lint`、`logic-test`、`ui-test`（`ui-test` がビルドも含むので `ios-build` は飛ばす）
   - ワークフローだけの変更: `lint` だけ走らせる（actionlint のため）
   - docs だけの変更など: どれも走らせない（skipped）
 - 走らせなかったジョブは skipped になり、成功として扱われます。`ci-status` は `changes` が success で、ほかのジョブが success か skipped のときに成功します。`on.pull_request.paths` を使わない理由は [ci.yml](../.github/workflows/ci.yml) 冒頭のコメントを参照してください。
 - `xcode-27` は Xcode 27 を入れた GitHub のプレビューのランナーイメージです。ジョブの環境変数 `DEVELOPER_DIR=/Applications/Xcode_27.2.app` で Xcode のバージョンを選び、README の「動作環境」と揃えます。正式なラベルになったら、`.github/actionlint.yaml` の登録を外します。
 - CI から呼ぶコマンドは mise のタスクに揃えます。
-- `logic-test`、`ios-build`、`ui-test` は、そのあとに `mise run check-warnings` を走らせ、ビルドの警告が 1 件でもあれば落ちます。手元のビルドは止めません。手で走らせることもできますが、増分ビルドなので 0 件でも当てにならず、CI の結果が正です。deprecated の警告も数えるので、Xcode を上げて増えたら相談します。理由と細部は [scripts/check-build-warnings.swift](../scripts/check-build-warnings.swift) の冒頭のコメントを参照してください。
+- `logic-test`、`ios-build`、`ui-test` は、そのあとに自分の xcresult を渡して `mise run check-warnings` を走らせ、ビルドの警告が 1 件でもあれば落ちます。手元のビルドは止めません。手で走らせることもできます（引数なしだと `build/` に残った古い結果も数えるので、`mise run check-warnings build/<名前>.xcresult` のように渡せます）。増分ビルドなので 0 件でも当てにならず、CI の結果が正です。deprecated の警告も数えるので、Xcode を上げて増えたら相談します。理由と細部は [scripts/check-build-warnings.swift](../scripts/check-build-warnings.swift) の冒頭のコメントを参照してください。
 
 ### PR ラベル
 

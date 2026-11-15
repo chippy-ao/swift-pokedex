@@ -13,10 +13,10 @@ CI の `build-test` が約 9 分かかっていた（#53）。測ると、テス
 ## 決定
 
 - パッケージは 1 つのまま、`platforms` に `.macOS(.v26)` を足す。
-- ロジックのテスト target 10 個だけを入れた共有 scheme `LogicTests`（`.swiftpm/xcode/xcshareddata/xcschemes/LogicTests.xcscheme`）を作り、macOS で回す（`mise run test-logic`）。UI のモジュールは入れない。
-- CI は、ロジックのテストを毎回走らせる。ロジックだけを変えた PR は、iOS Simulator 向けのビルドだけを加える（シミュレーターは起動しない）。画面を触った PR は、iOS Simulator でスナップショットと UI テストも走らせる。
+- ロジックのテスト target だけを入れた共有 scheme `LogicTests` を作り、macOS で回す。UI のモジュールは入れない。
+- CI は、ロジックのテストを毎回走らせる。ロジックだけを変えた PR は、iOS 向けのビルドだけを加え、画面を触った PR は iOS Simulator のテストも走らせる。
 - PokedexFeature は Store と View を分けず、まるごと画面側として扱う。
-- 手順と CI のジョブは [development.md](../development.md#ロジックのテストと画面のテスト) を参照。
+- 対象の target、タスク、CI のジョブの細部は [development.md](../development.md#ロジックのテストと画面のテスト) を参照。
 
 ## 理由
 
@@ -45,6 +45,7 @@ CI の `build-test` が約 9 分かかっていた（#53）。測ると、テス
 
 - ロジックのテスト target を足したら、`Package.swift` と `AllTests.xctestplan` に加えて `LogicTests` scheme にも足す（足し忘れは機械で検出できない）。
 - ロジックのモジュールに UIKit などが入ると、`LogicTests` の macOS 向けビルドで止まる。意図した効果。
+- ロジックだけを変えた PR では、Model や Domain の変更で画面の見た目が変わっても、スナップショットは走らない（#55 で合意した割り切り）。
 
 ## 参考リンク
 

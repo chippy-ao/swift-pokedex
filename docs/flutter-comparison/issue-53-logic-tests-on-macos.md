@@ -20,7 +20,7 @@
 
 - Swift は、ビルドするときに、その OS 向けの機械語に変えます。iOS 向けにビルドしたテストは、iOS の上（シミュレーターか実機）でしか動きません。
 - 同じコードを macOS 向けにもビルドできるなら、そのテストは Mac でそのまま動きます。シミュレーターを起動する必要がありません。
-- このリポジトリでは、ロジックのモジュール（Domain、Repository、NetworkClient など）が UIKit に頼っていないので、macOS 向けにもビルドできます。UI のモジュール（DesignSystem、SharedUI、各 Feature）は SwiftUI の部品を使うため、iOS でしか動かしません。
+- このリポジトリでは、ロジックのモジュール（Domain、Repository、NetworkClient など）が UIKit に頼っていないので、macOS 向けにもビルドできます。UI のモジュール（DesignSystem、SharedUI、各 Feature）は UIKit に依存するため、macOS ではビルドできません（SwiftUI 自体は macOS でも使えます）。
 - 「macOS 向けにもビルドする」は、`Package.swift` の `platforms` に書きます。
 
 Swift 側（このリポジトリ）:
@@ -47,7 +47,7 @@ flutter test         # Flutter のアプリ。ウィジェットのテストも�
 違いと間違えやすいところ:
 
 - `dart test` と `flutter test` は、Mac 上の Dart VM（または Flutter のテスト用のエンジン）で動きます。`flutter test` が iOS のシミュレーターを使うことはありません。
-- Swift には、この「ホストの VM で動かす」仕組みがありません。macOS 向けにビルドできるモジュールだけが Mac で動き、それ以外は iOS の上で動かします。
+- Swift はビルドした OS 向けのネイティブコードになります。テストをホストの Mac で動かせるのは、macOS 向けにもビルドできるモジュールだけで、それ以外は iOS の上で動かします。
 - そのため、ロジックのモジュールに UIKit などの iOS 専用の API を `import` すると、macOS 向けのビルドが止まります。Dart で `dart:ui` を使うと純 Dart のテストが動かなくなるのと、起きることは似ています。このリポジトリでは、これをモジュールの境界を守る仕組みとして使っています（`#if canImport(UIKit)` で囲って逃がす案は、囲い忘れで壊れるため採りませんでした）。
 - `Package.swift` に `.macOS(.v26)` を足しても、UI のモジュールが macOS でビルドできるようにはなりません。UI のモジュールを macOS でビルドしないのは、scheme に入れないことで実現しています（次の項目）。
 
