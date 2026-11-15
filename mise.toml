@@ -91,7 +91,9 @@ xcodebuild test \\
 [tasks.test]
 description = "ロジックのテスト（macOS）と、それ以外のテスト（iOS Simulator）を両方実行する"
 # PR の前に通すのはこれ（CLAUDE.md）。CI は同じ中身をジョブに分けて走らせる。
-depends = ["test-logic", "test-ui"]
+# depends は並列で走る。xcodebuild を 2 本同時に走らせると不安定になり、
+# 速いほう（test-logic）が先に落ちると、もう片方の結果が見えにくいので、順番に走らせる。
+run = ["mise run test-logic", "mise run test-ui"]
 
 [tasks.build-ios]
 description = "iOS Simulator 向けに全モジュールとテストをビルドだけする（テストは動かさない）"
@@ -155,5 +157,6 @@ exit "${status}"
 
 [tasks.check-warnings]
 description = "test-logic、test-ui、build-ios が出した xcresult のビルドの警告を数え、1 件でもあれば失敗する"
-# build/ にある xcresult のうち存在するものを全部見る。CI の各ジョブは自分が作ったものだけが build/ にある
+# 引数なしだと、build/ にある xcresult のうち存在するものを全部見る（古い結果も数える）。
+# CI の各ジョブは、`mise run check-warnings build/<名前>.xcresult` で自分の結果だけを渡す
 run = "swift scripts/check-build-warnings.swift"

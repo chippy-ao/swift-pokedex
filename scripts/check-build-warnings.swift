@@ -65,7 +65,11 @@ func buildResults(at path: String) -> BuildResults {
     process.arguments = ["xcresulttool", "get", "build-results", "--path", path]
     let pipe = Pipe()
     process.standardOutput = pipe
-    try? process.run()
+    do {
+        try process.run()
+    } catch {
+        fail("xcresulttool を起動できませんでした（\(path)）: \(error)")
+    }
     // 出力が大きいと waitUntilExit の前にパイプが詰まるので、先に読み切る
     let data = pipe.fileHandleForReading.readDataToEndOfFile()
     process.waitUntilExit()

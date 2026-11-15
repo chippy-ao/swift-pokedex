@@ -62,7 +62,10 @@ jobs:
           # iOS Simulator でのテスト（スナップショットと UI テスト）が要る対象。
           # 画面のモジュール、App、参照画像、ビルドの設定を含む。ロジックのモジュールだけの変更は含めない
           # （その場合は macOS のテストと、iOS 向けのビルドだけ走らせる。#55）。
-          ui_re='^feature/|^core/(DesignSystem|SharedUI|SnapshotTestSupport)/|^app/|__Snapshots__/|(^|/)Package\.(swift|resolved)$|^mise\.toml$|^\.github/workflows/ci\.yml$'
+          # NetworkClientURLSession はロジックだが含める。UI テスト（LocalizedNameUITests）が、
+          # 同梱の JSON と POKEDEX_UI_TEST_FIXTURE の分岐（PokeAPIClient+Live）を通るため。
+          # .swiftpm は、LogicTests.xcscheme が test-ui の -skip-testing の一覧の元になっているため。
+          ui_re='^feature/|^core/(DesignSystem|SharedUI|SnapshotTestSupport|NetworkClientURLSession)/|^app/|^\.swiftpm/|__Snapshots__/|(^|/)Package\.(swift|resolved)$|^mise\.toml$|^\.github/workflows/ci\.yml$'
           # lint だけ走らせる対象（actionlint のため）
           workflows_re='^\.github/workflows/|^\.github/actionlint\.yaml$'
 
@@ -125,7 +128,7 @@ jobs:
           persist-credentials: false
       - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
       - run: mise run test-logic
-      - run: mise run check-warnings
+      - run: mise run check-warnings build/LogicTests.xcresult
 
   # 画面を触っていない PR 向け。iOS Simulator 向けにビルドだけして、ロジックの変更で
   # 画面側のコンパイルが壊れていないかを確かめる。generic な destination なのでシミュレーターは起動しない。
@@ -144,13 +147,13 @@ jobs:
           persist-credentials: false
       - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
       - run: mise run build-ios
-      - run: mise run check-warnings
+      - run: mise run check-warnings build/IosBuild.xcresult
 
   # 画面を触った PR 向け。iOS Simulator でスナップショットと UI テストを走らせる。
   ui-test:
     name: ui-test
     needs: changes
-    if: needs.changes.outputs.ui == 'true'
+    if: needs.changes.outputs.swift == 'true' && needs.changes.outputs.ui == 'true'
     runs-on: xcode-27
     timeout-minutes: 45
     permissions:
@@ -164,7 +167,7 @@ jobs:
       - run: mise run test-ui
         env:
           TEST_RUNNER_SNAPSHOT_TESTING_RECORD: never
-      - run: mise run check-warnings
+      - run: mise run check-warnings build/AllTests.xcresult
 
   ci-status:
     name: ci-status
