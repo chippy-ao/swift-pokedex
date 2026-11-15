@@ -7,7 +7,7 @@ pinact = "5.0.2"
 actionlint = "1.7.12"
 xcbeautify = "3.2.1"
 
-# test と snapshot-record が使うシミュレーター。スナップショットの参照画像を撮った環境で、
+# test-ui と snapshot-record が使うシミュレーター。スナップショットの参照画像を撮った環境で、
 # core/SnapshotTestSupport の SnapshotEnvironment と同じ値にする（ADR-0020）。
 [vars]
 pokedex_destination = "platform=iOS Simulator,name=iPhone 17,OS=27.2"
@@ -36,8 +36,27 @@ run = [
   "swift scripts/check-dependencies.swift",
 ]
 
-[tasks.test]
-description = "xcodebuild test（scheme Pokedex、テストプラン AllTests）を iOS Simulator で実行する"
+[tasks.test-logic]
+description = "ロジックのテスト（scheme LogicTests）を macOS で実行する。シミュレーターは要らない"
+# ロジックのモジュールは macOS でもビルドできるので、Mac でそのまま走る。UI のモジュールは入れない
+# （.swiftpm/xcode/xcshareddata/xcschemes/LogicTests.xcscheme、理由は docs/development.md）。
+# -skipMacroValidation と -resultBundlePath の理由は test-ui と同じ。結果は build/LogicTests.xcresult に出す。
+run = """
+#!/usr/bin/env bash
+set -euo pipefail
+rm -rf build/LogicTests.xcresult
+xcodebuild test \\
+  -scheme LogicTests \\
+  -destination platform=macOS \\
+  -skipMacroValidation \\
+  -resultBundlePath build/LogicTests.xcresult \\
+  | xcbeautify
+"""
+
+[tasks.test-ui]
+description = "xcodebuild test（scheme Pokedex、テストプラン AllTests）から、ロジックのテストを除いて iOS Simulator で実行する"
+# ロジックのテストは test-logic（macOS）で回すので、ここでは -skip-testing で外す。
+# 外す一覧は LogicTests.xcscheme の BlueprintIdentifier から読む（一覧を 1 か所に置くため）。
 # 既定のシミュレーターは [vars] の pokedex_destination（固定の環境。違う環境ではスナップショットが失敗する）。
 # -skipMacroValidation: Swift のマクロはサンドボックスで動き（WWDC23 Expand on Swift macros）、
 # 承認ボタンは中身を見せないので守りとして薄い。守りは Package.resolved の固定と Renovate の PR の確認。
@@ -49,14 +68,46 @@ run = """
 set -euo pipefail
 POKEDEX_TEST_DESTINATION="${POKEDEX_TEST_DESTINATION:-{{vars.pokedex_destination}}}"
 echo "destination: ${POKEDEX_TEST_DESTINATION}"
+skip_args=()
+while IFS= read -r name; do
+  skip_args+=("-skip-testing:${name}")
+done < <(grep -o 'BlueprintIdentifier = "[^"]*"' .swiftpm/xcode/xcshareddata/xcschemes/LogicTests.xcscheme | cut -d'"' -f2)
+if [ "${#skip_args[@]}" -eq 0 ]; then
+  echo "LogicTests.xcscheme からテスト target を読めませんでした" >&2
+  exit 1
+fi
 rm -rf build/AllTests.xcresult
 xcodebuild test \\
   -project app/App.xcodeproj \\
   -scheme Pokedex \\
   -testPlan AllTests \\
   -destination "${POKEDEX_TEST_DESTINATION}" \\
+  "${skip_args[@]}" \\
   -skipMacroValidation \\
   -resultBundlePath build/AllTests.xcresult \\
+  | xcbeautify
+"""
+
+[tasks.test]
+description = "ロジックのテスト（macOS）と、それ以外のテスト（iOS Simulator）を両方実行する"
+# PR の前に通すのはこれ（CLAUDE.md）。CI は同じ中身をジョブに分けて走らせる。
+depends = ["test-logic", "test-ui"]
+
+[tasks.build-ios]
+description = "iOS Simulator 向けに全モジュールとテストをビルドだけする（テストは動かさない）"
+# generic/platform=iOS Simulator は具体的な端末を指さないので、シミュレーターを起動しない。
+# ロジックだけを変えた PR で、画面側のコンパイルが壊れていないかを速く確かめるために CI で使う。
+run = """
+#!/usr/bin/env bash
+set -euo pipefail
+rm -rf build/IosBuild.xcresult
+xcodebuild build-for-testing \\
+  -project app/App.xcodeproj \\
+  -scheme Pokedex \\
+  -testPlan AllTests \\
+  -destination "generic/platform=iOS Simulator" \\
+  -skipMacroValidation \\
+  -resultBundlePath build/IosBuild.xcresult \\
   | xcbeautify
 """
 
@@ -103,5 +154,6 @@ exit "${status}"
 """
 
 [tasks.check-warnings]
-description = "mise run test が出した xcresult のビルドの警告を数え、1 件でもあれば失敗する"
-run = "swift scripts/check-build-warnings.swift build/AllTests.xcresult"
+description = "test-logic、test-ui、build-ios が出した xcresult のビルドの警告を数え、1 件でもあれば失敗する"
+# build/ にある xcresult のうち存在するものを全部見る。CI の各ジョブは自分が作ったものだけが build/ にある
+run = "swift scripts/check-build-warnings.swift"
