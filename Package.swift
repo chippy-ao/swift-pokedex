@@ -5,7 +5,10 @@ import PackageDescription
 let package = Package(
     name: "swift-pokedex",
     defaultLocalization: "en",
-    platforms: [.iOS(.v26)],
+    // macOS は、ロジックのテストを Mac で回すために足している（LogicTests scheme、mise run test-logic）。
+    // UI のモジュール（DesignSystem、SharedUI、SnapshotTestSupport、各 Feature）は macOS でビルドできないので、
+    // LogicTests scheme には入れない。iOS 向けのビルドとテストは今までどおり Pokedex scheme で行う。
+    platforms: [.iOS(.v26), .macOS(.v26)],
     products: [
         // App ターゲット（app/App.xcodeproj）がリンクするものだけを公開する。
         // SnapshotTestSupport は、ホストアプリ付きのテスト target（PokedexSnapshotTests）がリンクする

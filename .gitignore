@@ -1,6 +1,13 @@
 # SwiftPM
 .build/
-.swiftpm/
+# .swiftpm の中は共有 scheme（LogicTests.xcscheme）だけを追跡する。
+# 理由: ロジックのテスト target だけを入れた scheme は、手で書かないと作れない（SwiftPM の自動生成は全 target を入れる）。
+.swiftpm/*
+!.swiftpm/xcode/
+.swiftpm/xcode/*
+!.swiftpm/xcode/xcshareddata/
+.swiftpm/xcode/xcshareddata/*
+!.swiftpm/xcode/xcshareddata/xcschemes/
 
 # Xcode
 DerivedData/
