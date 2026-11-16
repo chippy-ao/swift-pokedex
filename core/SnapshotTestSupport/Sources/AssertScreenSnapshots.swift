@@ -4,8 +4,8 @@ import Testing
 import UIKit
 
 /// 画面を、撮る端末（SnapshotEnvironment.devices）ごとに、ライトとダークで撮って参照画像と比べる。
-/// 参照画像は、テストのファイルがあるフォルダの 1 つ上の
-/// `__Snapshots__/<テストのファイル名>/<テスト名>.<端末>-<ライト / ダーク>.png`（理由は SnapshotDirectory）。
+/// 参照画像は `feature/<feature 名>/__Snapshots__/<テストのファイル名>/<テスト名>.<端末>-<ライト / ダーク>.png`
+/// （理由は SnapshotDirectory）。`feature` は、画像を置く feature の名前。
 ///
 /// Swift Testing から呼ぶ前提。失敗を `Issue.record` で記録するため、XCTest からは使えない。
 ///
@@ -25,6 +25,7 @@ import UIKit
 @MainActor
 public func assertScreenSnapshots(
     of screen: some View,
+    feature: String,
     fileID: StaticString = #fileID,
     file: StaticString = #filePath,
     testName: String = #function,
@@ -56,7 +57,7 @@ public func assertScreenSnapshots(
                     }),
                 named: "\(device.name)-\(styleName)",
                 snapshotDirectory: SnapshotDirectory.path(
-                    forTestFile: "\(file)", feature: "PokedexFeature"),
+                    forTestFile: "\(file)", feature: feature),
                 // 呼び出し元のテスト名を渡さないと、画像の名前が「assertScreenSnapshots」で衝突する
                 fileID: fileID, file: file, testName: testName, line: line, column: column)
             if let failure {

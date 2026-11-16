@@ -15,6 +15,7 @@ struct PokemonListSnapshotTests {
         for screen in screens {
             assertScreenSnapshots(
                 of: screen.view,
+                feature: "PokedexFeature",
                 // 場面ごとに画像の名前を分ける（既定の #function だと全部同じ名前になる）
                 testName: screen.name)
         }
