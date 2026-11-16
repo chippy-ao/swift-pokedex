@@ -33,7 +33,7 @@ SwiftUI 製のポケモン図鑑アプリ（学習用）。進み具合は GitHu
 ### 開発
 
 - PR を出す前に `mise run lint` と `mise run test` を通す（[docs/development.md](docs/development.md#タスク) 参照）。
-- モジュールの追加と依存の変更は `Package.swift` で行う。テスト target を足したら `app/AllTests.xctestplan` にも登録する（[docs/development.md](docs/development.md#xcode-プロジェクト) 参照）。
+- モジュールの追加と依存の変更は `Package.swift` で行う。テスト target を足したら `app/AllTests.xctestplan` にも登録し、ロジックのモジュールのものは `LogicTests` scheme にも足す（[docs/development.md](docs/development.md#xcode-プロジェクト) 参照）。
 - `project.pbxproj` を変えた PR は、Xcode で開けるかをユーザーに確かめてもらう。
 
 ### テスト

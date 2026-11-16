@@ -4,7 +4,8 @@
 //    パッケージ内の target と、宣言した外部パッケージの product は、直接依存に書かずに import するとエラー。
 //    Foundation や SwiftUI などのシステムのモジュールは対象外。
 // 2. Package.swift のテスト target が app/AllTests.xctestplan に過不足なく登録されているかを検査する。
-// 3. Package.swift の依存が、docs/package-dependencies.md の依存グラフ（mermaid）の矢印に載っているかを検査する。
+// 3. .swiftpm/xcode/xcshareddata/xcschemes/LogicTests.xcscheme のテスト target が、Package.swift に存在するかを検査する。
+// 4. Package.swift の依存が、docs/package-dependencies.md の依存グラフ（mermaid）の矢印に載っているかを検査する。
 //    図が許可リストになる。図に無い target や依存はエラー。図にあって Package.swift に無い矢印はエラーにしない
 //    （外部ライブラリは最初に使う Issue で入れるため）。
 import Foundation
@@ -46,6 +47,7 @@ struct TestPlan: Decodable {
 let rootURL = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
     .deletingLastPathComponent()
 let testPlanPath = "app/AllTests.xctestplan"
+let logicSchemePath = ".swiftpm/xcode/xcshareddata/xcschemes/LogicTests.xcscheme"
 
 func fail(_ messages: [String]) -> Never {
     for message in messages {
@@ -188,6 +190,33 @@ func checkTestPlan(in package: PackageDescription) -> [String] {
     return errors
 }
 
+/// LogicTests scheme の target が、Package.swift のテスト target にあるかを見る。
+/// 存在しない名前が残ると、`mise run test-ui` の -skip-testing が空振りし、macOS のテストからも外れるため。
+/// scheme に足し忘れた target は、ここでは見ない（UI のテスト target は入れないのが正しいので、機械では決められない）。
+func checkLogicScheme(in package: PackageDescription) -> [String] {
+    let url = rootURL.appendingPathComponent(logicSchemePath)
+    guard let xml = try? String(contentsOf: url, encoding: .utf8) else {
+        return ["\(logicSchemePath) を読めませんでした"]
+    }
+    let packageTests = Set(package.targets.filter { $0.type == "test" }.map(\.name))
+    let names = xml.components(separatedBy: "\n").compactMap { line -> String? in
+        guard
+            let range = line.range(
+                of: #"BlueprintIdentifier = "([^"]*)""#, options: .regularExpression)
+        else { return nil }
+        return String(line[range].dropFirst(#"BlueprintIdentifier = ""#.count).dropLast())
+    }
+    var errors: [String] = []
+    if names.isEmpty {
+        errors.append("\(logicSchemePath): テスト target が 1 つもありません")
+    }
+    for name in names where !packageTests.contains(name) {
+        errors.append(
+            "\(logicSchemePath): \(name) は Package.swift のテスト target にありません。scheme から外してください。")
+    }
+    return errors
+}
+
 /// 依存グラフ（mermaid）から読んだ許可リスト。
 struct DependencyGraph {
     /// ノード ID の集合。
@@ -321,7 +350,8 @@ func checkDependencyGraph(in package: PackageDescription) -> [String] {
 
 let package = describePackage()
 let errors =
-    checkImports(in: package) + checkTestPlan(in: package) + checkDependencyGraph(in: package)
+    checkImports(in: package) + checkTestPlan(in: package) + checkLogicScheme(in: package)
+    + checkDependencyGraph(in: package)
 if errors.isEmpty {
     print("依存チェック: 問題ありません（\(package.targets.count) target）")
 } else {

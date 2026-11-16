@@ -240,7 +240,7 @@ flowchart TD
 
 SwiftPM では、直接の依存に書いていないモジュールでも推移的な依存として import できてしまう場合があります。`--explicit-target-dependency-import-check` はこれを検出できません。Swift 6.4.2 で確認したところ、Domain 経由で Repository に推移的に依存する PokedexFeature に `import Repository` を足しても、error モードでビルドが通りました（native / swiftbuild のどちらのビルドシステムでも同じ）。なお、依存に全く無いモジュールの import は、このフラグが無くてもビルドエラーになります。
 
-そのため、各 target の import と `swift package describe --type json` の直接依存を突き合わせる自前のスクリプトを作り、mise のタスクと CI で実行します（Issue #3 / #4）。このスクリプトはテストプランへの登録漏れも検出します。
+そのため、各 target の import と `swift package describe --type json` の直接依存を突き合わせる自前のスクリプトを作り、mise のタスクと CI で実行します（Issue #3 / #4）。このスクリプトはテストプランへの登録漏れと、`LogicTests` scheme（[development.md](development.md#ロジックのテストと画面のテスト)）にある target が `Package.swift` に無いことも検出します。
 
 さらに、[依存グラフ](#依存グラフ)の矢印を許可リストとして、`Package.swift` の依存が図に載っているかを検査します。図に無い target や依存はエラーです。テスト target が依存してよいのは、対象の target、TestSupport、対象の target が依存しているもの（target と product）だけです。テストの入力（依存の差し替え、期待値の型）を作るのに、対象の依存の型が要るためです（Dart の `test/` が pubspec の `dependencies` を使えるのと同じ）。対象の依存の外（例: 実装モジュール）は引き続き禁止です。図にあって `Package.swift` に無い矢印はエラーにしません（外部ライブラリは最初に使う Issue で入れるため）。そのため、依存を変えるときは先に図を直します。図の書式（`A --> B` の矢印と、ノードのラベル末尾の括弧に書く product 名）を変えるときは、スクリプトの読み取りも直します。
 
@@ -306,7 +306,7 @@ Apple SDK や標準ライブラリのモジュール名・型名と衝突する�
 - 各 target は `path` で `<ディレクトリ>/Sources` を、test target は `<ディレクトリ>/Tests` を指定する。
 - 依存は target 単位で宣言する。推移的な import を防ぐチェックは [依存チェック](#依存チェック) を参照。
 - swift-tools-version は 6.2。使う機能が 6.2 からあるため。LicenseList も Swift 6.2 が前提。
-- `platforms` は iOS 26。[README](../README.md) の動作環境に合わせる。
+- `platforms` は iOS 26 と macOS 26。iOS は [README](../README.md) の動作環境に合わせる。macOS は、ロジックのテストを Mac で回すために足している（[development.md](development.md#ロジックのテストと画面のテスト)）。
 - 外部ライブラリは、最初に使う Issue で追加し、そのときに最新の安定版を確認する。バージョンはここには書かない。
 - product は App ターゲットがリンクするものだけを公開する（PokedexFeature、SettingsFeature、Domain、DesignSystem、NetworkClientURLSession、DatabaseSwiftData、DatastoreUserDefaults）。それ以外の target は、公開しても使う場所がない。
 - Swift 6 の設定は `swiftLanguageModes: [.v6]` だけにする。警告をエラー扱いにするのは CI だけ（Issue #4 で設定）にして、ローカルの開発では警告で止まらないようにする。MainActor を既定の隔離にする設定は使わない。Store などに `@MainActor` を明示して書く方針のため（[architecture.md](./architecture.md#concurrency-の方針)）。
@@ -315,7 +315,7 @@ Apple SDK や標準ライブラリのモジュール名・型名と衝突する�
 
 - ワークスペースは作らず、`app/App.xcodeproj` 1 つにエントリーポイントごとのターゲットを置く（[ADR 0015](./adr/0015-xcode-project-structure.md)）。
 - ルートの `Package.swift` が全モジュールを束ねるモノレポの役割を持つ（dart workspace のルート `pubspec.yaml` に相当）。`app/App.xcodeproj` はルートのパッケージをローカルパッケージとして参照する。同じ形の例として [isowords](https://github.com/pointfreeco/isowords) がある。
-- テストはテストプラン（`app/AllTests.xctestplan`）に全テスト target を登録し、⌘U や `xcodebuild test -project app/App.xcodeproj -scheme Pokedex` で全部回す。
+- テストはテストプラン（`app/AllTests.xctestplan`）に全テスト target を登録し、⌘U や `xcodebuild test -project app/App.xcodeproj -scheme Pokedex` で全部回す。ロジックのテストだけは、ルートの共有 scheme `LogicTests` で macOS でも回せる（[development.md](development.md#ロジックのテストと画面のテスト)）。
 
 ## 関連 ADR
 

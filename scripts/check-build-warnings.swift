@@ -1,8 +1,11 @@
-// ビルドの警告チェック。`mise run test` が出した xcresult の警告を数え、1 件でもあれば exit 1 にする。
-// 使い方: swift scripts/check-build-warnings.swift [xcresult のパス]（既定は build/AllTests.xcresult）
+// ビルドの警告チェック。`mise run test-logic` / `test-ui` / `build-ios` が出した xcresult の警告を数え、
+// 1 件でもあれば exit 1 にする。
+// 使い方: swift scripts/check-build-warnings.swift [xcresult のパス ...]
+// パスを省くと、build/ にある LogicTests.xcresult、AllTests.xcresult、IosBuild.xcresult のうち存在するものを
+// すべて見る（どれも無ければ失敗）。パスを渡したときは、無いものがあれば失敗する。
 //
-// 何のため: 警告が増えたことに気づかないまま PR がマージされるのを防ぐ。CI の build-test ジョブで
-// テストのあとに `mise run check-warnings` として走らせる。手元のビルドは止めない。
+// 何のため: 警告が増えたことに気づかないまま PR がマージされるのを防ぐ。CI の各ジョブで
+// テストやビルドのあとに `mise run check-warnings` として走らせる。手元のビルドは止めない。
 //
 // なぜコンパイラのフラグでないか（試して確かめた結果）:
 // - `-warnings-as-errors` を付けても、Swift 6 の並行性の警告（XCUIApplication が @MainActor）は
@@ -29,6 +32,10 @@ struct BuildResults: Decodable {
     let warnings: [Issue]
 }
 
+let defaultPaths = [
+    "build/LogicTests.xcresult", "build/AllTests.xcresult", "build/IosBuild.xcresult",
+]
+
 func fail(_ message: String) -> Never {
     FileHandle.standardError.write(Data("error: \(message)\n".utf8))
     exit(1)
@@ -52,33 +59,51 @@ func location(_ issue: Issue) -> String {
     return "\(path):\(line + 1)"
 }
 
-let path = CommandLine.arguments.dropFirst().first ?? "build/AllTests.xcresult"
-guard FileManager.default.fileExists(atPath: path) else {
-    fail("\(path) がありません。先に mise run test を実行してください")
+func buildResults(at path: String) -> BuildResults {
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: "/usr/bin/xcrun")
+    process.arguments = ["xcresulttool", "get", "build-results", "--path", path]
+    let pipe = Pipe()
+    process.standardOutput = pipe
+    do {
+        try process.run()
+    } catch {
+        fail("xcresulttool を起動できませんでした（\(path)）: \(error)")
+    }
+    // 出力が大きいと waitUntilExit の前にパイプが詰まるので、先に読み切る
+    let data = pipe.fileHandleForReading.readDataToEndOfFile()
+    process.waitUntilExit()
+    guard process.terminationStatus == 0 else {
+        fail("xcresulttool が失敗しました（\(path)、終了コード \(process.terminationStatus)）")
+    }
+    do {
+        return try JSONDecoder().decode(BuildResults.self, from: data)
+    } catch {
+        fail("xcresulttool の出力を読めませんでした（\(path)）: \(error)")
+    }
 }
 
-let process = Process()
-process.executableURL = URL(fileURLWithPath: "/usr/bin/xcrun")
-process.arguments = ["xcresulttool", "get", "build-results", "--path", path]
-let pipe = Pipe()
-process.standardOutput = pipe
-try process.run()
-// 出力が大きいと waitUntilExit の前にパイプが詰まるので、先に読み切る
-let data = pipe.fileHandleForReading.readDataToEndOfFile()
-process.waitUntilExit()
-guard process.terminationStatus == 0 else {
-    fail("xcresulttool が失敗しました（終了コード \(process.terminationStatus)）")
+let arguments = Array(CommandLine.arguments.dropFirst())
+let paths: [String]
+if arguments.isEmpty {
+    paths = defaultPaths.filter { FileManager.default.fileExists(atPath: $0) }
+    if paths.isEmpty {
+        fail("xcresult がありません。先に mise run test-logic、test-ui、build-ios のどれかを実行してください")
+    }
+} else {
+    for path in arguments where !FileManager.default.fileExists(atPath: path) {
+        fail("\(path) がありません。先にテストかビルドを実行してください")
+    }
+    paths = arguments
 }
 
-let results: BuildResults
-do {
-    results = try JSONDecoder().decode(BuildResults.self, from: data)
-} catch {
-    fail("xcresulttool の出力を読めませんでした: \(error)")
+var total = 0
+for path in paths {
+    let results = buildResults(at: path)
+    for warning in results.warnings {
+        print("\(location(warning)) \(warning.message)")
+    }
+    print("ビルドの警告（\(path)）: \(results.warningCount) 件")
+    total += max(results.warningCount, results.warnings.count)
 }
-
-for warning in results.warnings {
-    print("\(location(warning)) \(warning.message)")
-}
-print("ビルドの警告: \(results.warningCount) 件")
-exit(results.warningCount > 0 || !results.warnings.isEmpty ? 1 : 0)
+exit(total > 0 ? 1 : 0)

@@ -32,10 +32,13 @@ fastlane や CocoaPods を使わないので、Ruby と Bundler は入れませ�
 | `mise run bootstrap` | ツールと Git フックのインストール |
 | `mise run format` | swift-format による整形 |
 | `mise run lint` | swift-format、SwiftLint、actionlint による検査と、[依存チェック](package-dependencies.md#依存チェック) |
-| `mise run test` | `xcodebuild test`（scheme `Pokedex`、テストプラン `AllTests`）によるビルドとテスト |
-| `mise run check-warnings` | `mise run test` の結果（`build/AllTests.xcresult`）のビルドの警告を数え、1 件でもあれば失敗する |
+| `mise run test-logic` | ロジックのテスト（scheme `LogicTests`）を macOS で実行する。シミュレーターは要らない |
+| `mise run test-ui` | scheme `Pokedex`、テストプラン `AllTests` から、ロジックのテストを除いて iOS Simulator で実行する |
+| `mise run test` | `test-logic` と `test-ui` の両方。PR の前に通すのはこれ |
+| `mise run build-ios` | iOS Simulator 向けに全モジュールとテストをビルドだけする（テストは動かさない）。CI で使う |
+| `mise run check-warnings` | 上のタスクが `build/` に出した xcresult（存在するもの全部）のビルドの警告を数え、1 件でもあれば失敗する |
 
-`mise run test` は iOS Simulator で実行します。既定では、利用できる iPhone のシミュレーターのうち最後のものを使います。別のものを使うときは、環境変数 `POKEDEX_TEST_DESTINATION` に `xcodebuild` の `-destination` の値（例: `platform=iOS Simulator,name=iPhone 17`）を指定します。
+`mise run test-ui` は iOS Simulator で実行します。固定のシミュレーターを使います（値は [mise.toml](../mise.toml) の `pokedex_destination`）。別のものを使うときは、環境変数 `POKEDEX_TEST_DESTINATION` に `xcodebuild` の `-destination` の値（例: `platform=iOS Simulator,name=iPhone 17`）を指定します。
 
 このタスクではマクロの承認ダイアログを `-skipMacroValidation` で省きます（理由は [mise.toml](../mise.toml) のコメント）。Xcode の GUI では引き続き承認を求められます。
 
@@ -87,6 +90,16 @@ SwiftLint で無効にしたルールと理由は `.swiftlint.yml` のコメン�
 
 テストは Swift Testing で書きます。書き方の例は [architecture.md の「テストでの待ち方」](architecture.md#テストでの待ち方) を参照してください。
 
+### ロジックのテストと画面のテスト
+
+テストは 2 つに分けて回します。
+
+- ロジックのテスト（Common / Model / Domain / Repository / NetworkClient / Database / Datastore とその実装の 10 target）は、macOS で回します（`mise run test-logic`）。scheme `LogicTests`（[LogicTests.xcscheme](../.swiftpm/xcode/xcshareddata/xcschemes/LogicTests.xcscheme)）に、この 10 target だけを入れています。シミュレーターを起動しないので速いです。
+- 画面のテスト（各 Feature、DesignSystem、SharedUI、SnapshotTestSupport、スナップショット、UI テスト）は、iOS Simulator で回します（`mise run test-ui`）。UI のモジュールは macOS でビルドできないため、`LogicTests` には入れません。
+- `mise run test-ui` は、`LogicTests.xcscheme` に書いたロジックのテスト target を `-skip-testing` で外します。一覧は scheme の 1 か所だけにあります。
+- ロジックのモジュールに UIKit などの iOS 専用の API が入ると、`test-logic` の macOS 向けのビルドが止まります。モジュールの境界をコンパイラーで守るための、意図した効果です。
+- 決めた理由と検討した代替案は [ADR 0021](adr/0021-logic-tests-on-macos.md) を参照してください。
+
 ### 進め方
 
 テストが実装に引きずられないよう、テストを先に固めてから実装します。
@@ -127,13 +140,13 @@ SwiftLint で無効にしたルールと理由は `.swiftlint.yml` のコメン�
 
 ### UI テスト
 
-組み上げたアプリ（`Pokedex.app`）を起動して確かめるテストです。`app/PokedexUITests`（XCTest の XCUITest）にあり、`app/AllTests.xctestplan` に入っているので `mise run test` で一緒に走ります。単体テストは各層を DI で差し替えるため、アプリ本体が言語を持っているかや、同梱の名前の表と言語の読み取りが実際につながっているかを見られません。そこを見るために置いています。
+組み上げたアプリ（`Pokedex.app`）を起動して確かめるテストです。`app/PokedexUITests`（XCTest の XCUITest）にあり、`app/AllTests.xctestplan` に入っているので `mise run test-ui`（と `mise run test`）で走ります。単体テストは各層を DI で差し替えるため、アプリ本体が言語を持っているかや、同梱の名前の表と言語の読み取りが実際につながっているかを見られません。そこを見るために置いています。
 
 - 今あるのは [LocalizedNameUITests](../app/PokedexUITests/LocalizedNameUITests.swift) です。起動引数 `-AppleLanguages (ja)` / `(en)` で言語を指定して起動し、一覧の 1 行目に「フシギダネ」/「Bulbasaur」が出るかを見ます。
 - 差し替えるのは一覧の通信（`fetchPokemonList`）だけです。CI で PokeAPI を叩かず、結果を決まった値にするためです。環境変数 `POKEDEX_UI_TEST_FIXTURE=1` をテストが渡したときだけ、[PokeAPIClient+Live.swift](../core/NetworkClientURLSession/Sources/PokeAPIClient+Live.swift) の `liveValue` が差し替えます。`#if DEBUG` の中だけなので Release には入りません（UI テストは scheme の Test が Debug なので Debug で走ります）。
 - 名前の表（同梱の JSON）と言語の読み取り（`PreferredLocalization`）は本物を通します。ここを差し替えると、見たいもの（組み上げたアプリでの言語の効き方）を見なくなるためです。
 - `app/PokedexUITests` は `Package.swift` の外にあるため、`scripts/check-dependencies.swift` はテストプランに `PokedexUITests` が登録されているかだけを見ます。テストの中身や、UI テストを足したときの登録は人が見ます。
-- 走らせ方は単体テストと同じ `mise run test` です（シミュレーターの選び方も同じ）。XCUITest なので、Swift Testing ではなく XCTest で書きます。
+- 走らせ方は `mise run test-ui` です（シミュレーターの選び方はスナップショットテストと同じ）。XCUITest なので、Swift Testing ではなく XCTest で書きます。
 
 ## Issue
 
@@ -197,24 +210,27 @@ SwiftLint で無効にしたルールと理由は `.swiftlint.yml` のコメン�
 | PR タイトル（`pr-title`） | Conventional Commits 形式か | `ubuntu-latest` |
 | コミットメッセージ（`commit-messages`） | PR 内の全コミットを committed で検査 | `ubuntu-latest` |
 | Lint（`lint`） | swift-format、SwiftLint、actionlint、依存チェック | `xcode-27` |
-| Build / Test（`build-test`） | `xcodebuild test` で全モジュールとアプリをビルドし、Swift Testing のテストを実行 | `xcode-27` |
+| ロジックのテスト（`logic-test`） | ロジックのテストを macOS で実行（`mise run test-logic`） | `xcode-27` |
+| iOS のビルド（`ios-build`） | iOS Simulator 向けに全モジュールとアプリをビルドだけする（`mise run build-ios`）。画面を触っていない PR だけ | `xcode-27` |
+| 画面のテスト（`ui-test`） | iOS Simulator でスナップショットと UI テストなどを実行（`mise run test-ui`）。画面を触った PR だけ | `xcode-27` |
 
 - main のルールセットで必須にするのは、個々のジョブではなく、ワークフローごとの集約ジョブ（結果をまとめるだけのジョブ）です。変更のない領域のジョブをスキップしても、集約ジョブが成功すればマージできます。
 
   | 必須にするジョブ | ワークフロー | まとめるジョブ |
   | --- | --- | --- |
   | `conventions-status` | [conventions.yml](../.github/workflows/conventions.yml) | `pr-title`、`commit-messages` |
-  | `ci-status` | [ci.yml](../.github/workflows/ci.yml) | `changes`、`lint`、`build-test` |
+  | `ci-status` | [ci.yml](../.github/workflows/ci.yml) | `changes`、`lint`、`logic-test`、`ios-build`、`ui-test` |
 
 - `ci.yml` は PR でだけ走り、main への push では走りません。理由は [ci.yml](../.github/workflows/ci.yml) 冒頭のコメントを参照してください。
-- `lint` と `build-test` は、`changes` ジョブが PR の変更ファイルを調べた結果で走らせるかを決めます。対象ファイルの一覧は [ci.yml](../.github/workflows/ci.yml) の `changes` ジョブを参照してください。
-  - Swift に関わる変更（Swift のコードや設定など）: `lint` と `build-test` を走らせる
+- `lint`、`logic-test`、`ios-build`、`ui-test` は、`changes` ジョブが PR の変更ファイルを調べた結果で走らせるかを決めます。対象ファイルの一覧は [ci.yml](../.github/workflows/ci.yml) の `changes` ジョブを参照してください。
+  - ロジックのモジュールだけを変えた PR: `lint`、`logic-test`、`ios-build`。ロジックの変更で画面側のコンパイルが壊れるのを、シミュレーターなしで見つけるため
+  - 画面（feature、DesignSystem、SharedUI、SnapshotTestSupport、app、参照画像）、UI テストが通る NetworkClientURLSession、ビルドの設定（`LogicTests.xcscheme` を含む）を触った PR（Swift に関わる変更に限る）: `lint`、`logic-test`、`ui-test`（`ui-test` がビルドも含むので `ios-build` は飛ばす）
   - ワークフローだけの変更: `lint` だけ走らせる（actionlint のため）
-  - docs だけの変更など: どちらも走らせない（skipped）
-- 走らせなかったジョブは skipped になり、成功として扱われます。`ci-status` は `changes` が success で、`lint` と `build-test` が success か skipped のときに成功します。`on.pull_request.paths` を使わない理由は [ci.yml](../.github/workflows/ci.yml) 冒頭のコメントを参照してください。
+  - docs だけの変更など: どれも走らせない（skipped）
+- 走らせなかったジョブは skipped になり、成功として扱われます。`ci-status` は `changes` が success で、ほかのジョブが success か skipped のときに成功します。`on.pull_request.paths` を使わない理由は [ci.yml](../.github/workflows/ci.yml) 冒頭のコメントを参照してください。
 - `xcode-27` は Xcode 27 を入れた GitHub のプレビューのランナーイメージです。ジョブの環境変数 `DEVELOPER_DIR=/Applications/Xcode_27.2.app` で Xcode のバージョンを選び、README の「動作環境」と揃えます。正式なラベルになったら、`.github/actionlint.yaml` の登録を外します。
 - CI から呼ぶコマンドは mise のタスクに揃えます。
-- `build-test` はテストのあとに `mise run check-warnings` を走らせ、ビルドの警告が 1 件でもあれば落ちます。手元のビルドは止めません。手で走らせることもできますが、増分ビルドなので 0 件でも当てにならず、CI の結果が正です。deprecated の警告も数えるので、Xcode を上げて増えたら相談します。理由と細部は [scripts/check-build-warnings.swift](../scripts/check-build-warnings.swift) の冒頭のコメントを参照してください。
+- `logic-test`、`ios-build`、`ui-test` は、そのあとに自分の xcresult を渡して `mise run check-warnings` を走らせ、ビルドの警告が 1 件でもあれば落ちます。手元のビルドは止めません。手で走らせることもできます（引数なしだと `build/` に残った古い結果も数えるので、`mise run check-warnings build/<名前>.xcresult` のように渡せます）。増分ビルドなので 0 件でも当てにならず、CI の結果が正です。deprecated の警告も数えるので、Xcode を上げて増えたら相談します。理由と細部は [scripts/check-build-warnings.swift](../scripts/check-build-warnings.swift) の冒頭のコメントを参照してください。
 
 ### PR ラベル
 
@@ -257,4 +273,4 @@ GitHub Actions、mise のツール、Swift のパッケージの更新は、[Men
 
 `app/App.xcodeproj` は生成ツールを使わずに直接管理し、buildable folder を使います（[ADR-0014](adr/0014-xcode-project-management.md)）。モジュールの追加や依存の変更は、すべてルートの `Package.swift` で行い、App ターゲットは `@main`、依存の注入、ルート画面と画面遷移だけを持ちます（app のフォルダ構成は [package-dependencies.md](./package-dependencies.md) を参照）。`project.pbxproj` を変更した PR は、Xcode で開けることを確認します。
 
-テスト target を追加したら、`app/AllTests.xctestplan` にも登録します。登録漏れは依存チェックのスクリプトが検出します（[package-dependencies.md](package-dependencies.md#依存チェック)）。
+テスト target を追加したら、`app/AllTests.xctestplan` にも登録します。ロジックのモジュールのテスト target なら、さらに `.swiftpm/xcode/xcshareddata/xcschemes/LogicTests.xcscheme` にも足します（足さないと macOS で回りません。UI のモジュールのものは足しません）。テストプランの登録漏れと、scheme にある target が Package.swift に無いことは、依存チェックのスクリプトが検出します（[package-dependencies.md](package-dependencies.md#依存チェック)）。scheme への足し忘れは検出できません。

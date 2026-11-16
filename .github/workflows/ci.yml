@@ -36,6 +36,7 @@ jobs:
       pull-requests: read
     outputs:
       swift: ${{ steps.filter.outputs.swift }}
+      ui: ${{ steps.filter.outputs.ui }}
       workflows: ${{ steps.filter.outputs.workflows }}
     steps:
       - id: filter
@@ -55,9 +56,16 @@ jobs:
             | jq -r '.[] | [.filename, (.previous_filename // empty)][]' \
             | sort -u)
 
-          # lint / build-test の対象。.swift には Package.swift と scripts/ 内の Swift も含まれる。
+          # lint / logic-test / ios-build の対象（ui-test は下の ui_re）。.swift には Package.swift と scripts/ 内の Swift も含まれる。
           # ci.yml 自身の変更でも走らせて、この判定の変更を PR で確かめられるようにする。
-          swift_re='\.swift$|(^|/)Package\.resolved$|^app/|__Snapshots__/|^mise\.toml$|^\.swiftlint\.yml$|^\.swift-format$|^\.github/workflows/ci\.yml$'
+          swift_re='\.swift$|(^|/)Package\.resolved$|^app/|^\.swiftpm/|__Snapshots__/|^mise\.toml$|^\.swiftlint\.yml$|^\.swift-format$|^\.github/workflows/ci\.yml$'
+          # iOS Simulator でのテスト（スナップショットと UI テスト）が要る対象。
+          # 画面のモジュール、App、参照画像、ビルドの設定を含む。ロジックのモジュールだけの変更は含めない
+          # （その場合は macOS のテストと、iOS 向けのビルドだけ走らせる。#55）。
+          # NetworkClientURLSession はロジックだが含める。UI テスト（LocalizedNameUITests）が、
+          # 同梱の JSON と POKEDEX_UI_TEST_FIXTURE の分岐（PokeAPIClient+Live）を通るため。
+          # .swiftpm は、LogicTests.xcscheme が test-ui の -skip-testing の一覧の元になっているため。
+          ui_re='^feature/|^core/(DesignSystem|SharedUI|SnapshotTestSupport|NetworkClientURLSession)/|^app/|^\.swiftpm/|__Snapshots__/|(^|/)Package\.(swift|resolved)$|^mise\.toml$|^\.github/workflows/ci\.yml$'
           # lint だけ走らせる対象（actionlint のため）
           workflows_re='^\.github/workflows/|^\.github/actionlint\.yaml$'
 
@@ -67,20 +75,26 @@ jobs:
           [ "$file_count" -ge 3000 ] && truncated=true
 
           swift_hits=$(printf '%s\n' "$names" | grep -E "$swift_re" || true)
+          ui_hits=$(printf '%s\n' "$names" | grep -E "$ui_re" || true)
           workflows_hits=$(printf '%s\n' "$names" | grep -E "$workflows_re" || true)
 
           swift=false
+          ui=false
           workflows=false
           [ -n "$swift_hits" ] && swift=true
-          [ "$truncated" = true ] && swift=true
+          [ -n "$ui_hits" ] && ui=true
+          [ "$truncated" = true ] && swift=true && ui=true
           [ -n "$workflows_hits" ] && workflows=true
 
           echo "swift=$swift"
           printf '%s\n' "$swift_hits"
+          echo "ui=$ui"
+          printf '%s\n' "$ui_hits"
           echo "workflows=$workflows"
           printf '%s\n' "$workflows_hits"
 
           echo "swift=$swift" >> "$GITHUB_OUTPUT"
+          echo "ui=$ui" >> "$GITHUB_OUTPUT"
           echo "workflows=$workflows" >> "$GITHUB_OUTPUT"
 
   lint:
@@ -98,10 +112,48 @@ jobs:
       - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
       - run: mise run lint
 
-  build-test:
-    name: build-test
+  # ロジックのテストを macOS で回す（scheme LogicTests）。シミュレーターは要らず、速い。
+  # ロジックのモジュールに UIKit などが入ると、この macOS 向けのビルドで止まる（#55）。
+  logic-test:
+    name: logic-test
     needs: changes
     if: needs.changes.outputs.swift == 'true'
+    runs-on: xcode-27
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
+      - run: mise run test-logic
+      - run: mise run check-warnings build/LogicTests.xcresult
+
+  # 画面を触っていない PR 向け。iOS Simulator 向けにビルドだけして、ロジックの変更で
+  # 画面側のコンパイルが壊れていないかを確かめる。generic な destination なのでシミュレーターは起動しない。
+  # 画面を触った PR は ui-test がビルドも含めて行うので飛ばす。
+  ios-build:
+    name: ios-build
+    needs: changes
+    if: needs.changes.outputs.swift == 'true' && needs.changes.outputs.ui != 'true'
+    runs-on: xcode-27
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
+      - run: mise run build-ios
+      - run: mise run check-warnings build/IosBuild.xcresult
+
+  # 画面を触った PR 向け。iOS Simulator でスナップショットと UI テストを走らせる。
+  ui-test:
+    name: ui-test
+    needs: changes
+    if: needs.changes.outputs.swift == 'true' && needs.changes.outputs.ui == 'true'
     runs-on: xcode-27
     timeout-minutes: 45
     permissions:
@@ -112,30 +164,32 @@ jobs:
           persist-credentials: false
       - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
       # 参照画像は CI で撮り直さない。差があれば失敗にする（ADR-0020）。
-      - run: mise run test
+      - run: mise run test-ui
         env:
           TEST_RUNNER_SNAPSHOT_TESTING_RECORD: never
-      - run: mise run check-warnings
+      - run: mise run check-warnings build/AllTests.xcresult
 
   ci-status:
     name: ci-status
-    needs: [changes, lint, build-test]
+    needs: [changes, lint, logic-test, ios-build, ui-test]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: {}
     steps:
-      # changes は必ず success。lint と build-test は success か skipped（対象外で飛ばした）なら成功。
+      # changes は必ず success。lint、logic-test、ios-build、ui-test は success か skipped（対象外で飛ばした）なら成功。
       # failure、cancelled、changes の skipped などは失敗にする。
       - name: 全ジョブの結果を確認する
         env:
           CHANGES: ${{ needs.changes.result }}
           LINT: ${{ needs.lint.result }}
-          BUILD_TEST: ${{ needs.build-test.result }}
+          LOGIC_TEST: ${{ needs.logic-test.result }}
+          IOS_BUILD: ${{ needs.ios-build.result }}
+          UI_TEST: ${{ needs.ui-test.result }}
         run: |
-          echo "changes: $CHANGES, lint: $LINT, build-test: $BUILD_TEST"
+          echo "changes: $CHANGES, lint: $LINT, logic-test: $LOGIC_TEST, ios-build: $IOS_BUILD, ui-test: $UI_TEST"
           [ "$CHANGES" = "success" ] || exit 1
-          for r in "$LINT" "$BUILD_TEST"; do
+          for r in "$LINT" "$LOGIC_TEST" "$IOS_BUILD" "$UI_TEST"; do
             case "$r" in
               success|skipped) ;;
               *) exit 1 ;;
