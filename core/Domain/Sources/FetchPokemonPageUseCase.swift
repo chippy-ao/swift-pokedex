@@ -22,7 +22,7 @@ extension FetchPokemonPageUseCase: DependencyKey {
     /// 一覧に入れる ID の上限。PokeAPI の `/pokemon` は 1..1025 のあとに、
     /// フォーム違い（10001〜）が続く。フォーム違いは詳細で扱う。
     /// 世代で絞り込むときは、この「止める位置」を世代の終わりに差し替える。
-    private static let lastListedID = 10000
+    package static let lastListedID = 10000
 
     package static let liveValue = FetchPokemonPageUseCase(
         execute: { offset in

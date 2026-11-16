@@ -127,7 +127,17 @@ extension PokemonRepository: DependencyKey {
             }
         },
         fetchAllNames: {
-            []
+            @Dependency(\.pokeAPIClient) var client
+            do {
+                let names = try await client.fetchAllPokemonSpeciesNames()
+                return names.keys.sorted().map { id in
+                    PokemonNameEntry(
+                        id: id, names: (names[id] ?? []).map(localizedName),
+                        spriteURL: pokemonSpriteURL(id: id))
+                }
+            } catch {
+                throw loadError(from: error)
+            }
         }
     )
 }
