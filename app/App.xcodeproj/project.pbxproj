@@ -41,16 +41,6 @@
 		A10000000000000000000400 /* swift-pokedex */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "swift-pokedex"; path = ..; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		A10000000000000000000500 /* Exceptions for "PokedexSnapshotTests" folder in "PokedexSnapshotTests" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				__Snapshots__,
-			);
-			target = A10000000000000000000080 /* PokedexSnapshotTests */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		A10000000000000000000020 /* Pokedex */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
@@ -64,9 +54,6 @@
 		};
 		A10000000000000000000022 /* PokedexSnapshotTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				A10000000000000000000500 /* Exceptions for "PokedexSnapshotTests" folder in "PokedexSnapshotTests" target */,
-			);
 			path = PokedexSnapshotTests;
 			sourceTree = "<group>";
 		};

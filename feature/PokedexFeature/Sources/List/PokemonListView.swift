@@ -107,51 +107,9 @@ public struct PokemonListView: View {
     }
 }
 
-// Preview は fetchPokemonPage だけを差し替える。feature は Domain の UseCase しか知らない。
-private func previewSummary(id: Int, name: String) -> PokemonSummary {
-    PokemonSummary(
-        id: id, name: name,
-        spriteURL: URL(
-            string:
-                "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/\(id).png"
-        )!)
-}
-
-#Preview("読み込み済み") {
-    let store = withDependencies {
-        $0.fetchPokemonPage.execute = { _ in
-            PokemonPage(
-                items: [
-                    previewSummary(id: 1, name: "Bulbasaur"),
-                    previewSummary(id: 4, name: "Charmander"),
-                    previewSummary(id: 7, name: "Squirtle"),
-                    previewSummary(id: 25, name: "Pikachu"),
-                ],
-                hasNext: false)
-        }
-    } operation: {
-        PokemonListStore()
-    }
-    NavigationStack { PokemonListView(store: store) }
-}
-
-#Preview("初回の読み込み中") {
-    let store = withDependencies {
-        $0.fetchPokemonPage.execute = { _ in
-            try await Task.sleep(for: .seconds(3600))
-            return PokemonPage(items: [], hasNext: false)
-        }
-    } operation: {
-        PokemonListStore()
-    }
-    NavigationStack { PokemonListView(store: store) }
-}
-
-#Preview("初回のエラー（オフライン）") {
-    let store = withDependencies {
-        $0.fetchPokemonPage.execute = { _ in throw LoadError.offline }
-    } operation: {
-        PokemonListStore()
-    }
-    NavigationStack { PokemonListView(store: store) }
-}
+// Preview の場面とデータは PokemonListScenario にある（スナップショットのテストと共有）。
+#if DEBUG
+    #Preview("読み込み済み") { PokemonListScenario.loaded.makeView() }
+    #Preview("初回の読み込み中") { PokemonListScenario.loading.makeView() }
+    #Preview("初回のエラー（オフライン）") { PokemonListScenario.errorOffline.makeView() }
+#endif
