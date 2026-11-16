@@ -116,8 +116,8 @@ flutter test --update-goldens
 
 何の話か: 参照画像のファイルをどこに置くかです。このリポジトリでは Xcode の都合で、既定から変えました。
 
-- 既定は、テストのファイルの隣の `__Snapshots__/<テストのファイル名>/` です。このリポジトリでは、画面の持ち主の `feature/<feature 名>/__Snapshots__/<テストのファイル名>/` に置きます。テストのファイルは `app/` の Xcode のテスト target（フォルダ同期）にあり、その中に PNG があると、Xcode が成果物へコピーして名前がぶつかるためです。詳しい理由と求め方は [SnapshotDirectory.swift](../../core/SnapshotTestSupport/Sources/SnapshotDirectory.swift) のコメントにあります。
-- Flutter の golden は、キーを「テストのファイルのフォルダからの相対パス」として読み、テストの隣に置けます（[LocalFileComparator（Flutter API）](https://api.flutter.dev/flutter/flutter_test/LocalFileComparator-class.html)）。Xcode はテストを 1 つの成果物（`.xctest`）にまとめ、同期フォルダの中のファイルを取り込むので、テストの隣には置けません。そのため、テストの場所からは feature が分からず、呼ぶ側が `feature:` で名前を渡します。
+- 既定は、テストのファイルの隣の `__Snapshots__/<テストのファイル名>/` です。このリポジトリでは、画面の持ち主の `feature/<feature 名>/Tests/__Snapshots__/<テストのファイル名>/` に置きます。テストのファイルは `app/` の Xcode のテスト target（フォルダ同期）にあり、その中に PNG があると、Xcode が成果物へコピーして名前がぶつかるためです。詳しい理由と求め方は [SnapshotDirectory.swift](../../core/SnapshotTestSupport/Sources/SnapshotDirectory.swift) のコメントにあります。
+- Flutter の golden は、キーを「テストのファイルのフォルダからの相対パス」として読むので、`test/` の下に置けます（[LocalFileComparator（Flutter API）](https://api.flutter.dev/flutter/flutter_test/LocalFileComparator-class.html)）。ここでも画像は feature の `Tests` の下で、同じ形です。違いは 2 つあります。Xcode はテストを 1 つの成果物（`.xctest`）にまとめ、同期フォルダの中のファイルを取り込むので、テストの隣には置けず、呼ぶ側が `feature:` で名前を渡します。また、`Tests` は SwiftPM のテスト target の path なので、`Package.swift` の `exclude` で画像のフォルダを外します。この指定に当たるものは、Flutter の側では確認した範囲で見当たりません。
 - `snapshotDirectory:` の引数があるのは `verifySnapshot` だけで、`assertSnapshot` にはありません。そのため `verifySnapshot` を呼び、失敗を自分で `Issue.record` に渡しています（[AssertSnapshot.swift](https://github.com/pointfreeco/swift-snapshot-testing/blob/main/Sources/SnapshotTesting/AssertSnapshot.swift)）。
 
 ### 場面を Preview と共有する
@@ -164,5 +164,5 @@ Dart 側:
 | 記録のモード（`SNAPSHOT_TESTING_RECORD`） | `flutter test --update-goldens` | Swift は 4 つのモード。Flutter は更新のフラグ 1 つ | [mise.toml](../../mise.toml) の `tasks.snapshot-record` |
 | シミュレーターの本物の描画 | 既定は Ahem フォント | Swift は環境を固定する必要がある | `SnapshotEnvironment` |
 | `precision` / `perceptualPrecision` | `LocalFileComparator`（完全一致、許容の記述なし） | Swift は呼び出しごとに許容を渡せる | [AssertScreenSnapshots.swift](../../core/SnapshotTestSupport/Sources/AssertScreenSnapshots.swift) |
-| `feature/<feature 名>/__Snapshots__/`（同期フォルダの外） | テストの隣の相対パス | Xcode は同期フォルダの PNG を成果物へコピーする | [SnapshotDirectory.swift](../../core/SnapshotTestSupport/Sources/SnapshotDirectory.swift) |
+| `feature/<feature 名>/Tests/__Snapshots__/`（同期フォルダの外） | テストの隣の相対パス | Xcode は同期フォルダの PNG を成果物へコピーする | [SnapshotDirectory.swift](../../core/SnapshotTestSupport/Sources/SnapshotDirectory.swift) |
 | `PokemonListScenario`（Preview と共有） | 標準の相当なし | `CaseIterable` と `#Preview` の組み合わせ | [PokemonListScenario.swift](../../feature/PokedexFeature/Sources/List/PokemonListScenario.swift) |

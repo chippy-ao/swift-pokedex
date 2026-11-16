@@ -132,7 +132,7 @@ SwiftLint で無効にしたルールと理由は `.swiftlint.yml` のコメン�
 - 撮る場面の定義は PokedexFeature の `PokemonListScenario` と `PokemonDetailScenario` にあり、Preview と共有します。場面を足すと、スナップショットも自動で増えます。
 - 撮り方（ホストアプリ付き、`drawHierarchyInKeyWindow`）と、そうする理由は [ADR 0020](adr/0020-snapshot-tests-with-host-app.md) を参照してください。
 - 撮る環境（端末、OS、言語）は固定します。値は `core/SnapshotTestSupport` の `SnapshotEnvironment` と `mise.toml` にあり、違う環境で走らせるとテストが失敗します。
-- 参照画像は、画面の持ち主の `feature/<feature 名>/__Snapshots__/<テストのファイル名>/` にコミットします。理由と求め方は [SnapshotDirectory.swift](../core/SnapshotTestSupport/Sources/SnapshotDirectory.swift) のコメントを参照してください。
+- 参照画像は、画面の持ち主の `feature/<feature 名>/Tests/__Snapshots__/<テストのファイル名>/` にコミットします。理由と求め方は [SnapshotDirectory.swift](../core/SnapshotTestSupport/Sources/SnapshotDirectory.swift) のコメントを参照してください。別の feature の画面を撮り始めるときは、その feature のテスト target に `exclude: ["__Snapshots__"]` を足します（同じコメントに理由があります）。
 - 撮り直しは `mise run snapshot-record` です。スナップショットのテストだけを記録のモードで走らせます。記録したテストは失敗で終わりますが、想定どおりなので終了コードは 0 です。
 - 参照画像を変えるのは「テストの期待値の変更」です。画面を意図して変えたときだけ撮り直し、PR に理由を書きます。画像を見て、意図した差だけかを確かめます。
 - CI では撮り直しません（`TEST_RUNNER_SNAPSHOT_TESTING_RECORD=never`）。差があれば失敗します。
