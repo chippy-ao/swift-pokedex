@@ -15,6 +15,10 @@
             let view: AnyView
         }
 
+        static func pokemonList() async -> [Screen] {
+            []
+        }
+
         /// 詳細画面の場面。読み込みが終わった状態にして返す。
         /// `loading` は撮らない。ProgressView は回り続けるので、撮るたびに羽根の濃淡の位置が変わり、
         /// 毎回違う画像になって比べられない。Preview には残してある。
