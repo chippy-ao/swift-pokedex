@@ -7,6 +7,8 @@ import UIKit
 /// 参照画像は、テストのファイルがあるフォルダの 1 つ上の
 /// `__Snapshots__/<テストのファイル名>/<テスト名>.<端末>-<ライト / ダーク>.png`（理由は SnapshotDirectory）。
 ///
+/// Swift Testing から呼ぶ前提。失敗を `Issue.record` で記録するため、XCTest からは使えない。
+///
 /// ホストアプリ付きのテスト target（app/PokedexSnapshotTests）から呼ぶ。理由は ADR-0020。
 ///
 /// - `drawHierarchyInKeyWindow: true`: 実際に画面に出した View を描いて撮る。
