@@ -4,7 +4,7 @@ import Testing
 import UIKit
 
 /// 画面を、撮る端末（SnapshotEnvironment.devices）ごとに、ライトとダークで撮って参照画像と比べる。
-/// 参照画像は `feature/<feature 名>/__Snapshots__/<テストのファイル名>/<テスト名>.<端末>-<ライト / ダーク>.png`
+/// 参照画像は `feature/<feature 名>/Tests/__Snapshots__/<テストのファイル名>/<テスト名>.<端末>-<ライト / ダーク>.png`
 /// （理由は SnapshotDirectory）。`feature` は、画像を置く feature の名前。
 ///
 /// Swift Testing から呼ぶ前提。失敗を `Issue.record` で記録するため、XCTest からは使えない。

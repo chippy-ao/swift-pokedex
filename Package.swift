@@ -43,7 +43,9 @@ let package = Package(
                 "PokedexFeature", "Domain", "Model", "TestSupport",
                 .product(name: "Dependencies", package: "swift-dependencies"),
             ],
-            path: "feature/PokedexFeature/Tests"
+            path: "feature/PokedexFeature/Tests",
+            // 参照画像（スナップショットのテストの正解）のフォルダ。SwiftPM に拾わせない（理由は SnapshotDirectory）。
+            exclude: ["__Snapshots__"]
         ),
         .target(
             name: "SettingsFeature",
