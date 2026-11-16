@@ -9,6 +9,8 @@ package struct PokemonRepository: Sendable {
     package var fetchList: @Sendable (_ limit: Int, _ offset: Int) async throws -> PokemonListPage
     /// 詳細 1 件ぶん。pokemon と species を取ってくっつける。
     package var fetchDetail: @Sendable (_ id: Int) async throws -> PokemonDetailEntry
+    /// 名前の表にある全件（番号の小さい順）。検索用で、API は叩かない。
+    package var fetchAllNames: @Sendable () async throws -> [PokemonNameEntry]
 }
 
 extension PokemonRepository: TestDependencyKey {
@@ -56,6 +58,17 @@ extension PokemonRepository: TestDependencyKey {
                         "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/"
                         + "official-artwork/1.png"
                 ))
+        },
+        fetchAllNames: {
+            [
+                PokemonNameEntry(
+                    id: 1,
+                    names: [
+                        LocalizedName(languageCode: .en, name: "Bulbasaur"),
+                        LocalizedName(languageCode: .jaHrkt, name: "フシギダネ"),
+                    ],
+                    spriteURL: pokemonSpriteURL(id: 1))
+            ]
         }
     )
 }
@@ -112,6 +125,9 @@ extension PokemonRepository: DependencyKey {
             } catch {
                 throw loadError(from: error)
             }
+        },
+        fetchAllNames: {
+            []
         }
     )
 }

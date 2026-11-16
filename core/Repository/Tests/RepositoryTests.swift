@@ -142,4 +142,60 @@ struct RepositoryTests {
             try await fetchList(throwing: CancellationError())
         }
     }
+
+    private func fetchAllNames(
+        table: [Int: [LocalizedNameDTO]]
+    ) async throws -> [PokemonNameEntry] {
+        try await withDependencies {
+            $0.pokeAPIClient.fetchAllPokemonSpeciesNames = { table }
+        } operation: {
+            try await PokemonRepository.liveValue.fetchAllNames()
+        }
+    }
+
+    @Test("名前の表の全件が、番号の小さい順に、言語コードを LanguageCode にして返る")
+    func allNamesAreSortedByID() async throws {
+        let entries = try await fetchAllNames(table: [
+            122: [
+                LocalizedNameDTO(languageCode: "en", name: "Mr. Mime"),
+                LocalizedNameDTO(languageCode: "ja-hrkt", name: "バリヤード"),
+            ],
+            25: [LocalizedNameDTO(languageCode: "en", name: "Pikachu")],
+        ])
+
+        #expect(entries.map(\.id) == [25, 122])
+        #expect(
+            entries.map(\.names) == [
+                [LocalizedName(languageCode: .en, name: "Pikachu")],
+                [
+                    LocalizedName(languageCode: .en, name: "Mr. Mime"),
+                    LocalizedName(languageCode: .jaHrkt, name: "バリヤード"),
+                ],
+            ])
+    }
+
+    @Test("名前の表の画像の URL は、一覧と同じ作り方で番号から作る")
+    func allNamesSpriteURLComesFromID() async throws {
+        let entries = try await fetchAllNames(table: [
+            25: [LocalizedNameDTO(languageCode: "en", name: "Pikachu")]
+        ])
+
+        #expect(
+            entries.first?.spriteURL
+                == URL(
+                    string:
+                        "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png"
+                ))
+    }
+
+    @Test("名前の表が読めなければ LoadError になる")
+    func allNamesFailureBecomesLoadError() async {
+        await #expect(throws: LoadError.offline) {
+            try await withDependencies {
+                $0.pokeAPIClient.fetchAllPokemonSpeciesNames = { throw PokeAPIError.offline }
+            } operation: {
+                try await PokemonRepository.liveValue.fetchAllNames()
+            }
+        }
+    }
 }
