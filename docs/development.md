@@ -127,12 +127,12 @@ SwiftLint で無効にしたルールと理由は `.swiftlint.yml` のコメン�
 
 ### スナップショットテスト
 
-画面を、場面ごとにライトとダークで撮り、参照画像と比べます。今撮るのは詳細画面（`app/PokedexSnapshotTests`）の `loaded` と `errorOffline` です。`loading` は ProgressView が回り続けて毎回違う画像になるので撮りません（Preview には残っています）。
+画面を、場面ごとにライトとダークで撮り、参照画像と比べます。今撮るのは、一覧画面と詳細画面（`app/PokedexSnapshotTests`）の `loaded` と `errorOffline` です。`loading` は ProgressView が回り続けて毎回違う画像になるので撮りません（Preview には残っています）。
 
-- 撮る場面の定義は PokedexFeature の `PokemonDetailScenario` にあり、Preview と共有します。場面を足すと、スナップショットも自動で増えます。
+- 撮る場面の定義は PokedexFeature の `PokemonListScenario` と `PokemonDetailScenario` にあり、Preview と共有します。場面を足すと、スナップショットも自動で増えます。
 - 撮り方（ホストアプリ付き、`drawHierarchyInKeyWindow`）と、そうする理由は [ADR 0020](adr/0020-snapshot-tests-with-host-app.md) を参照してください。
 - 撮る環境（端末、OS、言語）は固定します。値は `core/SnapshotTestSupport` の `SnapshotEnvironment` と `mise.toml` にあり、違う環境で走らせるとテストが失敗します。
-- 参照画像は `app/PokedexSnapshotTests/__Snapshots__/` にコミットします。
+- 参照画像は `app/__Snapshots__/<テストのファイル名>/` にコミットします。テスト target のフォルダの外に置くのは、Xcode のフォルダ同期が、フォルダの中の PNG をテストの成果物（`.xctest` の直下）へコピーするためです。場面ごとに同じ名前の画像ができるので、テストのファイルが 2 つ以上あると名前がぶつかってビルドが失敗します。フォルダごとの除外はできません（ファイル 1 枚ずつしか外せない）。置き場所は `SnapshotDirectory` が求めます。
 - 撮り直しは `mise run snapshot-record` です。スナップショットのテストだけを記録のモードで走らせます。記録したテストは失敗で終わりますが、想定どおりなので終了コードは 0 です。
 - 参照画像を変えるのは「テストの期待値の変更」です。画面を意図して変えたときだけ撮り直し、PR に理由を書きます。画像を見て、意図した差だけかを確かめます。
 - CI では撮り直しません（`TEST_RUNNER_SNAPSHOT_TESTING_RECORD=never`）。差があれば失敗します。
@@ -179,8 +179,9 @@ SwiftLint で無効にしたルールと理由は `.swiftlint.yml` のコメン�
 
 ### スクリーンショット
 
-- 画面が変わる PR では、Before（main）と After（PR のブランチ）のスクリーンショットを、同じ端末・言語・画面で撮って本文に貼ります。
-- ライトモードで 1 枚ずつ撮ります。色を変えたときはダークモードも撮ります。
+- 変わった画面がスナップショットに写っていれば、参照画像の差分（PR の Files changed で見られる）をスクリーンショットに代えてかまいません。
+- スナップショットに写っていないものだけ、スクリーンショットを撮って本文に貼ります。画面をまたぐ変更、本物のデータでの見え方、まだ撮っていない端末などです。
+- 撮るときは、Before（main）と After（PR のブランチ）を、同じ端末・言語・画面で撮ります。ライトモードで 1 枚ずつ撮り、色を変えたときはダークモードも撮ります。
 - シミュレーターでは `xcrun simctl io booted screenshot <ファイル名>` で撮れます。gh では PR に画像を上げられないため、撮った人がブラウザで本文に貼ります。
 
 ### マージ
