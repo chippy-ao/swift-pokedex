@@ -10,7 +10,7 @@ import Foundation
 /// フォルダごとの除外はできない（ファイル 1 枚ずつしか外せない）ので、同期の対象の外に置く。
 enum SnapshotDirectory {
     /// - Parameter file: テストのファイルのパス（`#filePath`）。
-    static func path(forTestFile file: String) -> String {
+    static func path(forTestFile file: String, feature: String) -> String {
         let url = URL(fileURLWithPath: file)
         let testName = url.deletingPathExtension().lastPathComponent
         return

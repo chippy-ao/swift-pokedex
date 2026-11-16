@@ -55,7 +55,8 @@ public func assertScreenSnapshots(
                         traits.displayScale = device.config.traits.displayScale
                     }),
                 named: "\(device.name)-\(styleName)",
-                snapshotDirectory: SnapshotDirectory.path(forTestFile: "\(file)"),
+                snapshotDirectory: SnapshotDirectory.path(
+                    forTestFile: "\(file)", feature: "PokedexFeature"),
                 // 呼び出し元のテスト名を渡さないと、画像の名前が「assertScreenSnapshots」で衝突する
                 fileID: fileID, file: file, testName: testName, line: line, column: column)
             if let failure {

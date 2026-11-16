@@ -2,16 +2,21 @@ import Testing
 
 @testable import SnapshotTestSupport
 
-/// 参照画像の置き場所。テストのファイルの 1 つ上の `__Snapshots__` に、テストのファイル名のフォルダを作る。
+/// 参照画像の置き場所。リポジトリのルートの `feature/<feature 名>/__Snapshots__/<テストのファイル名>`。
+/// リポジトリのルートは、テストのファイル（`app/<target>/X.swift`）の 2 つ上。
 struct SnapshotDirectoryTests {
-    @Test func placesDirectoryNextToTestFolder() {
+    @Test func placesDirectoryUnderFeature() {
         let directory = SnapshotDirectory.path(
-            forTestFile: "/work/app/PokedexSnapshotTests/PokemonDetailSnapshotTests.swift")
-        #expect(directory == "/work/app/__Snapshots__/PokemonDetailSnapshotTests")
+            forTestFile: "/work/app/PokedexSnapshotTests/PokemonDetailSnapshotTests.swift",
+            feature: "PokedexFeature")
+        #expect(
+            directory
+                == "/work/feature/PokedexFeature/__Snapshots__/PokemonDetailSnapshotTests")
     }
 
-    @Test func usesFileNameWithoutExtension() {
-        let directory = SnapshotDirectory.path(forTestFile: "/a/b/Foo.swift")
-        #expect(directory == "/a/__Snapshots__/Foo")
+    @Test func usesFileNameWithoutExtensionAndGivenFeature() {
+        let directory = SnapshotDirectory.path(
+            forTestFile: "/a/app/T/Foo.swift", feature: "SettingsFeature")
+        #expect(directory == "/a/feature/SettingsFeature/__Snapshots__/Foo")
     }
 }
