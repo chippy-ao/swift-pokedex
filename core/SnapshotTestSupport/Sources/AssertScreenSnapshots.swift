@@ -4,7 +4,8 @@ import Testing
 import UIKit
 
 /// 画面を、撮る端末（SnapshotEnvironment.devices）ごとに、ライトとダークで撮って参照画像と比べる。
-/// 参照画像は `__Snapshots__/<テストのファイル名>/<テスト名>.<端末>-<ライト / ダーク>.png`。
+/// 参照画像は、テストのファイルがあるフォルダの 1 つ上の
+/// `__Snapshots__/<テストのファイル名>/<テスト名>.<端末>-<ライト / ダーク>.png`（理由は SnapshotDirectory）。
 ///
 /// ホストアプリ付きのテスト target（app/PokedexSnapshotTests）から呼ぶ。理由は ADR-0020。
 ///
@@ -39,7 +40,8 @@ public func assertScreenSnapshots(
         for (styleName, style) in styles {
             let host = UIHostingController(
                 rootView: screen.environment(\.locale, Locale(identifier: "en")))
-            assertSnapshot(
+            // assertSnapshot には置き場所の引数が無いので、同じ中身の verifySnapshot を呼び、失敗は自分で記録する。
+            let failure = verifySnapshot(
                 of: host,
                 as: .image(
                     on: device.config,
@@ -51,8 +53,16 @@ public func assertScreenSnapshots(
                         traits.displayScale = device.config.traits.displayScale
                     }),
                 named: "\(device.name)-\(styleName)",
+                snapshotDirectory: SnapshotDirectory.path(forTestFile: "\(file)"),
                 // 呼び出し元のテスト名を渡さないと、画像の名前が「assertScreenSnapshots」で衝突する
                 fileID: fileID, file: file, testName: testName, line: line, column: column)
+            if let failure {
+                Issue.record(
+                    Comment(rawValue: failure),
+                    sourceLocation: SourceLocation(
+                        fileID: "\(fileID)", filePath: "\(file)", line: Int(line),
+                        column: Int(column)))
+            }
         }
     }
 }
