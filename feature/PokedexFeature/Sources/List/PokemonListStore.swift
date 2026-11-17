@@ -57,6 +57,7 @@ final class PokemonListStore {
             return load(offset: state.items.count)
         case .queryChanged(let query):
             state.query = query
+            state.searchError = nil
             guard !query.isEmpty else {
                 // 空に戻したら、ページング一覧に戻る
                 state.searchResults = nil
@@ -64,7 +65,9 @@ final class PokemonListStore {
             }
             return search(query)
         case .searchRetryTapped:
-            return nil
+            guard state.searchError != nil, !state.query.isEmpty else { return nil }
+            state.searchError = nil
+            return search(state.query)
         }
     }
 
@@ -95,8 +98,13 @@ final class PokemonListStore {
                 // 答えを待つ間に入力が変わっていたら、古い答えなので捨てる
                 guard state.query == query else { return }
                 state.searchResults = results
+                state.searchError = nil
+            } catch is CancellationError {
+                // キャンセルは失敗ではない
             } catch {
-                // 端末内の表を読むだけなので、失敗は想定しない。前の結果を残し、エラー表示は出さない
+                // 古い失敗で、今の検索のエラーを立てない
+                guard state.query == query else { return }
+                state.searchError = (error as? LoadError) ?? .unavailable
             }
         }
     }

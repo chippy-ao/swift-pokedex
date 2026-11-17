@@ -33,19 +33,17 @@ public struct PokemonListView: View {
     @ViewBuilder
     private var content: some View {
         let state = store.state
-        if let results = state.searchResults, !state.query.isEmpty {
+        // 検索の分岐。searchError と searchResults は、Store が query を空に戻すときに nil にする。
+        // なので query の空かどうかは、ここでは見ない（見ると同じ守りが 2 か所になる）。
+        // どちらも nil の間（最初の答えを待つ間）は、通常の一覧を出す。
+        if let error = state.searchError {
+            errorView(error, retry: .searchRetryTapped)
+        } else if let results = state.searchResults {
             searchResultsList(results, query: state.query)
         } else if state.items.isEmpty {
             switch state.phase {
             case .failed(let error):
-                VStack(spacing: Spacing.large) {
-                    Text(Self.message(for: error))
-                        .multilineTextAlignment(.center)
-                    Button(.listRetryButton) { store.send(.retryTapped) }
-                        .buttonStyle(.glassProminent)
-                }
-                .padding()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                errorView(error, retry: .retryTapped)
             default:
                 skeleton
             }
@@ -66,6 +64,18 @@ public struct PokemonListView: View {
             }
             .listStyle(.plain)
         }
+    }
+
+    /// 全面のエラー表示（初回の読み込みと検索で共通）。
+    private func errorView(_ error: LoadError, retry: PokemonListStore.Action) -> some View {
+        VStack(spacing: Spacing.large) {
+            Text(Self.message(for: error))
+                .multilineTextAlignment(.center)
+            Button(.listRetryButton) { store.send(retry) }
+                .buttonStyle(.glassProminent)
+        }
+        .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     /// 検索中の一覧。全件から探した結果なので、続きの読み込みはしない。0 件のときは標準の部品を出す。
