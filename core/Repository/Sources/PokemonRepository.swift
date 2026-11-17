@@ -10,6 +10,9 @@ package struct PokemonRepository: Sendable {
     /// 詳細 1 件ぶん。pokemon と species を取ってくっつける。
     package var fetchDetail: @Sendable (_ id: Int) async throws -> PokemonDetailEntry
     /// 名前の表にある全件（番号の小さい順）。検索用で、API は叩かない。
+    /// PokeAPI に名前検索の API が無く、`GET /pokemon` が日本語名を返さないため、全件を取って
+    /// 呼ぶ側（`SearchPokemonByNameUseCase`）が絞る（docs/adr/0018-bundled-pokemon-names-table.md）。
+    /// API で検索できるなら、この関数を `query` を受ける形に差し替える。
     package var fetchAllNames: @Sendable () async throws -> [PokemonNameEntry]
 }
 
