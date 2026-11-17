@@ -28,7 +28,7 @@ struct NameSearchTests {
 
     @Test("探すのは language の名前だけ。ja で英語の綴りは当たらない")
     func searchesOnlyGivenLanguage() {
-        #expect(searchNames(in: Self.table, query: "pika", language: .jaHrkt).isEmpty)
+        #expect(searchNames(in: Self.table, query: "rai", language: .jaHrkt).isEmpty)
         #expect(searchNames(in: Self.table, query: "ぴか", language: .en).isEmpty)
     }
 

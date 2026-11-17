@@ -129,8 +129,17 @@ extension PokemonRepository: DependencyKey {
                 throw loadError(from: error)
             }
         },
-        searchNames: { _, _ in
-            []
+        searchNames: { query, language in
+            @Dependency(\.pokeAPIClient) var client
+            do {
+                return try await client.searchPokemonNames(query, language).map {
+                    PokemonNameEntry(
+                        id: $0.id, names: $0.names.map(localizedName),
+                        spriteURL: pokemonSpriteURL(id: $0.id))
+                }
+            } catch {
+                throw loadError(from: error)
+            }
         }
     )
 }

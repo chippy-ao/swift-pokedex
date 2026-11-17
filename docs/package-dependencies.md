@@ -174,6 +174,7 @@ flowchart TD
   NetworkClient --> Model
   NetworkClient --> Dependencies
   NetworkClientURLSession --> NetworkClient
+  NetworkClientURLSession --> Model
   NetworkClientURLSession --> HTTPTypes
   NetworkClientURLSession --> Dependencies
 
