@@ -19,6 +19,7 @@ final class PokemonListStore {
         var hasNext = true
         var query = ""
         var searchResults: [PokemonSummary]?
+        var searchError: LoadError?
     }
 
     enum Action {
@@ -26,6 +27,7 @@ final class PokemonListStore {
         case reachedBottom
         case retryTapped
         case queryChanged(String)
+        case searchRetryTapped
     }
 
     private(set) var state = State()
@@ -61,6 +63,8 @@ final class PokemonListStore {
                 return nil
             }
             return search(query)
+        case .searchRetryTapped:
+            return nil
         }
     }
 
