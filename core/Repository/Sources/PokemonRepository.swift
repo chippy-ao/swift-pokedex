@@ -9,11 +9,11 @@ package struct PokemonRepository: Sendable {
     package var fetchList: @Sendable (_ limit: Int, _ offset: Int) async throws -> PokemonListPage
     /// 詳細 1 件ぶん。pokemon と species を取ってくっつける。
     package var fetchDetail: @Sendable (_ id: Int) async throws -> PokemonDetailEntry
-    /// 名前の表にある全件（番号の小さい順）。検索用で、API は叩かない。
-    /// PokeAPI に名前検索の API が無く、`GET /pokemon` が日本語名を返さないため、全件を取って
-    /// 呼ぶ側（`SearchPokemonByNameUseCase`）が絞る（docs/adr/0018-bundled-pokemon-names-table.md）。
-    /// API で検索できるなら、この関数を `query` を受ける形に差し替える。
-    package var fetchAllNames: @Sendable () async throws -> [PokemonNameEntry]
+    /// 名前で検索する（検索用で、一覧の API は叩かない）。`language` の名前に `query` が部分一致する
+    /// ものを、番号の小さい順に返す。空の `query` は全件。絞り込みは NetworkClient の実装が行う
+    /// （表を使う理由と、API に差し替える想定は `PokeAPIClient.searchPokemonNames`）。
+    package var searchNames:
+        @Sendable (_ query: String, _ language: LanguageCode) async throws -> [PokemonNameEntry]
 }
 
 extension PokemonRepository: TestDependencyKey {
@@ -62,7 +62,7 @@ extension PokemonRepository: TestDependencyKey {
                         + "official-artwork/1.png"
                 ))
         },
-        fetchAllNames: {
+        searchNames: { _, _ in
             [
                 PokemonNameEntry(
                     id: 1,
@@ -129,18 +129,8 @@ extension PokemonRepository: DependencyKey {
                 throw loadError(from: error)
             }
         },
-        fetchAllNames: {
-            @Dependency(\.pokeAPIClient) var client
-            do {
-                let names = try await client.fetchAllPokemonSpeciesNames()
-                return names.keys.sorted().map { id in
-                    PokemonNameEntry(
-                        id: id, names: (names[id] ?? []).map(localizedName),
-                        spriteURL: pokemonSpriteURL(id: id))
-                }
-            } catch {
-                throw loadError(from: error)
-            }
+        searchNames: { _, _ in
+            []
         }
     )
 }

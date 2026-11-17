@@ -12,9 +12,14 @@ package func displayName(
 /// 言語の規則で 1 つ選ぶ。ja は ja-hrkt、無ければ en。どちらも無ければ nil。
 /// 分類（genus）のように、無ければ出さないものに使う。
 package func localizedText(in texts: [LocalizedName], localization: String?) -> String? {
-    let preferred: LanguageCode = localization == "ja" ? .jaHrkt : .en
+    let preferred = preferredLanguageCode(localization: localization)
     func text(in code: LanguageCode) -> String? {
         texts.first { $0.languageCode == code }?.name
     }
     return text(in: preferred) ?? text(in: .en)
+}
+
+/// アプリの言語（`ja`、`en` など）に当たる PokeAPI の言語コード。ja は ja-hrkt、それ以外は en。
+package func preferredLanguageCode(localization: String?) -> LanguageCode {
+    localization == "ja" ? .jaHrkt : .en
 }

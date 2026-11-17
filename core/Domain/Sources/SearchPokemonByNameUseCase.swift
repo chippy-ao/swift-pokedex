@@ -25,19 +25,8 @@ extension SearchPokemonByNameUseCase: TestDependencyKey {
 
 extension SearchPokemonByNameUseCase: DependencyKey {
     package static let liveValue = SearchPokemonByNameUseCase(
-        execute: { query in
-            @Dependency(\.pokemonRepository) var repository
-            @Dependency(\.preferredLocalization) var preferredLocalization
-            let entries = try await repository.fetchAllNames()
-            // 探す対象は一覧に出る名前と同じ（設定言語）にする。見えない名前で当たると利用者が戸惑う。
-            // 一覧と同じ規則で、フォーム違いは入れない。使える名前が無い番号は、空の行になるので入れない。
-            return entries.compactMap { entry in
-                guard entry.id <= FetchPokemonPageUseCase.lastListedID,
-                    let name = localizedText(in: entry.names, localization: preferredLocalization),
-                    matchesName(name, query: query)
-                else { return nil }
-                return PokemonSummary(id: entry.id, name: name, spriteURL: entry.spriteURL)
-            }
+        execute: { _ in
+            []
         }
     )
 }

@@ -1,6 +1,6 @@
 import Testing
 
-@testable import Domain
+@testable import NetworkClientURLSession
 
 struct NameMatchingTests {
     struct Case: Sendable, CustomTestStringConvertible {

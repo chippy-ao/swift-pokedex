@@ -2,6 +2,7 @@ import Dependencies
 import Foundation
 import HTTPTypes
 import HTTPTypesFoundation
+import Model
 import NetworkClient
 
 extension PokeAPIClient: DependencyKey {
@@ -53,6 +54,9 @@ extension PokeAPIClient: DependencyKey {
             // 同梱の表から答える。API を叩きすぎないため（ADR-0018）。
             fetchAllPokemonSpeciesNames: {
                 try bundledSpeciesNames.get()
+            },
+            searchPokemonNames: { query, language in
+                searchNames(in: try bundledSpeciesNames.get(), query: query, language: language)
             },
             fetchPokemonDetail: { id in
                 let response = try await get(
