@@ -41,11 +41,10 @@ struct NameSearchTests {
             result.first?.names.map(\.languageCode).sorted() == ["en", "ja-hrkt"])
     }
 
-    @Test("language の名前が無い番号は、英語の名前で探す（表示の名前と同じ規則）")
-    func fallsBackToEnglishName() {
-        let result = searchNames(in: Self.table, query: "mystery", language: .jaHrkt)
-
-        #expect(result.map(\.id) == [999])
+    @Test("language の名前が無い番号は、英語の名前では探さず、結果に入れない（空文字でも）")
+    func dropsEntriesWithoutNameInLanguage() {
+        #expect(searchNames(in: Self.table, query: "mystery", language: .jaHrkt).isEmpty)
+        #expect(searchNames(in: Self.table, query: "", language: .jaHrkt).map(\.id) == [25, 26])
     }
 
     @Test("空文字は全件を、番号の小さい順に返す")
