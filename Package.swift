@@ -158,7 +158,7 @@ let package = Package(
         .target(
             name: "NetworkClient",
             dependencies: [
-                "Common",
+                "Common", "Model",
                 .product(name: "Dependencies", package: "swift-dependencies"),
                 .product(name: "DependenciesMacros", package: "swift-dependencies"),
             ],

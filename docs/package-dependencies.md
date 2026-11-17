@@ -171,6 +171,7 @@ flowchart TD
   Repository --> Dependencies
 
   NetworkClient --> Common
+  NetworkClient --> Model
   NetworkClient --> Dependencies
   NetworkClientURLSession --> NetworkClient
   NetworkClientURLSession --> HTTPTypes
@@ -211,7 +212,7 @@ flowchart TD
 - 依存の方向は常に app → feature → core です。逆向きの矢印はありません。
 - 実装モジュール（青）に矢印を向けているのは Pokedex（App ターゲット）だけです。
 - feature は Domain と Model の両方を見ます。SharedUI は Model だけを見ます（Domain は見ません）。
-- DTO は NetworkClient に置き、Repository で Model に変換します。
+- DTO は NetworkClient に置き、Repository で Model に変換します。NetworkClient は Model の値（`LanguageCode` など、ただの値の型）を引数に使えます。通信のエラーは `PokeAPIError` で投げ、`LoadError` への変換は Repository が行います。
 - TestSupport は各モジュールの Tests ターゲットから使う想定です。上の図には通常ターゲットの依存だけを描いています。
 
 ## 依存ルール
