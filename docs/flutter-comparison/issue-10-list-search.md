@@ -44,6 +44,19 @@ Scaffold(
 
 **意味:** `.searchable` の `text:` は `Binding<String>`（読み書きできる参照）を求めます。このアプリの文字は Store の `state.query` にあり、書き換えは Action 経由だけです。そこで、`get` で State を読み、`set` で Action を送る `Binding` をその場で作ります。Flutter で同じ形にするなら、`TextField` の `controller.text` を State から出し、`onChanged` で Action を送ります。
 
+```swift
+Binding(
+    get: { store.state.query },              // 読み: State の文字を欄に出す
+    set: { store.send(.queryChanged($0)) })  // 書き: 入力を Action にして送る
+```
+
+```dart
+TextField(
+  controller: TextEditingController(text: state.query), // 読み（get に当たる）
+  onChanged: (text) => store.send(QueryChanged(text)),   // 書き（set に当たる）
+);
+```
+
 **違いと間違えやすいところ:** `Binding` は 1 つの値で「読む」と「書く」を両方持ちます。Flutter の `TextField` は読み（`controller`）と書き（`onChanged`）が別々の引数です。
 
 **出典:** [Binding（Apple）](https://developer.apple.com/documentation/swiftui/binding)、[TextField（Flutter）](https://api.flutter.dev/flutter/material/TextField-class.html)
