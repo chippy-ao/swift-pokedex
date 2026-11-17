@@ -9,6 +9,11 @@ package struct PokemonRepository: Sendable {
     package var fetchList: @Sendable (_ limit: Int, _ offset: Int) async throws -> PokemonListPage
     /// 詳細 1 件ぶん。pokemon と species を取ってくっつける。
     package var fetchDetail: @Sendable (_ id: Int) async throws -> PokemonDetailEntry
+    /// 名前で検索する（検索用で、一覧の API は叩かない）。`language` の名前に `query` が部分一致する
+    /// ものを、番号の小さい順に返す。空の `query` は全件。絞り込みは NetworkClient の実装が行う
+    /// （表を使う理由と、API に差し替える想定は `PokeAPIClient.searchPokemonNames`）。
+    package var searchNames:
+        @Sendable (_ query: String, _ language: LanguageCode) async throws -> [PokemonNameEntry]
 }
 
 extension PokemonRepository: TestDependencyKey {
@@ -56,6 +61,17 @@ extension PokemonRepository: TestDependencyKey {
                         "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/"
                         + "official-artwork/1.png"
                 ))
+        },
+        searchNames: { _, _ in
+            [
+                PokemonNameEntry(
+                    id: 1,
+                    names: [
+                        LocalizedName(languageCode: .en, name: "Bulbasaur"),
+                        LocalizedName(languageCode: .jaHrkt, name: "フシギダネ"),
+                    ],
+                    spriteURL: pokemonSpriteURL(id: 1))
+            ]
         }
     )
 }
@@ -109,6 +125,18 @@ extension PokemonRepository: DependencyKey {
                     heightInMeters: Double(pokemon.height) / 10,
                     weightInKilograms: Double(pokemon.weight) / 10,
                     artworkURL: pokemon.artworkURL)
+            } catch {
+                throw loadError(from: error)
+            }
+        },
+        searchNames: { query, language in
+            @Dependency(\.pokeAPIClient) var client
+            do {
+                return try await client.searchPokemonNames(query, language).map {
+                    PokemonNameEntry(
+                        id: $0.id, names: $0.names.map(localizedName),
+                        spriteURL: pokemonSpriteURL(id: $0.id))
+                }
             } catch {
                 throw loadError(from: error)
             }

@@ -142,4 +142,85 @@ struct RepositoryTests {
             try await fetchList(throwing: CancellationError())
         }
     }
+
+    private func searchNames(
+        returning matches: [PokemonNameMatchDTO]
+    ) async throws -> [PokemonNameEntry] {
+        try await withDependencies {
+            $0.pokeAPIClient.searchPokemonNames = { _, _ in matches }
+        } operation: {
+            try await PokemonRepository.liveValue.searchNames(query: "pika", language: .en)
+        }
+    }
+
+    @Test("検索結果が、順番を保ったまま、言語コードを LanguageCode にして PokemonNameEntry になる")
+    func searchResultsBecomeEntries() async throws {
+        let entries = try await searchNames(returning: [
+            .init(
+                id: 122,
+                names: [
+                    LocalizedNameDTO(languageCode: "en", name: "Mr. Mime"),
+                    LocalizedNameDTO(languageCode: "ja-hrkt", name: "バリヤード"),
+                ]),
+            .init(id: 25, names: [LocalizedNameDTO(languageCode: "en", name: "Pikachu")]),
+        ])
+
+        #expect(entries.map(\.id) == [122, 25])
+        #expect(
+            entries.map(\.names) == [
+                [
+                    LocalizedName(languageCode: .en, name: "Mr. Mime"),
+                    LocalizedName(languageCode: .jaHrkt, name: "バリヤード"),
+                ],
+                [LocalizedName(languageCode: .en, name: "Pikachu")],
+            ])
+    }
+
+    @Test("画像の URL は、一覧と同じ作り方で番号から作る")
+    func searchResultSpriteURLComesFromID() async throws {
+        let entries = try await searchNames(returning: [
+            .init(id: 25, names: [LocalizedNameDTO(languageCode: "en", name: "Pikachu")])
+        ])
+
+        #expect(
+            entries.first?.spriteURL
+                == URL(
+                    string:
+                        "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png"
+                ))
+    }
+
+    @Test("query と language は NetworkClient にそのまま渡す")
+    func passesQueryAndLanguage() async throws {
+        let recorder = QueryRecorder()
+        _ = try await withDependencies {
+            $0.pokeAPIClient.searchPokemonNames = { query, language in
+                await recorder.record(query: query, language: language)
+                return []
+            }
+        } operation: {
+            try await PokemonRepository.liveValue.searchNames(query: "ぴか", language: .jaHrkt)
+        }
+
+        #expect(await recorder.calls == [["ぴか", "ja-hrkt"]])
+    }
+
+    private actor QueryRecorder {
+        /// `[query, 言語コード]` の組。
+        private(set) var calls: [[String]] = []
+        func record(query: String, language: LanguageCode) {
+            calls.append([query, language.rawValue])
+        }
+    }
+
+    @Test("検索の失敗は LoadError になる")
+    func searchFailureBecomesLoadError() async {
+        await #expect(throws: LoadError.offline) {
+            try await withDependencies {
+                $0.pokeAPIClient.searchPokemonNames = { _, _ in throw PokeAPIError.offline }
+            } operation: {
+                try await PokemonRepository.liveValue.searchNames(query: "pika", language: .en)
+            }
+        }
+    }
 }

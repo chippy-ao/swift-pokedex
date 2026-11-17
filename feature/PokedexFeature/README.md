@@ -78,7 +78,7 @@ feature をまたぐ遷移は現時点ではありません。必要になった
 | 表示項目 | 画像(小さいドット絵 `spriteURL`)、ID、名前(アプリの言語)。タイプは出さない(下の「一覧の決めごと」) |
 | 操作 | 最後の行が画面に出たら次ページ取得、行タップで Detail へ、検索欄への入力、タイプフィルタの選択 |
 | PokeAPI | `GET /pokemon?limit=&offset=`(ページング)、`GET /type/{name}`(タイプフィルタ) |
-| UseCase 案 | `FetchPokemonPageUseCase`、`FetchAllPokemonNamesUseCase`、`FetchPokemonByTypeUseCase` |
+| UseCase 案 | `FetchPokemonPageUseCase`、`SearchPokemonByNameUseCase`、`FetchPokemonByTypeUseCase` |
 
 ページングは limit / offset 方式で、1ページは 20 件です(PokeAPI の初期値で、1 画面を少し超える量)。ID の取り出し方は [docs/data-layer.md](../../docs/data-layer.md) を参照してください。名前検索の API は無いため、全件の名前リスト(limit を count 以上にして1回取得)をキャッシュし、ローカルで絞り込みます。
 

@@ -158,7 +158,7 @@ let package = Package(
         .target(
             name: "NetworkClient",
             dependencies: [
-                "Common",
+                "Common", "Model",
                 .product(name: "Dependencies", package: "swift-dependencies"),
                 .product(name: "DependenciesMacros", package: "swift-dependencies"),
             ],
@@ -194,7 +194,7 @@ let package = Package(
         .target(
             name: "NetworkClientURLSession",
             dependencies: [
-                "NetworkClient",
+                "NetworkClient", "Model",
                 .product(name: "HTTPTypes", package: "swift-http-types"),
                 .product(name: "HTTPTypesFoundation", package: "swift-http-types"),
                 .product(name: "Dependencies", package: "swift-dependencies"),
@@ -210,7 +210,7 @@ let package = Package(
         ),
         .testTarget(
             name: "NetworkClientURLSessionTests",
-            dependencies: ["NetworkClientURLSession", "NetworkClient", "TestSupport"],
+            dependencies: ["NetworkClientURLSession", "NetworkClient", "Model", "TestSupport"],
             path: "core/NetworkClientURLSession/Tests"
         ),
         .target(

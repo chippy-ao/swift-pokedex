@@ -2,6 +2,7 @@ import Dependencies
 import Foundation
 import HTTPTypes
 import HTTPTypesFoundation
+import Model
 import NetworkClient
 
 extension PokeAPIClient: DependencyKey {
@@ -53,6 +54,10 @@ extension PokeAPIClient: DependencyKey {
             // 同梱の表から答える。API を叩きすぎないため（ADR-0018）。
             fetchAllPokemonSpeciesNames: {
                 try bundledSpeciesNames.get()
+            },
+            // 通信せず、同梱の表を端末内で絞る（理由と差し替えの想定は `searchNames`）。
+            searchPokemonNames: { query, language in
+                searchNames(in: try bundledSpeciesNames.get(), query: query, language: language)
             },
             fetchPokemonDetail: { id in
                 let response = try await get(
@@ -115,7 +120,8 @@ private struct PokemonListResponse: Decodable {
             guard let id = pokemonID(fromURL: entry.url) else {
                 throw PokeAPIError.unavailable
             }
-            return PokemonListDTO.Entry(id: id, name: entry.name, spriteURL: spriteURL(id: id))
+            return PokemonListDTO.Entry(
+                id: id, name: entry.name, spriteURL: pokemonSpriteURL(id: id))
         }
         return PokemonListDTO(items: items, hasNext: next != nil)
     }
@@ -209,13 +215,6 @@ private struct PokemonSpeciesResponse: Decodable {
 /// `https://pokeapi.co/api/v2/pokemon/25/` の末尾の `25` を取り出す。
 private func pokemonID(fromURL url: String) -> Int? {
     url.split(separator: "/").last.flatMap { Int($0) }
-}
-
-/// 小さいドット絵の URL。REST のレスポンスには入っていないので、番号から作る。
-private func spriteURL(id: Int) -> URL {
-    URL(
-        string: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/\(id).png"
-    )!
 }
 
 /// 共通の GET とデコード。URLSession は 2xx 以外でも投げないので、ここで失敗にする。
