@@ -20,13 +20,22 @@ public struct PokemonListView: View {
     public var body: some View {
         content
             .navigationTitle(Text(.listNavigationTitle))
+            // 検索欄は常に出す。1 文字ごとに絞る（README の「検索の決めごと」）。
+            .searchable(
+                text: Binding(
+                    get: { store.state.query },
+                    set: { store.send(.queryChanged($0)) }),
+                placement: .navigationBarDrawer(displayMode: .always)
+            )
             .task { store.send(.onAppear) }
     }
 
     @ViewBuilder
     private var content: some View {
         let state = store.state
-        if state.items.isEmpty {
+        if let results = state.searchResults, !state.query.isEmpty {
+            searchResultsList(results, query: state.query)
+        } else if state.items.isEmpty {
             switch state.phase {
             case .failed(let error):
                 VStack(spacing: Spacing.large) {
@@ -54,6 +63,21 @@ public struct PokemonListView: View {
                     }
                 }
                 footer(state)
+            }
+            .listStyle(.plain)
+        }
+    }
+
+    /// 検索中の一覧。全件から探した結果なので、続きの読み込みはしない。0 件のときは標準の部品を出す。
+    @ViewBuilder
+    private func searchResultsList(_ results: [PokemonSummary], query: String) -> some View {
+        if results.isEmpty {
+            ContentUnavailableView.search(text: query)
+        } else {
+            List(results) { pokemon in
+                NavigationLink(value: PokedexRoute.detail(id: pokemon.id)) {
+                    PokemonRow(pokemon: pokemon)
+                }
             }
             .listStyle(.plain)
         }
