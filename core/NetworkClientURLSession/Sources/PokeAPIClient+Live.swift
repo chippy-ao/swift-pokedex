@@ -55,6 +55,7 @@ extension PokeAPIClient: DependencyKey {
             fetchAllPokemonSpeciesNames: {
                 try bundledSpeciesNames.get()
             },
+            // 通信せず、同梱の表を端末内で絞る（理由と差し替えの想定は `searchNames`）。
             searchPokemonNames: { query, language in
                 searchNames(in: try bundledSpeciesNames.get(), query: query, language: language)
             },
