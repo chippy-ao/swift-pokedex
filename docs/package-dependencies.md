@@ -325,6 +325,7 @@ Apple SDK や標準ライブラリのモジュール名・型名と衝突する�
 - [ADR 0005 外部ライブラリ選定](./adr/0005-external-libraries.md)
 - [ADR 0008 モジュール命名規約](./adr/0008-module-naming.md)
 - [ADR 0015 Xcode プロジェクトの構成と名前](./adr/0015-xcode-project-structure.md)
+- [ADR 0022 NetworkClient が Model を見てよいことにする](./adr/0022-network-client-may-depend-on-model.md)
 
 関連ドキュメントです。
 

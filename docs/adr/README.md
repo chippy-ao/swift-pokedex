@@ -37,6 +37,7 @@ ADR を残す基準、書き換えない原則、置き場所の考え方は [do
 | [0019](0019-type-and-stat-names-and-colors-in-app.md) | タイプと種族値の名前と色をアプリに持つ | 承認済み | 2026-11-13 |
 | [0020](0020-snapshot-tests-with-host-app.md) | スナップショットテストはホストアプリ付きで撮る | 承認済み | 2026-11-14 |
 | [0021](0021-logic-tests-on-macos.md) | ロジックのテストを macOS で回す | 承認済み | 2026-11-15 |
+| [0022](0022-network-client-may-depend-on-model.md) | NetworkClient が Model を見てよいことにする | 承認済み | 2026-11-17 |
 
 ## テンプレート
 
