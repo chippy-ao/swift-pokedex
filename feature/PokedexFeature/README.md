@@ -106,6 +106,7 @@ enum Action {
     case reachedBottom
     case retryTapped
     case queryChanged(String)                   // 検索欄への入力
+    case searchRetryTapped                      // 検索の失敗からの再試行
 }
 ```
 
