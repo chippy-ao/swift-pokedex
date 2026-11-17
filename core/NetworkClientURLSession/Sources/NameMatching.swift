@@ -22,19 +22,17 @@ private func katakana(_ text: String) -> String {
 /// 絞っている（docs/adr/0018-bundled-pokemon-names-table.md）。API で検索できるようになったら、
 /// この絞り込みごと、`PokeAPIClient.searchPokemonNames` の実装を API 呼び出しに差し替える。
 ///
-/// 探す名前は、画面に出す名前と同じ規則で選ぶ（`language`、無ければ `en`）。見えない名前で当たると
-/// 利用者が戸惑うため。この規則は Domain の `localizedText` と同じなので、変えるときは両方そろえる。
+/// 探す名前は `language` のものだけ。表示名の選び方（フォールバック）は UseCase が持つ規則で、ここには
+/// 持たない（規則を 1 か所にするため）。表に抜けが出たら、ここと UseCase の規則を見直す。
+/// その言語の名前が無い番号は、空の行になるので結果に入れない（UseCase も同じ扱い）。
 func searchNames(
     in table: [Int: [LocalizedNameDTO]], query: String, language: LanguageCode
 ) -> [PokemonNameMatchDTO] {
-    func name(of names: [LocalizedNameDTO], in code: LanguageCode) -> String? {
-        names.first { $0.languageCode == code.rawValue }?.name
-    }
     return table.keys.sorted().compactMap { id in
         let names = table[id] ?? []
-        // 名前が 1 つも無い番号は、空の検索語のときだけ当たる（空の名前に空の検索語が当たる）。
-        let target = name(of: names, in: language) ?? name(of: names, in: .en) ?? ""
-        guard matchesName(target, query: query) else { return nil }
+        guard let name = names.first(where: { $0.languageCode == language.rawValue })?.name,
+            matchesName(name, query: query)
+        else { return nil }
         return PokemonNameMatchDTO(id: id, names: names)
     }
 }
