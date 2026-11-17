@@ -198,4 +198,111 @@ struct PokemonListStoreTests {
         #expect(store.state.phase == .loaded)
         #expect(store.state.items.map(\.id) == Array(1..<41))
     }
+
+    // MARK: - 名前の検索
+
+    private func makeSearchStore(
+        search: @escaping @Sendable (_ query: String) async throws -> [PokemonSummary],
+        recorder: Recorder = Recorder()
+    ) -> PokemonListStore {
+        withDependencies {
+            $0.fetchPokemonPage.execute = { offset in
+                await recorder.record(offset)
+                return Self.page(ids: 1..<21, hasNext: true)
+            }
+            $0.searchPokemonByName.execute = search
+        } operation: {
+            PokemonListStore()
+        }
+    }
+
+    private nonisolated static func summaries(_ ids: [Int]) -> [PokemonSummary] {
+        page(ids: 0..<0, hasNext: false).items
+            + ids.map {
+                PokemonSummary(
+                    id: $0, name: "found-\($0)",
+                    spriteURL: URL(string: "https://example.com/sprites/\($0).png")!)
+            }
+    }
+
+    @Test("入力すると、その文字で探した結果が searchResults に入り、入力のたびに置き換わる")
+    func queryChangedShowsSearchResults() async {
+        let store = makeSearchStore { query in
+            switch query {
+            case "p": Self.summaries([25, 172, 4])
+            case "pi": Self.summaries([25, 172])
+            default: []
+            }
+        }
+        await store.send(.onAppear)?.value
+
+        await store.send(.queryChanged("p"))?.value
+        #expect(store.state.query == "p")
+        #expect(store.state.searchResults?.map(\.id) == [25, 172, 4])
+
+        await store.send(.queryChanged("pi"))?.value
+        #expect(store.state.query == "pi")
+        #expect(store.state.searchResults?.map(\.id) == [25, 172])
+        // 読み込み済みの一覧は触らない
+        #expect(store.state.items.map(\.id) == Array(1..<21))
+    }
+
+    @Test("検索中の reachedBottom は無視して、次のページを読まない")
+    func reachedBottomIgnoredWhileSearching() async {
+        let recorder = Recorder()
+        let store = makeSearchStore(
+            search: { _ in Self.summaries([25]) }, recorder: recorder)
+        await store.send(.onAppear)?.value
+        await store.send(.queryChanged("pi"))?.value
+
+        let task = store.send(.reachedBottom)
+        await task?.value
+
+        #expect(task == nil)
+        #expect(await recorder.offsets == [0])
+        #expect(store.state.items.count == 20)
+    }
+
+    @Test("検索を空に戻すと、読み込み済みの一覧に戻り、reachedBottom がまた効く")
+    func clearingQueryReturnsToPagedList() async {
+        let recorder = Recorder()
+        let store = makeSearchStore(
+            search: { _ in Self.summaries([25]) }, recorder: recorder)
+        await store.send(.onAppear)?.value
+        await store.send(.queryChanged("pi"))?.value
+        #expect(store.state.searchResults?.map(\.id) == [25])
+
+        await store.send(.queryChanged(""))?.value
+
+        #expect(store.state.query == "")
+        #expect(store.state.searchResults == nil)
+        #expect(store.state.items.map(\.id) == Array(1..<21))
+        await store.send(.reachedBottom)?.value
+        #expect(await recorder.offsets == [0, 20])
+    }
+
+    @Test("一致が 0 件のときは、searchResults が nil ではなく空配列になる")
+    func noMatchGivesEmptyResults() async {
+        let store = makeSearchStore { _ in [] }
+        await store.send(.onAppear)?.value
+
+        await store.send(.queryChanged("zzz"))?.value
+
+        #expect(store.state.searchResults?.isEmpty == true)
+    }
+
+    @Test("答えが返る前に空に戻したら、遅れて届いた答えは捨てる")
+    func lateAnswerAfterClearIsDiscarded() async {
+        let store = makeSearchStore { _ in
+            try await Task.sleep(for: .milliseconds(100))
+            return Self.summaries([25])
+        }
+        await store.send(.onAppear)?.value
+
+        let slow = store.send(.queryChanged("pi"))
+        await store.send(.queryChanged(""))?.value
+        await slow?.value
+
+        #expect(store.state.searchResults == nil)
+    }
 }

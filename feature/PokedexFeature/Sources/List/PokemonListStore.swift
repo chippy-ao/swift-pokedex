@@ -17,12 +17,15 @@ final class PokemonListStore {
         var items: [PokemonSummary] = []
         var phase: Phase = .idle
         var hasNext = true
+        var query = ""
+        var searchResults: [PokemonSummary]?
     }
 
     enum Action {
         case onAppear
         case reachedBottom
         case retryTapped
+        case queryChanged(String)
     }
 
     private(set) var state = State()
@@ -46,6 +49,9 @@ final class PokemonListStore {
         case .retryTapped:
             guard case .failed = state.phase else { return nil }
             return load(offset: state.items.count)
+        case .queryChanged(let query):
+            state.query = query
+            return nil
         }
     }
 
