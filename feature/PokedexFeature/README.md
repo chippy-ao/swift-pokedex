@@ -86,35 +86,45 @@ feature をまたぐ遷移は現時点ではありません。必要になった
 
 - 続きを読むタイミングは、最後の行の `onAppear` で `reachedBottom` を送ります。`onAppear` は何度も呼ばれるので、Store は読み込み中と `hasNext == false` のときの `reachedBottom` を無視します。
 - ID が 10000 を超えるフォーム違いは一覧に入れず、詳細で扱います。PokeAPI の `/pokemon` は 1..1025 のあとに 10001.. が続くので、読んだページに ID > 10000 があれば捨てて `hasNext = false` にします。これは図鑑のきまりなので Domain の `FetchPokemonPageUseCase` で行います。
-- 名前はアプリの言語で出します。日本語ならカナ(`ja-hrkt`)、それ以外は英語です（無いときの規則は [docs/data-layer.md](../../docs/data-layer.md#言語コードと変換ルール)）。名前は API を叩かず、同梱の表から出します（選び方は Domain の `FetchPokemonPageUseCase`、理由は [ADR 0018](../../docs/adr/0018-bundled-pokemon-names-table.md)、仕組みは [docs/data-layer.md](../../docs/data-layer.md#名前の表)）。名前での検索は #10 で足します。詳細画面の名前は API の species から取ります(下の Detail)。
+- 名前はアプリの言語で出します。日本語ならカナ(`ja-hrkt`)、それ以外は英語です（無いときの規則は [docs/data-layer.md](../../docs/data-layer.md#言語コードと変換ルール)）。名前は API を叩かず、同梱の表から出します（選び方は Domain の `FetchPokemonPageUseCase`、理由は [ADR 0018](../../docs/adr/0018-bundled-pokemon-names-table.md)、仕組みは [docs/data-layer.md](../../docs/data-layer.md#名前の表)）。名前での検索は下の「検索の決めごと」です。詳細画面の名前は API の species から取ります(下の Detail)。
 - 行にタイプは出しません。出すには 1 行ごとに詳細 API を呼ぶことになり、PokeAPI の Fair Use Policy に反しやすいためです。出したくなったら、この理由を見直してから決めます。
 
-State / Action です。一覧の実装に合わせてあり、検索とタイプフィルタは #10、#11 で足します。
+State / Action です。一覧の実装に合わせてあり、タイプフィルタは #11 で足します。
 
 ```swift
 struct State: Equatable {
     var items: [PokemonSummary] = []
     var phase: Phase = .idle          // idle / loading / loaded / failed(LoadError)
     var hasNext = true
+    var query = ""                              // 検索欄の文字
+    var searchResults: [PokemonSummary]?        // 検索の結果。nil は結果がまだ無い（検索していない、または最初の答えを待っている）
+    var searchError: LoadError?                 // 検索の失敗。入力し直す、または再試行で nil に戻る
 }
 
 enum Action {
     case onAppear
     case reachedBottom
     case retryTapped
+    case queryChanged(String)                   // 検索欄への入力
+    case searchRetryTapped                      // 検索の失敗からの再試行
 }
 ```
 
 エラーは `phase = .failed(LoadError)` に入れ、文言は View が `LoadError` から決めます。`CancellationError` は失敗にしません。行タップで Detail へ進む操作は Store を通さず、`NavigationLink` で行います(上の「画面遷移」)。
 
-検索の debounce は Store が Task を保持して cancel します(`Task.sleep` を使用)。
+検索の決めごとです。
+
+- 検索欄は一覧の上に常に出し(`.searchable`)、1 文字入力するごとに絞ります。debounce は入れません。名前での検索は端末内の表を絞るだけで通信せず、一瞬で終わるためです(通信するようになったら、debounce と前の検索のキャンセルが要る。理由は `SearchPokemonByNameUseCase` のコメント)。
+- 検索中(`query` が空でない間)は、読み込み済みの一覧ではなく全件から探します。`reachedBottom` は無視し、無限スクロールは止まります。`query` を空に戻すと、今のページング一覧に戻ります。
+- 絞り込みは `SearchPokemonByNameUseCase` が行います（一致のしかたは `SearchPokemonByNameUseCase` を参照）。Store は結果を `searchResults` に入れるだけです。答えが返ったとき `query` が変わっていたら、古い答えとして捨てます。
 
 | 状態 | 表示 |
 | --- | --- |
 | 読み込み中(初回) | 一覧の行と同じ形のスケルトンに shimmer（視差効果を減らす設定では動かさない） |
 | 読み込み中(次ページ) | リスト末尾に ProgressView |
-| 空(検索・フィルタの結果なし) | 「該当するポケモンがいません」と条件のクリア導線 |
+| 空(検索・フィルタの結果なし) | 標準部品の `ContentUnavailableView.search(text:)`。「検索をクリア」などのボタンは足さない |
 | エラー(初回) | オフラインのときは接続を確認する文言、それ以外は時間をおいて再試行する文言。どちらも再試行ボタン |
+| エラー(検索) | 初回のエラーと同じ文言(オフラインかどうかで分ける)と再試行ボタンを、検索結果の場所に出す |
 | エラー(次ページ) | オフラインのときは接続を確認する文言、それ以外は時間をおいて再試行する文言。どちらも末尾の再試行行。取得済みの一覧は維持する |
 
 ### Detail

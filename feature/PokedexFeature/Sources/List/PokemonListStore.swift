@@ -17,18 +17,26 @@ final class PokemonListStore {
         var items: [PokemonSummary] = []
         var phase: Phase = .idle
         var hasNext = true
+        var query = ""
+        var searchResults: [PokemonSummary]?
+        var searchError: LoadError?
     }
 
     enum Action {
         case onAppear
         case reachedBottom
         case retryTapped
+        case queryChanged(String)
+        case searchRetryTapped
     }
 
     private(set) var state = State()
 
     @ObservationIgnored
     @Dependency(\.fetchPokemonPage) private var fetchPokemonPage
+
+    @ObservationIgnored
+    @Dependency(\.searchPokemonByName) private var searchPokemonByName
 
     init() {}
 
@@ -40,12 +48,26 @@ final class PokemonListStore {
             guard state.phase == .idle else { return nil }
             return load(offset: 0)
         case .reachedBottom:
-            // onAppear は何度も呼ばれるので、読み込み中と末尾の後は無視する
-            guard state.phase == .loaded, state.hasNext else { return nil }
+            // onAppear は何度も呼ばれるので、読み込み中と末尾の後は無視する。
+            // 検索中は全件から探していて続きが無いので、これも無視する
+            guard state.query.isEmpty, state.phase == .loaded, state.hasNext else { return nil }
             return load(offset: state.items.count)
         case .retryTapped:
             guard case .failed = state.phase else { return nil }
             return load(offset: state.items.count)
+        case .queryChanged(let query):
+            state.query = query
+            state.searchError = nil
+            guard !query.isEmpty else {
+                // 空に戻したら、ページング一覧に戻る
+                state.searchResults = nil
+                return nil
+            }
+            return search(query)
+        case .searchRetryTapped:
+            guard state.searchError != nil, !state.query.isEmpty else { return nil }
+            state.searchError = nil
+            return search(state.query)
         }
     }
 
@@ -64,6 +86,25 @@ final class PokemonListStore {
                 state.phase = .failed(error)
             } catch {
                 state.phase = .failed(.unavailable)
+            }
+        }
+    }
+
+    /// 入力のたびに探す。端末内の表を絞るだけで一瞬なので、debounce も前の検索のキャンセルもしない。
+    private func search(_ query: String) -> Task<Void, Never> {
+        Task {
+            do {
+                let results = try await searchPokemonByName.execute(query)
+                // 答えを待つ間に入力が変わっていたら、古い答えなので捨てる
+                guard state.query == query else { return }
+                state.searchResults = results
+                state.searchError = nil
+            } catch is CancellationError {
+                // キャンセルは失敗ではない
+            } catch {
+                // 古い失敗で、今の検索のエラーを立てない
+                guard state.query == query else { return }
+                state.searchError = (error as? LoadError) ?? .unavailable
             }
         }
     }
